@@ -1,11 +1,25 @@
 import { NextResponse } from "next/server";
 import {
-  INITIAL_SERVICES,
-  INITIAL_REQUIREMENTS,
-  INITIAL_REQUIREMENT_STATUS,
-  INITIAL_DOCUMENTS,
-  INITIAL_PROFILE_FIELDS,
-} from "@/lib/mock-data/initial-state";
+  authenticateSession,
+  getUserProfileFields,
+  getUserDocuments,
+  getUserRequirementStatuses,
+  recomputeRequirementStatuses,
+} from "@/lib/server/db";
+import { INITIAL_SERVICES, INITIAL_REQUIREMENTS } from "@/lib/mock-data/initial-state";
+import { cookies } from "next/headers";
+
+function getAuthenticatedUser(request: Request) {
+  const cookieStore = cookies();
+  const token =
+    cookieStore.get("seva_saarthi_session")?.value ||
+    (request.headers.get("Authorization")?.startsWith("Bearer ")
+      ? request.headers.get("Authorization")?.substring(7)
+      : null);
+
+  if (!token) return null;
+  return authenticateSession(token);
+}
 
 export async function GET(
   request: Request,
@@ -14,14 +28,24 @@ export async function GET(
   const service = INITIAL_SERVICES.find((s) => s.id === params.id) || INITIAL_SERVICES[0];
   const reqs = INITIAL_REQUIREMENTS.filter((r) => r.service_id === service.id);
 
+  const user = getAuthenticatedUser(request);
+
+  let statuses = user ? getUserRequirementStatuses(user.id, service.id) : [];
+  if (user && statuses.length === 0) {
+    statuses = recomputeRequirementStatuses(user.id, service.id);
+  }
+
+  const profile = user ? getUserProfileFields(user.id) : [];
+  const docs = user ? getUserDocuments(user.id) : [];
+
   const items = reqs.map((req) => {
-    const statusRow = INITIAL_REQUIREMENT_STATUS.find((rs) => rs.requirement_id === req.id);
+    const statusRow = statuses.find((rs) => rs.requirement_id === req.id);
     const status = statusRow?.status || "MISSING";
     const satisfiedByDoc = statusRow?.satisfied_by_document_id
-      ? INITIAL_DOCUMENTS.find((d) => d.id === statusRow.satisfied_by_document_id) || null
+      ? docs.find((d) => d.id === statusRow.satisfied_by_document_id) || null
       : null;
     const satisfiedByProfile = statusRow?.satisfied_by_field_name
-      ? INITIAL_PROFILE_FIELDS.find((pf) => pf.field_name === statusRow.satisfied_by_field_name) || null
+      ? profile.find((pf) => pf.field_name === statusRow.satisfied_by_field_name) || null
       : null;
 
     return {

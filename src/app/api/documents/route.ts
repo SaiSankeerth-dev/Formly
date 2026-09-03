@@ -1,20 +1,46 @@
 import { NextResponse } from "next/server";
-import { INITIAL_DOCUMENTS, INITIAL_EXTRACTED_FIELDS } from "@/lib/mock-data/initial-state";
+import { authenticateSession, getUserDocuments, addDocumentForUser, getUserExtractedFields } from "@/lib/server/db";
 import { extractDocumentFields } from "@/lib/ocr/ocr-engine";
-import { DocumentType } from "@/types";
+import { DocumentType, DocumentRow, ExtractedField } from "@/types";
+import { cookies } from "next/headers";
 
-export async function GET() {
+function getAuthenticatedUser(request: Request) {
+  const cookieStore = cookies();
+  const token =
+    cookieStore.get("seva_saarthi_session")?.value ||
+    (request.headers.get("Authorization")?.startsWith("Bearer ")
+      ? request.headers.get("Authorization")?.substring(7)
+      : null);
+
+  if (!token) return null;
+  return authenticateSession(token);
+}
+
+export async function GET(request: Request) {
+  const user = getAuthenticatedUser(request);
+  if (!user) {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  }
+
+  const docs = getUserDocuments(user.id);
+  const extracted = getUserExtractedFields(user.id);
+
   return NextResponse.json({
     success: true,
-    data: INITIAL_DOCUMENTS.map((doc) => ({
+    data: docs.map((doc) => ({
       ...doc,
-      extracted_fields: INITIAL_EXTRACTED_FIELDS.filter((ef) => ef.document_id === doc.id),
+      extracted_fields: extracted.filter((ef) => ef.document_id === doc.id),
     })),
   });
 }
 
 export async function POST(request: Request) {
   try {
+    const user = getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const documentType = (formData.get("document_type") as DocumentType) || "OTHER";
@@ -31,13 +57,13 @@ export async function POST(request: Request) {
     const docId = `doc_${Date.now()}`;
     const ocrResult = await extractDocumentFields(file, documentType);
 
-    const newDoc = {
+    const newDoc: DocumentRow = {
       id: docId,
-      user_id: "u0000000-0000-0000-0000-000000000001",
+      user_id: user.id,
       document_type: ocrResult.documentType,
       storage_path: `vault/${file.name}`,
       original_filename: file.name,
-      mime_type: file.type,
+      mime_type: file.type || "application/octet-stream",
       status: "EXTRACTED",
       ocr_raw_text: ocrResult.rawText,
       is_superseded: false,
@@ -45,7 +71,7 @@ export async function POST(request: Request) {
       updated_at: new Date().toISOString(),
     };
 
-    const extracted = ocrResult.fields.map((f, i) => ({
+    const extracted: ExtractedField[] = ocrResult.fields.map((f, i) => ({
       id: `ef_${Date.now()}_${i}`,
       document_id: docId,
       field_name: f.fieldName,
@@ -55,6 +81,8 @@ export async function POST(request: Request) {
       accepted: false,
       created_at: new Date().toISOString(),
     }));
+
+    addDocumentForUser(user.id, newDoc, extracted);
 
     return NextResponse.json({
       success: true,

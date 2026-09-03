@@ -42,14 +42,14 @@ export function AutofillAssistant({ isOpen, onClose }: AutofillAssistantProps) {
   };
 
   const autofillFields = [
-    { key: "full_name", label: "Full Name", value: profileFields.find((f) => f.field_name === "full_name")?.value || user.name },
-    { key: "dob", label: "Date of Birth", value: profileFields.find((f) => f.field_name === "date_of_birth")?.value || "15/08/2001" },
-    { key: "phone", label: "Mobile Number", value: profileFields.find((f) => f.field_name === "phone_number")?.value || user.phone || "9876543210" },
-    { key: "email", label: "Email Address", value: profileFields.find((f) => f.field_name === "email")?.value || user.email },
-    { key: "aadhaar", label: "Aadhaar Number", value: profileFields.find((f) => f.field_name === "aadhaar_number")?.value || "5492 8173 9012" },
-    { key: "income", label: "Annual Family Income", value: profileFields.find((f) => f.field_name === "annual_income")?.value || "180000" },
-    { key: "college", label: "College Name", value: profileFields.find((f) => f.field_name === "college_name")?.value || "National Institute of Technology" },
-    { key: "course", label: "Degree / Course", value: profileFields.find((f) => f.field_name === "education_degree")?.value || "B.Tech Computer Science" },
+    { key: "full_name", label: "Full Name", value: profileFields.find((f) => f.field_name === "full_name")?.value || user?.name || "Applicant" },
+    { key: "dob", label: "Date of Birth", value: profileFields.find((f) => f.field_name === "date_of_birth")?.value || "" },
+    { key: "phone", label: "Mobile Number", value: profileFields.find((f) => f.field_name === "phone_number")?.value || user?.phone || "" },
+    { key: "email", label: "Email Address", value: profileFields.find((f) => f.field_name === "email")?.value || user?.email || "" },
+    { key: "aadhaar", label: "Aadhaar Number", value: profileFields.find((f) => f.field_name === "aadhaar_number")?.value || "" },
+    { key: "income", label: "Annual Family Income", value: profileFields.find((f) => f.field_name === "annual_income")?.value || "" },
+    { key: "college", label: "College Name", value: profileFields.find((f) => f.field_name === "college_name")?.value || "" },
+    { key: "course", label: "Degree / Course", value: profileFields.find((f) => f.field_name === "education_degree")?.value || "" },
   ];
 
   const officialPortals = [

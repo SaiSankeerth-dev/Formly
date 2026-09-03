@@ -13,19 +13,29 @@ import {
   DocumentType,
 } from "@/types";
 import {
-  DEFAULT_USER,
   INITIAL_SERVICES,
   INITIAL_REQUIREMENTS,
-  INITIAL_DOCUMENTS,
-  INITIAL_EXTRACTED_FIELDS,
-  INITIAL_PROFILE_FIELDS,
-  INITIAL_REQUIREMENT_STATUS,
 } from "@/lib/mock-data/initial-state";
 import { extractDocumentFields } from "@/lib/ocr/ocr-engine";
 import { toast } from "sonner";
 
+export interface UserSession {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: string;
+  avatar?: string;
+}
+
 interface SevaSaarthiContextType {
-  user: typeof DEFAULT_USER;
+  user: UserSession | null;
+  isAuthenticated: boolean;
+  isLoadingAuth: boolean;
+  login: (email: string, password: string) => Promise<boolean>;
+  signup: (name: string, email: string, password: string, phone?: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+
   services: ServiceRow[];
   requirements: ServiceRequirement[];
   documents: DocumentRow[];
@@ -45,58 +55,149 @@ interface SevaSaarthiContextType {
     missingDocuments: number;
     expiringSoonDocuments: number;
   };
+
   // Actions
   uploadDocument: (file: File, documentType?: DocumentType) => Promise<string>;
-  acceptExtractedField: (documentId: string, fieldId: string, customValue?: string) => void;
-  rejectExtractedField: (documentId: string, fieldId: string) => void;
-  acceptAllExtractedFields: (documentId: string) => void;
-  updateProfileField: (fieldName: string, value: string) => void;
-  deleteDocument: (documentId: string) => void;
+  acceptExtractedField: (documentId: string, fieldId: string, customValue?: string) => Promise<void>;
+  rejectExtractedField: (documentId: string, fieldId: string) => Promise<void>;
+  acceptAllExtractedFields: (documentId: string) => Promise<void>;
+  updateProfileField: (fieldName: string, value: string) => Promise<void>;
+  batchUpdateProfileFields: (fields: Record<string, string>) => Promise<void>;
+  deleteDocument: (documentId: string) => Promise<void>;
   retryOcr: (documentId: string) => Promise<void>;
-  markRequirementResolved: (requirementId: string, note?: string) => void;
-  unmarkRequirementResolved: (requirementId: string) => void;
+  markRequirementResolved: (requirementId: string, note?: string) => Promise<void>;
+  unmarkRequirementResolved: (requirementId: string) => Promise<void>;
   recomputeRequirements: () => void;
   resetToPreset: (preset: "default" | "first_run" | "completed") => void;
 }
 
 const SevaSaarthiContext = createContext<SevaSaarthiContextType | null>(null);
 
-const STORAGE_KEY = "formly_app_state_v1";
+const STORAGE_SESSION_KEY = "seva_saarthi_active_session";
 
 export function SevaSaarthiProvider({ children }: { children: React.ReactNode }) {
-  const [isHydrated, setIsHydrated] = useState(false);
-  const [user, setUser] = useState(DEFAULT_USER);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [user, setUser] = useState<UserSession | null>(null);
+
   const [services, setServices] = useState<ServiceRow[]>(INITIAL_SERVICES);
   const [requirements, setRequirements] = useState<ServiceRequirement[]>(INITIAL_REQUIREMENTS);
-  const [documents, setDocuments] = useState<DocumentRow[]>(INITIAL_DOCUMENTS);
-  const [extractedFields, setExtractedFields] = useState<ExtractedField[]>(INITIAL_EXTRACTED_FIELDS);
-  const [profileFields, setProfileFields] = useState<ProfileField[]>(INITIAL_PROFILE_FIELDS);
-  const [requirementStatuses, setRequirementStatuses] = useState<RequirementStatusRow[]>(INITIAL_REQUIREMENT_STATUS);
+  const [documents, setDocuments] = useState<DocumentRow[]>([]);
+  const [extractedFields, setExtractedFields] = useState<ExtractedField[]>([]);
+  const [profileFields, setProfileFields] = useState<ProfileField[]>([]);
+  const [requirementStatuses, setRequirementStatuses] = useState<RequirementStatusRow[]>([]);
   const [activeServiceId, setActiveServiceId] = useState<string>("s001");
 
-  // Load from localStorage on mount
-  useEffect(() => {
+  // Load user data from server / localStorage for this specific authenticated user
+  const loadUserData = useCallback(async (activeUser: UserSession) => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      // 1. Try fetching from server APIs
+      const [profRes, docsRes, checkRes] = await Promise.all([
+        fetch("/api/profile"),
+        fetch("/api/documents"),
+        fetch(`/api/services/s001/checklist`),
+      ]);
+
+      if (profRes.ok && docsRes.ok && checkRes.ok) {
+        const profData = await profRes.json();
+        const docsData = await docsRes.json();
+        const checkData = await checkRes.json();
+
+        if (profData.success && Array.isArray(profData.data)) {
+          setProfileFields(profData.data);
+        }
+        if (docsData.success && Array.isArray(docsData.data)) {
+          setDocuments(docsData.data);
+          const ext = docsData.data.flatMap((d: any) => d.extracted_fields || []);
+          setExtractedFields(ext);
+        }
+        if (checkData.success && Array.isArray(checkData.items)) {
+          const statuses: RequirementStatusRow[] = checkData.items.map((item: any) => ({
+            id: `reqstat_${activeUser.id}_${item.requirement.id}`,
+            user_id: activeUser.id,
+            requirement_id: item.requirement.id,
+            status: item.status,
+            satisfied_by_document_id: item.satisfiedByDocument?.id || null,
+            satisfied_by_field_name: item.satisfiedByProfileField?.field_name || null,
+            resolved_note: item.resolvedNote || null,
+            locked: item.locked || false,
+            updated_at: new Date().toISOString(),
+          }));
+          setRequirementStatuses(statuses);
+        }
+        return;
+      }
+    } catch (e) {
+      console.warn("[Formly Store] API load failed, checking local storage cache", e);
+    }
+
+    // Fallback to local storage keyed by user ID
+    try {
+      const userStorageKey = `seva_saarthi_data_${activeUser.id}`;
+      const saved = localStorage.getItem(userStorageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.documents) setDocuments(parsed.documents);
         if (parsed.extractedFields) setExtractedFields(parsed.extractedFields);
         if (parsed.profileFields) setProfileFields(parsed.profileFields);
         if (parsed.requirementStatuses) setRequirementStatuses(parsed.requirementStatuses);
+      } else {
+        // Fresh user: initialize empty profile with their registration name & email
+        const initialProfile: ProfileField[] = [
+          {
+            id: `pf_${activeUser.id}_fullname`,
+            user_id: activeUser.id,
+            field_name: "full_name",
+            value: activeUser.name,
+            source_document_id: null,
+            confidence: 1.0,
+            verified: true,
+            confirmed_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          {
+            id: `pf_${activeUser.id}_email`,
+            user_id: activeUser.id,
+            field_name: "email",
+            value: activeUser.email,
+            source_document_id: null,
+            confidence: 1.0,
+            verified: true,
+            confirmed_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ];
+        if (activeUser.phone) {
+          initialProfile.push({
+            id: `pf_${activeUser.id}_phone`,
+            user_id: activeUser.id,
+            field_name: "phone_number",
+            value: activeUser.phone,
+            source_document_id: null,
+            confidence: 1.0,
+            verified: true,
+            confirmed_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+        }
+        setProfileFields(initialProfile);
+        setDocuments([]);
+        setExtractedFields([]);
       }
-    } catch (e) {
-      console.warn("Could not load stored state", e);
+    } catch (err) {
+      console.error("[Formly Store] Failed to load local user cache", err);
     }
-    setIsHydrated(true);
   }, []);
 
-  // Save to localStorage
+  // Save changes locally per user
   useEffect(() => {
-    if (!isHydrated) return;
+    if (!user) return;
     try {
+      const userStorageKey = `seva_saarthi_data_${user.id}`;
       localStorage.setItem(
-        STORAGE_KEY,
+        userStorageKey,
         JSON.stringify({
           documents,
           extractedFields,
@@ -105,17 +206,126 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
         })
       );
     } catch (e) {
-      console.warn("Could not persist state", e);
+      console.warn("Could not persist user data locally", e);
     }
-  }, [documents, extractedFields, profileFields, requirementStatuses, isHydrated]);
+  }, [user, documents, extractedFields, profileFields, requirementStatuses]);
 
-  // Recompute Requirement Status Function (Mirror of Postgres recompute_requirement_status function)
+  // Check active session on mount
+  useEffect(() => {
+    const initSession = async () => {
+      try {
+        const res = await fetch("/api/auth/session");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated && data.user) {
+            setUser(data.user);
+            await loadUserData(data.user);
+            setIsLoadingAuth(false);
+            return;
+          }
+        }
+      } catch {
+        // server error, try local storage
+      }
+
+      // Check client local session
+      try {
+        const localSaved = localStorage.getItem(STORAGE_SESSION_KEY);
+        if (localSaved) {
+          const parsedUser = JSON.parse(localSaved);
+          if (parsedUser && parsedUser.id) {
+            setUser(parsedUser);
+            await loadUserData(parsedUser);
+            setIsLoadingAuth(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("Error parsing local session", err);
+      }
+
+      setIsLoadingAuth(false);
+    };
+
+    initSession();
+  }, [loadUserData]);
+
+  // Login handler
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        toast.error(data.error || "Login failed. Please check your credentials.");
+        return false;
+      }
+
+      setUser(data.user);
+      localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(data.user));
+      await loadUserData(data.user);
+      toast.success(`Welcome back, ${data.user.name}!`);
+      return true;
+    } catch (err: any) {
+      toast.error(err.message || "Network error while signing in.");
+      return false;
+    }
+  };
+
+  // Signup handler
+  const signup = async (name: string, email: string, password: string, phone?: string): Promise<boolean> => {
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password, phone }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        toast.error(data.error || "Signup failed. Please try again.");
+        return false;
+      }
+
+      setUser(data.user);
+      localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(data.user));
+      await loadUserData(data.user);
+      toast.success(`Account created successfully! Welcome to Seva Saarthi, ${data.user.name}.`);
+      return true;
+    } catch (err: any) {
+      toast.error(err.message || "Network error while signing up.");
+      return false;
+    }
+  };
+
+  // Logout handler
+  const logout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {}
+
+    localStorage.removeItem(STORAGE_SESSION_KEY);
+    setUser(null);
+    setDocuments([]);
+    setExtractedFields([]);
+    setProfileFields([]);
+    setRequirementStatuses([]);
+    toast.info("You have signed out.");
+    window.location.href = "/login";
+  };
+
+  // Recompute Requirement Status Function
   const recomputeRequirements = useCallback(() => {
+    if (!user) return;
+
     setRequirementStatuses((prevStatuses) => {
       const activeReqs = requirements.filter((r) => r.service_id === activeServiceId);
       const nextMap = new Map<string, RequirementStatusRow>();
 
-      // Populate existing or initial rows
       activeReqs.forEach((req) => {
         const existing = prevStatuses.find((rs) => rs.requirement_id === req.id);
         if (existing) {
@@ -138,7 +348,7 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
       // Apply recompute rules
       activeReqs.forEach((req) => {
         const current = nextMap.get(req.id);
-        if (!current || current.locked) return; // Locked / Manually resolved items are never overwritten
+        if (!current || current.locked) return; // Locked manual overrides are protected
 
         if (req.requirement_type === "PERSONAL_INFORMATION") {
           const matchingProfileField = profileFields.find(
@@ -155,9 +365,9 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
             current.satisfied_by_document_id = null;
           }
         } else {
-          // Document type requirements
+          // Document requirements
           const matchingDoc = documents.find(
-            (d) => !d.is_superseded && d.status === "VERIFIED" && d.document_type === req.notes
+            (d) => !d.is_superseded && (d.status === "VERIFIED" || d.status === "EXTRACTED") && d.document_type === req.notes
           );
           if (matchingDoc) {
             current.status = "SATISFIED";
@@ -174,10 +384,12 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
 
       return Array.from(nextMap.values());
     });
-  }, [requirements, activeServiceId, user.id, profileFields, documents]);
+  }, [requirements, activeServiceId, user, profileFields, documents]);
 
-  // Upload a document and kick off OCR
+  // Upload document
   const uploadDocument = async (file: File, documentType?: DocumentType): Promise<string> => {
+    if (!user) throw new Error("Please log in to upload documents.");
+
     const docId = `doc_${Date.now()}`;
     const newDoc: DocumentRow = {
       id: docId,
@@ -185,7 +397,7 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
       document_type: documentType || "OTHER",
       storage_path: `vault/${file.name}`,
       original_filename: file.name,
-      mime_type: file.type,
+      mime_type: file.type || "application/octet-stream",
       status: "PROCESSING",
       ocr_raw_text: null,
       is_superseded: false,
@@ -194,12 +406,35 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
     };
 
     setDocuments((prev) => [newDoc, ...prev]);
-    toast.loading("Scanning and extracting fields with OCR...", { id: docId });
+    toast.loading("Scanning document and extracting fields with OCR...", { id: docId });
 
     try {
-      const ocrResult = await extractDocumentFields(file, documentType);
+      // Send to backend API
+      const formData = new FormData();
+      formData.append("file", file);
+      if (documentType) formData.append("document_type", documentType);
 
-      // Create extracted fields
+      const apiRes = await fetch("/api/documents", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (apiRes.ok) {
+        const data = await apiRes.json();
+        if (data.success && data.document) {
+          setDocuments((prev) => prev.map((d) => (d.id === docId ? data.document : d)));
+          setExtractedFields((prev) => [...(data.extracted_fields || []), ...prev]);
+          toast.success(`OCR Complete! ${data.extracted_fields?.length || 0} fields extracted. Click "Review Fields" to confirm.`, {
+            id: docId,
+            duration: 5000,
+          });
+          setTimeout(recomputeRequirements, 50);
+          return data.document.id;
+        }
+      }
+
+      // Local extraction fallback
+      const ocrResult = await extractDocumentFields(file, documentType);
       const newExtracted: ExtractedField[] = ocrResult.fields.map((f, i) => ({
         id: `ef_${Date.now()}_${i}`,
         document_id: docId,
@@ -212,7 +447,6 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
       }));
 
       setExtractedFields((prev) => [...newExtracted, ...prev]);
-
       setDocuments((prev) =>
         prev.map((d) =>
           d.id === docId
@@ -227,13 +461,13 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
         )
       );
 
-      toast.success(`OCR Complete! ${newExtracted.length} fields extracted. Click "Review Fields" to confirm.`, {
+      toast.success(`OCR Complete! ${newExtracted.length} fields extracted. Review them to add to your profile.`, {
         id: docId,
         duration: 5000,
       });
-
+      setTimeout(recomputeRequirements, 50);
       return docId;
-    } catch (err) {
+    } catch (err: any) {
       setDocuments((prev) =>
         prev.map((d) => (d.id === docId ? { ...d, status: "FAILED", updated_at: new Date().toISOString() } : d))
       );
@@ -293,24 +527,30 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
       setDocuments((prev) =>
         prev.map((d) => (d.id === documentId ? { ...d, status: "FAILED" } : d))
       );
-      toast.error("Retry failed. Please re-upload a clearer image.", { id: documentId });
+      toast.error("Retry failed. Please re-upload a clearer document.", { id: documentId });
     }
   };
 
-  // Accept a single extracted field into profile_fields
-  const acceptExtractedField = (documentId: string, fieldId: string, customValue?: string) => {
+  // Accept extracted field
+  const acceptExtractedField = async (documentId: string, fieldId: string, customValue?: string) => {
     const field = extractedFields.find((f) => f.id === fieldId);
-    if (!field) return;
+    if (!field || !user) return;
 
     const valueToWrite = customValue !== undefined ? customValue : field.raw_value;
     const isManualOverride = customValue !== undefined && customValue !== field.raw_value;
 
-    // Mark field accepted
+    try {
+      await fetch(`/api/documents/${documentId}/extracted-fields/${fieldId}/accept`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ custom_value: valueToWrite }),
+      });
+    } catch {}
+
     setExtractedFields((prev) =>
       prev.map((f) => (f.id === fieldId ? { ...f, accepted: true, raw_value: valueToWrite } : f))
     );
 
-    // Upsert into profile_fields
     setProfileFields((prev) => {
       const existingIndex = prev.findIndex((pf) => pf.field_name === field.field_name);
       const newField: ProfileField = {
@@ -334,7 +574,6 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
       return [...prev, newField];
     });
 
-    // Check if all fields for this doc are accepted -> mark VERIFIED
     setDocuments((prev) =>
       prev.map((d) => (d.id === documentId ? { ...d, status: "VERIFIED", updated_at: new Date().toISOString() } : d))
     );
@@ -343,27 +582,43 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
     setTimeout(recomputeRequirements, 50);
   };
 
-  // Reject a field
-  const rejectExtractedField = (documentId: string, fieldId: string) => {
+  // Reject extracted field
+  const rejectExtractedField = async (documentId: string, fieldId: string) => {
+    try {
+      await fetch(`/api/documents/${documentId}/extracted-fields/${fieldId}/reject`, {
+        method: "POST",
+      });
+    } catch {}
+
     setExtractedFields((prev) => prev.filter((f) => f.id !== fieldId));
     toast.info("Extracted field discarded.");
   };
 
-  // Accept all fields from a document
-  const acceptAllExtractedFields = (documentId: string) => {
+  // Accept all fields from document
+  const acceptAllExtractedFields = async (documentId: string) => {
     const fieldsToAccept = extractedFields.filter((f) => f.document_id === documentId && !f.accepted);
-    fieldsToAccept.forEach((f) => {
-      acceptExtractedField(documentId, f.id);
-    });
+    for (const f of fieldsToAccept) {
+      await acceptExtractedField(documentId, f.id);
+    }
     setDocuments((prev) =>
       prev.map((d) => (d.id === documentId ? { ...d, status: "VERIFIED", updated_at: new Date().toISOString() } : d))
     );
-    toast.success("All extracted fields verified and added to profile!");
+    toast.success("All extracted fields verified and saved to profile!");
     setTimeout(recomputeRequirements, 100);
   };
 
-  // Manual Profile Field Update
-  const updateProfileField = (fieldName: string, value: string) => {
+  // Update single profile field manually
+  const updateProfileField = async (fieldName: string, value: string) => {
+    if (!user) return;
+
+    try {
+      await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ field_name: fieldName, value }),
+      });
+    } catch {}
+
     setProfileFields((prev) => {
       const existingIndex = prev.findIndex((pf) => pf.field_name === fieldName);
       const newField: ProfileField = {
@@ -372,7 +627,7 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
         field_name: fieldName,
         value,
         source_document_id: existingIndex >= 0 ? prev[existingIndex].source_document_id : null,
-        confidence: null, // manual entry
+        confidence: null,
         verified: true,
         confirmed_at: new Date().toISOString(),
         created_at: existingIndex >= 0 ? prev[existingIndex].created_at : new Date().toISOString(),
@@ -391,12 +646,67 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
     setTimeout(recomputeRequirements, 50);
   };
 
-  // Delete Document
-  const deleteDocument = (documentId: string) => {
+  // Batch update multiple profile fields at once
+  const batchUpdateProfileFields = async (fields: Record<string, string>) => {
+    if (!user) return;
+
+    for (const [fieldName, value] of Object.entries(fields)) {
+      if (value !== undefined) {
+        try {
+          await fetch("/api/profile", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ field_name: fieldName, value }),
+          });
+        } catch {}
+      }
+    }
+
+    setProfileFields((prev) => {
+      let next = [...prev];
+      const now = new Date().toISOString();
+
+      Object.entries(fields).forEach(([fieldName, value]) => {
+        const idx = next.findIndex((pf) => pf.field_name === fieldName);
+        if (idx >= 0) {
+          next[idx] = {
+            ...next[idx],
+            value,
+            verified: true,
+            confirmed_at: now,
+            updated_at: now,
+          };
+        } else {
+          next.push({
+            id: `pf_${Date.now()}_${fieldName}`,
+            user_id: user.id,
+            field_name: fieldName,
+            value,
+            source_document_id: null,
+            confidence: null,
+            verified: true,
+            confirmed_at: now,
+            created_at: now,
+            updated_at: now,
+          });
+        }
+      });
+      return next;
+    });
+
+    toast.success("All profile details updated successfully!");
+    setTimeout(recomputeRequirements, 50);
+  };
+
+  // Delete document
+  const deleteDocument = async (documentId: string) => {
+    try {
+      await fetch(`/api/documents/${documentId}`, { method: "DELETE" });
+    } catch {}
+
     setDocuments((prev) => prev.filter((d) => d.id !== documentId));
     setExtractedFields((prev) => prev.filter((ef) => ef.document_id !== documentId));
 
-    // Handle edge case: set source_document_id = null on profile_fields, keep verified = true as manually confirmed
     setProfileFields((prev) =>
       prev.map((pf) =>
         pf.source_document_id === documentId
@@ -410,7 +720,17 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
   };
 
   // Manual Resolution (F10)
-  const markRequirementResolved = (requirementId: string, note?: string) => {
+  const markRequirementResolved = async (requirementId: string, note?: string) => {
+    if (!user) return;
+
+    try {
+      await fetch(`/api/requirements/${requirementId}/resolve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ note }),
+      });
+    } catch {}
+
     setRequirementStatuses((prev) => {
       const existingIndex = prev.findIndex((rs) => rs.requirement_id === requirementId);
       const newStatus: RequirementStatusRow = {
@@ -437,7 +757,13 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
   };
 
   // Unmark resolution
-  const unmarkRequirementResolved = (requirementId: string) => {
+  const unmarkRequirementResolved = async (requirementId: string) => {
+    try {
+      await fetch(`/api/requirements/${requirementId}/unresolve`, {
+        method: "POST",
+      });
+    } catch {}
+
     setRequirementStatuses((prev) =>
       prev.map((rs) =>
         rs.requirement_id === requirementId
@@ -449,134 +775,118 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
     setTimeout(recomputeRequirements, 50);
   };
 
-  // Reset to preset
+  // Reset presets
   const resetToPreset = (preset: "default" | "first_run" | "completed") => {
+    if (!user) return;
+
     if (preset === "first_run") {
       setDocuments([]);
       setExtractedFields([]);
-      setProfileFields([]);
-      setRequirementStatuses([]);
-      toast.success("Switched to First-Run Empty state (0 documents, 0 profile fields).");
-    } else if (preset === "completed") {
-      setDocuments(INITIAL_DOCUMENTS.map((d) => ({ ...d, status: "VERIFIED" as const })));
       setProfileFields([
-        ...INITIAL_PROFILE_FIELDS,
         {
-          id: "pf_bonafide",
-          user_id: DEFAULT_USER.id,
-          field_name: "college_id_proof",
-          value: "Bonafide 2026-27 Active",
-          source_document_id: "doc_bonafide_pending",
-          confidence: 0.98,
+          id: `pf_${user.id}_fullname`,
+          user_id: user.id,
+          field_name: "full_name",
+          value: user.name,
+          source_document_id: null,
+          confidence: 1.0,
           verified: true,
           confirmed_at: new Date().toISOString(),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         },
       ]);
-      setRequirementStatuses(
-        INITIAL_REQUIREMENTS.map((req) => ({
-          id: `rs_comp_${req.id}`,
-          user_id: DEFAULT_USER.id,
-          requirement_id: req.id,
-          status: "SATISFIED",
-          satisfied_by_document_id: "doc_aadhaar",
-          satisfied_by_field_name: null,
-          resolved_note: null,
-          locked: false,
-          updated_at: new Date().toISOString(),
-        }))
-      );
-      toast.success("Switched to 100% Completed state!");
+      setRequirementStatuses([]);
+      toast.success("Reset to Clean / First-Run State.");
+      setTimeout(recomputeRequirements, 50);
     } else {
-      setDocuments(INITIAL_DOCUMENTS);
-      setExtractedFields(INITIAL_EXTRACTED_FIELDS);
-      setProfileFields(INITIAL_PROFILE_FIELDS);
-      setRequirementStatuses(INITIAL_REQUIREMENT_STATUS);
-      toast.success("Reset to Sai Kumar standard demo state!");
+      recomputeRequirements();
+      toast.info("Recomputed live requirements.");
     }
   };
 
-  // Calculate Checklist Summary
+  // Calculate dynamic checklist summary
   const checklistSummary: ChecklistSummary = useMemo(() => {
-    const activeService = services.find((s) => s.id === activeServiceId) || services[0];
-    const serviceReqs = requirements.filter((r) => r.service_id === activeServiceId);
-
-    const items: ChecklistItemViewModel[] = serviceReqs.map((req) => {
+    const activeReqs = requirements.filter((r) => r.service_id === activeServiceId);
+    const items: ChecklistItemViewModel[] = activeReqs.map((req) => {
       const statusRow = requirementStatuses.find((rs) => rs.requirement_id === req.id);
       const status = statusRow?.status || "MISSING";
-      const satisfiedByDoc = statusRow?.satisfied_by_document_id
+
+      const satisfiedDoc = statusRow?.satisfied_by_document_id
         ? documents.find((d) => d.id === statusRow.satisfied_by_document_id) || null
         : null;
-      const satisfiedByProfile = statusRow?.satisfied_by_field_name
+
+      const satisfiedField = statusRow?.satisfied_by_field_name
         ? profileFields.find((pf) => pf.field_name === statusRow.satisfied_by_field_name) || null
         : null;
 
       return {
         requirement: req,
         status,
-        satisfiedByDocument: satisfiedByDoc,
-        satisfiedByProfileField: satisfiedByProfile,
+        satisfiedByDocument: satisfiedDoc,
+        satisfiedByProfileField: satisfiedField,
         resolvedNote: statusRow?.resolved_note || null,
         locked: statusRow?.locked || false,
         updatedAt: statusRow?.updated_at || new Date().toISOString(),
       };
     });
 
-    const totalRequirements = items.filter((i) => i.requirement.required).length;
-    const satisfiedCount = items.filter((i) => i.requirement.required && i.status === "SATISFIED").length;
-    const manuallyResolvedCount = items.filter((i) => i.requirement.required && i.status === "MANUALLY_RESOLVED").length;
-    const missingCount = items.filter((i) => i.requirement.required && i.status === "MISSING").length;
-    const percentageComplete = totalRequirements > 0
-      ? Math.round(((satisfiedCount + manuallyResolvedCount) / totalRequirements) * 100)
-      : 0;
+    const currentService = services.find((s) => s.id === activeServiceId) || services[0];
+    const total = items.filter((i) => i.requirement.required).length;
+    const satisfied = items.filter((i) => i.requirement.required && i.status === "SATISFIED").length;
+    const manuallyResolved = items.filter((i) => i.requirement.required && i.status === "MANUALLY_RESOLVED").length;
+    const missing = items.filter((i) => i.requirement.required && i.status === "MISSING").length;
+    const percentage = total > 0 ? Math.round(((satisfied + manuallyResolved) / total) * 100) : 0;
 
     return {
-      service: activeService,
-      totalRequirements,
-      satisfiedCount,
-      missingCount,
-      manuallyResolvedCount,
-      percentageComplete,
+      service: currentService,
+      totalRequirements: total,
+      satisfiedCount: satisfied,
+      missingCount: missing,
+      manuallyResolvedCount: manuallyResolved,
+      percentageComplete: percentage,
       items,
     };
-  }, [services, activeServiceId, requirements, requirementStatuses, documents, profileFields]);
+  }, [services, requirements, activeServiceId, requirementStatuses, documents, profileFields]);
 
-  // Profile Strength (e.g. 92%)
+  // Dynamic Profile Strength
   const profileStrength = useMemo(() => {
-    const coreFields = [
+    const keyFields = [
       "full_name",
       "date_of_birth",
       "gender",
       "aadhaar_number",
       "location",
-      "annual_income",
-      "education_degree",
       "college_name",
+      "education_degree",
+      "annual_income",
       "bank_account_no",
       "bank_ifsc",
-      "caste_category",
     ];
-    const filledCount = coreFields.filter((f) =>
-      profileFields.some((pf) => pf.field_name === f && pf.verified && pf.value.trim().length > 0)
-    ).length;
+    const filledCount = keyFields.filter((key) => {
+      const f = profileFields.find((pf) => pf.field_name === key);
+      return f && f.value && f.value.trim().length > 0;
+    }).length;
 
-    const basePct = Math.round((filledCount / coreFields.length) * 100);
-    return Math.min(100, Math.max(10, basePct));
+    return Math.round((filledCount / keyFields.length) * 100);
   }, [profileFields]);
 
-  // Top Stats
+  // Overall Stats
   const stats = useMemo(() => {
-    const verifiedDocs = documents.filter((d) => d.status === "VERIFIED").length;
-    const missingDocs = checklistSummary.missingCount;
+    const verifiedDocs = documents.filter((d) => !d.is_superseded && d.status === "VERIFIED").length;
+    const totalDocs = documents.filter((d) => !d.is_superseded).length;
+    const isCompleted = checklistSummary.percentageComplete === 100;
+
     return {
-      activeApplications: 3,
-      completedApplications: 7,
-      totalDocuments: documents.length > 0 ? documents.length : 0,
+      activeApplications: isCompleted ? 0 : 1,
+      completedApplications: isCompleted ? 1 : 0,
+      totalDocuments: totalDocs,
       verifiedDocuments: verifiedDocs,
-      pendingTasks: checklistSummary.missingCount > 0 ? checklistSummary.missingCount : 0,
-      missingDocuments: missingDocs,
-      expiringSoonDocuments: 1,
+      pendingTasks: checklistSummary.missingCount,
+      missingDocuments: checklistSummary.items.filter(
+        (i) => i.status === "MISSING" && i.requirement.requirement_type !== "PERSONAL_INFORMATION"
+      ).length,
+      expiringSoonDocuments: 0,
     };
   }, [documents, checklistSummary]);
 
@@ -584,6 +894,12 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
     <SevaSaarthiContext.Provider
       value={{
         user,
+        isAuthenticated: !!user,
+        isLoadingAuth,
+        login,
+        signup,
+        logout,
+
         services,
         requirements,
         documents,
@@ -595,11 +911,13 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
         checklistSummary,
         profileStrength,
         stats,
+
         uploadDocument,
         acceptExtractedField,
         rejectExtractedField,
         acceptAllExtractedFields,
         updateProfileField,
+        batchUpdateProfileFields,
         deleteDocument,
         retryOcr,
         markRequirementResolved,

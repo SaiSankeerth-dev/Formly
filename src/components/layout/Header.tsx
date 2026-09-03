@@ -2,19 +2,28 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ShieldCheck, Bell, ChevronDown, User, LogOut, CheckCircle, Zap, Sparkles } from "lucide-react";
+import { ShieldCheck, Bell, ChevronDown, User, LogOut, CheckCircle, Zap } from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { AutofillAssistant } from "@/components/assistant/AutofillAssistant";
 
 export function Header() {
-  const { user, profileStrength, stats } = useSevaSaarthi();
+  const { user, profileStrength, logout } = useSevaSaarthi();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
   // Dynamic greeting based on current hour
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-  const firstName = user.name.split(" ")[0] || "Rahul";
+  const firstName = user?.name ? user.name.split(" ")[0] : "Citizen";
+
+  const initials = user?.name
+    ? user.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .substring(0, 2)
+    : "CS";
 
   return (
     <>
@@ -22,7 +31,7 @@ export function Header() {
         {/* Greeting */}
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            {greeting}, {firstName} <span className="text-2xl animate-pulse">👋</span>
+            {greeting}, {firstName} <span className="text-2xl">👋</span>
           </h1>
           <p className="text-sm font-medium text-slate-500 mt-0.5">
             Here&apos;s your application overview
@@ -70,7 +79,7 @@ export function Header() {
           >
             <Bell className="w-5 h-5" />
             <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-xs">
-              3
+              1
             </span>
           </Link>
 
@@ -80,16 +89,26 @@ export function Header() {
               onClick={() => setShowUserMenu(!showUserMenu)}
               className="flex items-center gap-3 p-1.5 pr-3 hover:bg-slate-50 rounded-2xl border border-transparent hover:border-slate-200/60 transition-all"
             >
-              <div className="w-9 h-9 rounded-xl overflow-hidden bg-gradient-to-tr from-amber-400 to-indigo-500 p-0.5 shadow-sm">
-                <img
-                  src={user.avatar}
-                  alt={user.name}
-                  className="w-full h-full object-cover rounded-[10px]"
-                />
-              </div>
+              {user?.avatar ? (
+                <div className="w-9 h-9 rounded-xl overflow-hidden bg-gradient-to-tr from-amber-400 to-indigo-500 p-0.5 shadow-sm">
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="w-full h-full object-cover rounded-[10px]"
+                  />
+                </div>
+              ) : (
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-600 text-white font-bold text-xs flex items-center justify-center shadow-sm shadow-indigo-100">
+                  {initials}
+                </div>
+              )}
               <div className="text-left hidden sm:block">
-                <div className="text-xs font-bold text-slate-800 leading-tight">{user.name}</div>
-                <div className="text-[10px] font-medium text-slate-500">{user.role}</div>
+                <div className="text-xs font-bold text-slate-800 leading-tight">
+                  {user?.name || "Citizen Account"}
+                </div>
+                <div className="text-[10px] font-medium text-slate-500">
+                  {user?.email || "Citizen User"}
+                </div>
               </div>
               <ChevronDown className="w-4 h-4 text-slate-400" />
             </button>
@@ -98,8 +117,8 @@ export function Header() {
             {showUserMenu && (
               <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2">
                 <div className="px-4 py-2 border-b border-slate-100">
-                  <div className="text-xs font-bold text-slate-900">{user.name}</div>
-                  <div className="text-[11px] text-slate-500">{user.email}</div>
+                  <div className="text-xs font-bold text-slate-900">{user?.name}</div>
+                  <div className="text-[11px] text-slate-500">{user?.email}</div>
                 </div>
                 <Link
                   href="/profile"
@@ -128,7 +147,7 @@ export function Header() {
                 <button
                   onClick={() => {
                     setShowUserMenu(false);
-                    window.location.reload();
+                    logout();
                   }}
                   className="w-full text-left flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50"
                 >

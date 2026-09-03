@@ -1,15 +1,36 @@
 import { NextResponse } from "next/server";
-import { INITIAL_PROFILE_FIELDS } from "@/lib/mock-data/initial-state";
+import { authenticateSession, getUserProfileFields, updateUserProfileField } from "@/lib/server/db";
+import { cookies } from "next/headers";
 
-export async function GET() {
+function getAuthenticatedUser(request: Request) {
+  const cookieStore = cookies();
+  const token = cookieStore.get("seva_saarthi_session")?.value ||
+    (request.headers.get("Authorization")?.startsWith("Bearer ") ? request.headers.get("Authorization")?.substring(7) : null);
+
+  if (!token) return null;
+  return authenticateSession(token);
+}
+
+export async function GET(request: Request) {
+  const user = getAuthenticatedUser(request);
+  if (!user) {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  }
+
+  const fields = getUserProfileFields(user.id);
   return NextResponse.json({
     success: true,
-    data: INITIAL_PROFILE_FIELDS,
+    data: fields,
   });
 }
 
 export async function PATCH(request: Request) {
   try {
+    const user = getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     const { field_name, value } = body;
 
@@ -17,25 +38,14 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ success: false, error: "field_name is required" }, { status: 400 });
     }
 
-    const updatedField = {
-      id: `pf_${Date.now()}`,
-      user_id: "u0000000-0000-0000-0000-000000000001",
-      field_name,
-      value: value || "",
-      source_document_id: null,
-      confidence: null,
-      verified: true,
-      confirmed_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
+    const updatedField = updateUserProfileField(user.id, field_name, value || "");
 
     return NextResponse.json({
       success: true,
       message: `Profile field '${field_name}' updated successfully`,
       data: updatedField,
     });
-  } catch {
-    return NextResponse.json({ success: false, error: "Invalid JSON payload" }, { status: 400 });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message || "Invalid payload" }, { status: 400 });
   }
 }

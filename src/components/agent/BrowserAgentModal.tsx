@@ -48,18 +48,18 @@ export function BrowserAgentModal({
   const terminalEndRef = useRef<HTMLDivElement>(null);
 
   const applicant = {
-    fullName: profileFields.find((f) => f.field_name === "full_name")?.value || user.name,
-    dob: profileFields.find((f) => f.field_name === "date_of_birth")?.value || "15/08/2001",
+    fullName: profileFields.find((f) => f.field_name === "full_name")?.value || user?.name || "Applicant",
+    dob: profileFields.find((f) => f.field_name === "date_of_birth")?.value || "",
     gender: profileFields.find((f) => f.field_name === "gender")?.value || "Male",
-    aadhaarNo: profileFields.find((f) => f.field_name === "aadhaar_number")?.value || "5492 8173 9012",
-    phone: profileFields.find((f) => f.field_name === "phone_number")?.value || user.phone || "9876543210",
-    email: profileFields.find((f) => f.field_name === "email")?.value || user.email,
-    income: profileFields.find((f) => f.field_name === "annual_income")?.value || "180000",
-    college: profileFields.find((f) => f.field_name === "college_name")?.value || "National Institute of Technology",
-    course: profileFields.find((f) => f.field_name === "education_degree")?.value || "B.Tech (CSE)",
-    rollNo: profileFields.find((f) => f.field_name === "roll_number")?.value || "22071A0589",
-    bankAccount: profileFields.find((f) => f.field_name === "bank_account_no")?.value || "38491029481",
-    bankIfsc: profileFields.find((f) => f.field_name === "bank_ifsc")?.value || "SBIN0012948",
+    aadhaarNo: profileFields.find((f) => f.field_name === "aadhaar_number")?.value || "",
+    phone: profileFields.find((f) => f.field_name === "phone_number")?.value || user?.phone || "",
+    email: profileFields.find((f) => f.field_name === "email")?.value || user?.email || "",
+    income: profileFields.find((f) => f.field_name === "annual_income")?.value || "",
+    college: profileFields.find((f) => f.field_name === "college_name")?.value || "",
+    course: profileFields.find((f) => f.field_name === "education_degree")?.value || "",
+    rollNo: profileFields.find((f) => f.field_name === "roll_number")?.value || "",
+    bankAccount: profileFields.find((f) => f.field_name === "bank_account_no")?.value || "",
+    bankIfsc: profileFields.find((f) => f.field_name === "bank_ifsc")?.value || "",
   };
 
   const addLog = (type: AgentStepLog["type"], message: string, field?: string, value?: string) => {
