@@ -28,6 +28,16 @@ export interface UserSession {
   avatar?: string;
 }
 
+export interface AppNotification {
+  id: string;
+  title: string;
+  desc: string;
+  time: string;
+  category: "DOCUMENT" | "PROFILE" | "READINESS" | "SECURITY";
+  href: string;
+  read: boolean;
+}
+
 interface SevaSaarthiContextType {
   user: UserSession | null;
   isAuthenticated: boolean;
@@ -55,6 +65,12 @@ interface SevaSaarthiContextType {
     missingDocuments: number;
     expiringSoonDocuments: number;
   };
+
+  // Real Notifications
+  notifications: AppNotification[];
+  unreadNotificationsCount: number;
+  markNotificationAsRead: (id: string) => void;
+  clearAllNotifications: () => void;
 
   // Actions
   uploadDocument: (file: File, documentType?: DocumentType) => Promise<string>;
@@ -890,6 +906,128 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
     };
   }, [documents, checklistSummary]);
 
+  // Real Notification State
+  const [readNotificationIds, setReadNotificationIds] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("seva_saarthi_read_notifications");
+        return saved ? JSON.parse(saved) : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+
+  const markNotificationAsRead = (id: string) => {
+    setReadNotificationIds((prev) => {
+      const next = prev.includes(id) ? prev : [...prev, id];
+      if (typeof window !== "undefined") {
+        localStorage.setItem("seva_saarthi_read_notifications", JSON.stringify(next));
+      }
+      return next;
+    });
+  };
+
+  const clearAllNotifications = () => {
+    const allIds = notifications.map((n) => n.id);
+    setReadNotificationIds(allIds);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("seva_saarthi_read_notifications", JSON.stringify(allIds));
+    }
+  };
+
+  // Real Dynamic Notifications
+  const notifications: AppNotification[] = useMemo(() => {
+    const list: AppNotification[] = [];
+
+    // 1. Real Document Events
+    documents.forEach((doc) => {
+      const filename = doc.original_filename || doc.document_type;
+      if (doc.status === "EXTRACTED") {
+        list.push({
+          id: `doc_ext_${doc.id}`,
+          title: `OCR Extracted: ${filename}`,
+          desc: `New fields were extracted from this file. Click to review and confirm in your vault.`,
+          time: "Recent Upload",
+          category: "DOCUMENT",
+          href: "/vault",
+          read: readNotificationIds.includes(`doc_ext_${doc.id}`),
+        });
+      } else if (doc.status === "VERIFIED") {
+        list.push({
+          id: `doc_ver_${doc.id}`,
+          title: `Document Verified: ${filename}`,
+          desc: `All fields have been confirmed and locked into your citizen profile.`,
+          time: "Verified",
+          category: "DOCUMENT",
+          href: "/vault",
+          read: readNotificationIds.includes(`doc_ver_${doc.id}`),
+        });
+      }
+    });
+
+    // 2. Real Profile Completeness Alert
+    const totalProfileFields = 26;
+    const filledCount = profileFields.filter((pf) => pf.value && pf.value.trim().length > 0).length;
+    const emptyCount = Math.max(0, totalProfileFields - filledCount);
+
+    if (emptyCount > 0) {
+      list.push({
+        id: "profile_incomplete",
+        title: `Profile Incomplete (${emptyCount} details remaining)`,
+        desc: `Your citizen profile is at ${profileStrength}% strength. Fill in remaining academic, income, or bank details.`,
+        time: "Action Required",
+        category: "PROFILE",
+        href: "/profile",
+        read: readNotificationIds.includes("profile_incomplete"),
+      });
+    } else {
+      list.push({
+        id: "profile_complete",
+        title: `Profile 100% Complete & Verified!`,
+        desc: `All personal, academic, and banking records are in order for instant 1-click portal autofill.`,
+        time: "Completed",
+        category: "PROFILE",
+        href: "/profile",
+        read: readNotificationIds.includes("profile_complete"),
+      });
+    }
+
+    // 3. Real Scheme Readiness Alert
+    const currentService = services.find((s) => s.id === activeServiceId) || services[0];
+    if (currentService) {
+      list.push({
+        id: `scheme_readiness_${currentService.id}`,
+        title: `${currentService.name}: ${checklistSummary.percentageComplete}% Ready`,
+        desc: `${checklistSummary.satisfiedCount} of ${checklistSummary.totalRequirements} criteria met. ${checklistSummary.missingCount} requirement(s) remaining.`,
+        time: "Active Scheme",
+        category: "READINESS",
+        href: "/checklist",
+        read: readNotificationIds.includes(`scheme_readiness_${currentService.id}`),
+      });
+    }
+
+    // 4. Real Account & Security Alert
+    if (user) {
+      list.push({
+        id: `security_session_${user.id}`,
+        title: `Logged in as ${user.name}`,
+        desc: `Verified session active for ${user.email}. Multi-tenant vault encryption active.`,
+        time: "Active",
+        category: "SECURITY",
+        href: "/settings",
+        read: readNotificationIds.includes(`security_session_${user.id}`),
+      });
+    }
+
+    return list;
+  }, [documents, profileFields, profileStrength, services, activeServiceId, checklistSummary, user, readNotificationIds]);
+
+  const unreadNotificationsCount = useMemo(() => {
+    return notifications.filter((n) => !n.read).length;
+  }, [notifications]);
+
   return (
     <SevaSaarthiContext.Provider
       value={{
@@ -911,6 +1049,12 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
         checklistSummary,
         profileStrength,
         stats,
+
+        // Real Notifications
+        notifications,
+        unreadNotificationsCount,
+        markNotificationAsRead,
+        clearAllNotifications,
 
         uploadDocument,
         acceptExtractedField,

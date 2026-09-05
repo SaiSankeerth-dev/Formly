@@ -7,7 +7,7 @@ import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { AutofillAssistant } from "@/components/assistant/AutofillAssistant";
 
 export function Header() {
-  const { user, profileStrength, logout } = useSevaSaarthi();
+  const { user, profileStrength, logout, unreadNotificationsCount } = useSevaSaarthi();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
 
@@ -78,9 +78,11 @@ export function Header() {
             title="Notifications"
           >
             <Bell className="w-5 h-5" />
-            <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-xs">
-              1
-            </span>
+            {unreadNotificationsCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                {unreadNotificationsCount}
+              </span>
+            )}
           </Link>
 
           {/* User Profile Pill */}

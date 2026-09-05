@@ -31,7 +31,7 @@ interface NavItem {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { stats, checklistSummary, resetToPreset } = useSevaSaarthi();
+  const { stats, checklistSummary, resetToPreset, unreadNotificationsCount } = useSevaSaarthi();
 
   const navItems: NavItem[] = [
     { label: "Home", href: "/dashboard", icon: LayoutDashboard },
@@ -40,7 +40,7 @@ export function Sidebar() {
     { label: "Documents", href: "/vault", icon: FolderOpen, badge: stats.totalDocuments },
     { label: "Profile", href: "/profile", icon: User },
     { label: "Tasks & Reminders", href: "/tasks", icon: ListTodo, badge: stats.pendingTasks > 0 ? stats.pendingTasks : undefined, badgeColor: "bg-amber-100 text-amber-800" },
-    { label: "Notifications", href: "/notifications", icon: Bell, badge: 3, badgeColor: "bg-rose-500 text-white" },
+    { label: "Notifications", href: "/notifications", icon: Bell, badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : undefined, badgeColor: "bg-rose-500 text-white" },
     { label: "Settings", href: "/settings", icon: Settings },
     { label: "Help & Support", href: "/help", icon: HelpCircle },
   ];
