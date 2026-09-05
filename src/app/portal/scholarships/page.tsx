@@ -20,8 +20,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useSevaSaarthi } from "@/lib/store/formly-store";
 
 export default function GovernmentScholarshipPortal() {
+  const { profileFields, user } = useSevaSaarthi();
+
   // Agent States: IDLE, RUNNING, PAUSED, AWAITING_APPROVAL, SUBMITTED, CANCELLED
   const [agentStatus, setAgentStatus] = useState<"IDLE" | "RUNNING" | "PAUSED" | "AWAITING_APPROVAL" | "SUBMITTED" | "CANCELLED">("RUNNING");
   const [currentFieldKey, setCurrentFieldKey] = useState<string | null>("fullName");
@@ -59,22 +62,37 @@ export default function GovernmentScholarshipPortal() {
   const [generatedAppId, setGeneratedAppId] = useState<string | null>(null);
   const isPausedRef = useRef(false);
 
-  // Target Profile Data to Auto-Fill
+  // Helper to extract actual citizen profile fields with fallback
+  const getProfileVal = (fieldName: string, fallback: string) => {
+    const match = profileFields.find((p) => p.field_name === fieldName);
+    return match && match.value && match.value.trim().length > 0 ? match.value : fallback;
+  };
+
+  const rawDob = getProfileVal("date_of_birth", "2001-08-15");
+  let formattedDob = rawDob;
+  if (rawDob.includes("-")) {
+    const parts = rawDob.split("-");
+    if (parts.length === 3 && parts[0].length === 4) {
+      formattedDob = `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+  }
+
+  // Target Profile Data to Auto-Fill (From Verified Citizen Vault)
   const targetData = {
-    fullName: "Rahul Kumar",
-    dob: "15/08/2001",
-    gender: "Male",
-    aadhaarNo: "5492 8173 9012",
-    mobile: "9876543210",
-    email: "rahul@example.com",
-    domicileState: "Delhi (NCT)",
-    institution: "National Institute of Technology (AISHE: U-0129)",
-    course: "B.Tech Computer Science & Engineering",
-    rollNo: "22071A0589",
-    annualIncome: "180000",
-    category: "OBC / BC",
-    bankAccount: "38491029481",
-    bankIfsc: "SBIN0012948",
+    fullName: getProfileVal("full_name", user?.name || "Citizen Applicant"),
+    dob: formattedDob,
+    gender: getProfileVal("gender", "Male"),
+    aadhaarNo: getProfileVal("aadhaar_number", "5492 8173 9012"),
+    mobile: getProfileVal("phone_number", user?.phone || "9876543210"),
+    email: getProfileVal("email", user?.email || "citizen@formly.in"),
+    domicileState: getProfileVal("location", "Delhi (NCT)"),
+    institution: getProfileVal("college_name", "National Institute of Technology"),
+    course: getProfileVal("education_degree", "B.Tech Computer Science & Engineering"),
+    rollNo: getProfileVal("roll_number", "22071A0589"),
+    annualIncome: getProfileVal("annual_income", "180000"),
+    category: getProfileVal("caste_category", "OBC / BC"),
+    bankAccount: getProfileVal("bank_account_no", "38491029481"),
+    bankIfsc: getProfileVal("bank_ifsc", "SBIN0012948"),
     bankName: "State Bank of India",
   };
 

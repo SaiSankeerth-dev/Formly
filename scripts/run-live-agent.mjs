@@ -5,16 +5,16 @@ async function runLiveGovernmentAgent() {
   console.log("🤖 SEVA SAARTHI AUTONOMOUS LIVE GOVERNMENT & PAN AGENT");
   console.log("==================================================");
 
-  // Applicant Profile Data from Seva Saarthi Verified Vault
-  const profile = {
-    fullName: "Rahul Kumar",
-    firstName: "Rahul",
-    lastName: "Kumar",
+  // Applicant Profile Data from Seva Saarthi / Formly Verified Vault
+  let profile = {
+    fullName: "Citizen Applicant",
+    firstName: "Citizen",
+    lastName: "",
     dob: "15/08/2001",
     gender: "Male",
     aadhaarNo: "5492 8173 9012",
     mobile: "9876543210",
-    email: "rahul@example.com",
+    email: "citizen@example.com",
     domicileState: "Delhi",
     college: "National Institute of Technology",
     course: "B.Tech Computer Science",
@@ -23,6 +23,16 @@ async function runLiveGovernmentAgent() {
     bankAccount: "38491029481",
     bankIfsc: "SBIN0012948",
   };
+
+  if (process.env.USER_PROFILE_JSON) {
+    try {
+      const parsed = JSON.parse(process.env.USER_PROFILE_JSON);
+      profile = { ...profile, ...parsed };
+      console.log(`👤 Using actual citizen profile for: ${profile.fullName}`);
+    } catch (e) {
+      console.warn("Could not parse USER_PROFILE_JSON, falling back to default");
+    }
+  }
 
   const targetUrl =
     process.env.TARGET_URL ||
