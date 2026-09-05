@@ -32,10 +32,26 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { field_name, value } = body;
+    const { field_name, value, fields } = body;
+
+    // Support batch update
+    if (fields && typeof fields === "object") {
+      const updatedFields = [];
+      for (const [key, val] of Object.entries(fields)) {
+        if (typeof val === "string") {
+          const updated = updateUserProfileField(user.id, key, val);
+          updatedFields.push(updated);
+        }
+      }
+      return NextResponse.json({
+        success: true,
+        message: `${updatedFields.length} profile fields updated successfully`,
+        data: getUserProfileFields(user.id),
+      });
+    }
 
     if (!field_name) {
-      return NextResponse.json({ success: false, error: "field_name is required" }, { status: 400 });
+      return NextResponse.json({ success: false, error: "field_name or fields is required" }, { status: 400 });
     }
 
     const updatedField = updateUserProfileField(user.id, field_name, value || "");

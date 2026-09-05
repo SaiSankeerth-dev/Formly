@@ -18,6 +18,7 @@ import {
 } from "@/lib/mock-data/initial-state";
 import { extractDocumentFields } from "@/lib/ocr/ocr-engine";
 import { toast } from "sonner";
+import { CANONICAL_PROFILE_FIELDS, computeProfileStrength, getProfileCompleteness } from "@/lib/constants/profile";
 
 export interface UserSession {
   id: string;
@@ -102,30 +103,43 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
   const [profileFields, setProfileFields] = useState<ProfileField[]>([]);
   const [requirementStatuses, setRequirementStatuses] = useState<RequirementStatusRow[]>([]);
   const [activeServiceId, setActiveServiceId] = useState<string>("s001");
+  const isDataLoadedRef = React.useRef(false);
 
   // Load user data from server / localStorage for this specific authenticated user
   const loadUserData = useCallback(async (activeUser: UserSession) => {
     try {
-      // 1. Try fetching from server APIs
-      const [profRes, docsRes, checkRes] = await Promise.all([
+      // 1. Try fetching from server APIs independently
+      const [profRes, docsRes, checkRes] = await Promise.allSettled([
         fetch("/api/profile"),
         fetch("/api/documents"),
         fetch(`/api/services/s001/checklist`),
       ]);
 
-      if (profRes.ok && docsRes.ok && checkRes.ok) {
-        const profData = await profRes.json();
-        const docsData = await docsRes.json();
-        const checkData = await checkRes.json();
+      let loadedProfile: ProfileField[] | null = null;
+      let loadedDocs: DocumentRow[] | null = null;
+      let loadedExtracted: ExtractedField[] = [];
+      let loadedStatuses: RequirementStatusRow[] | null = null;
 
+      if (profRes.status === "fulfilled" && profRes.value.ok) {
+        const profData = await profRes.value.json();
         if (profData.success && Array.isArray(profData.data)) {
+          loadedProfile = profData.data;
           setProfileFields(profData.data);
         }
+      }
+
+      if (docsRes.status === "fulfilled" && docsRes.value.ok) {
+        const docsData = await docsRes.value.json();
         if (docsData.success && Array.isArray(docsData.data)) {
+          loadedDocs = docsData.data;
           setDocuments(docsData.data);
-          const ext = docsData.data.flatMap((d: any) => d.extracted_fields || []);
-          setExtractedFields(ext);
+          loadedExtracted = docsData.data.flatMap((d: any) => d.extracted_fields || []);
+          setExtractedFields(loadedExtracted);
         }
+      }
+
+      if (checkRes.status === "fulfilled" && checkRes.value.ok) {
+        const checkData = await checkRes.value.json();
         if (checkData.success && Array.isArray(checkData.items)) {
           const statuses: RequirementStatusRow[] = checkData.items.map((item: any) => ({
             id: `reqstat_${activeUser.id}_${item.requirement.id}`,
@@ -138,8 +152,24 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
             locked: item.locked || false,
             updated_at: new Date().toISOString(),
           }));
+          loadedStatuses = statuses;
           setRequirementStatuses(statuses);
         }
+      }
+
+      // If we received server data, cache it locally and mark loaded
+      if (loadedProfile !== null || loadedDocs !== null || loadedStatuses !== null) {
+        isDataLoadedRef.current = true;
+        const userStorageKey = `seva_saarthi_data_${activeUser.id}`;
+        localStorage.setItem(
+          userStorageKey,
+          JSON.stringify({
+            documents: loadedDocs ?? [],
+            extractedFields: loadedExtracted,
+            profileFields: loadedProfile ?? [],
+            requirementStatuses: loadedStatuses ?? [],
+          })
+        );
         return;
       }
     } catch (e) {
@@ -156,6 +186,7 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
         if (parsed.extractedFields) setExtractedFields(parsed.extractedFields);
         if (parsed.profileFields) setProfileFields(parsed.profileFields);
         if (parsed.requirementStatuses) setRequirementStatuses(parsed.requirementStatuses);
+        isDataLoadedRef.current = true;
       } else {
         // Fresh user: initialize empty profile with their registration name & email
         const initialProfile: ProfileField[] = [
@@ -201,15 +232,16 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
         setProfileFields(initialProfile);
         setDocuments([]);
         setExtractedFields([]);
+        isDataLoadedRef.current = true;
       }
     } catch (err) {
       console.error("[Formly Store] Failed to load local user cache", err);
     }
   }, []);
 
-  // Save changes locally per user
+  // Save changes locally per user ONLY after data is loaded (prevents wiping cache with empty array)
   useEffect(() => {
-    if (!user) return;
+    if (!user || !isDataLoadedRef.current) return;
     try {
       const userStorageKey = `seva_saarthi_data_${user.id}`;
       localStorage.setItem(
@@ -229,35 +261,51 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
   // Check active session on mount
   useEffect(() => {
     const initSession = async () => {
-      try {
-        const res = await fetch("/api/auth/session");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.authenticated && data.user) {
-            setUser(data.user);
-            await loadUserData(data.user);
-            setIsLoadingAuth(false);
-            return;
-          }
-        }
-      } catch {
-        // server error, try local storage
-      }
-
-      // Check client local session
+      // 1. Immediately check client local session to restore user & data without flash
       try {
         const localSaved = localStorage.getItem(STORAGE_SESSION_KEY);
         if (localSaved) {
           const parsedUser = JSON.parse(localSaved);
           if (parsedUser && parsedUser.id) {
             setUser(parsedUser);
-            await loadUserData(parsedUser);
+            const userStorageKey = `seva_saarthi_data_${parsedUser.id}`;
+            const cached = localStorage.getItem(userStorageKey);
+            if (cached) {
+              const parsedData = JSON.parse(cached);
+              if (Array.isArray(parsedData.documents) && parsedData.documents.length > 0) {
+                setDocuments(parsedData.documents);
+              }
+              if (Array.isArray(parsedData.extractedFields) && parsedData.extractedFields.length > 0) {
+                setExtractedFields(parsedData.extractedFields);
+              }
+              if (Array.isArray(parsedData.profileFields) && parsedData.profileFields.length > 0) {
+                setProfileFields(parsedData.profileFields);
+              }
+              if (Array.isArray(parsedData.requirementStatuses) && parsedData.requirementStatuses.length > 0) {
+                setRequirementStatuses(parsedData.requirementStatuses);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Error restoring preliminary local session", err);
+      }
+
+      // 2. Fetch verified server session and live data
+      try {
+        const res = await fetch("/api/auth/session");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated && data.user) {
+            setUser(data.user);
+            localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(data.user));
+            await loadUserData(data.user);
             setIsLoadingAuth(false);
             return;
           }
         }
       } catch (err) {
-        console.warn("Error parsing local session", err);
+        console.warn("Server auth check failed, using local session", err);
       }
 
       setIsLoadingAuth(false);
@@ -666,16 +714,14 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
   const batchUpdateProfileFields = async (fields: Record<string, string>) => {
     if (!user) return;
 
-    for (const [fieldName, value] of Object.entries(fields)) {
-      if (value !== undefined) {
-        try {
-          await fetch("/api/profile", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ field_name: fieldName, value }),
-          });
-        } catch {}
-      }
+    try {
+      await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fields }),
+      });
+    } catch (e) {
+      console.warn("Batch profile update API failed", e);
     }
 
     setProfileFields((prev) => {
@@ -865,26 +911,9 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
     };
   }, [services, requirements, activeServiceId, requirementStatuses, documents, profileFields]);
 
-  // Dynamic Profile Strength
+  // Dynamic Profile Strength (Unified from Canonical Fields)
   const profileStrength = useMemo(() => {
-    const keyFields = [
-      "full_name",
-      "date_of_birth",
-      "gender",
-      "aadhaar_number",
-      "location",
-      "college_name",
-      "education_degree",
-      "annual_income",
-      "bank_account_no",
-      "bank_ifsc",
-    ];
-    const filledCount = keyFields.filter((key) => {
-      const f = profileFields.find((pf) => pf.field_name === key);
-      return f && f.value && f.value.trim().length > 0;
-    }).length;
-
-    return Math.round((filledCount / keyFields.length) * 100);
+    return computeProfileStrength(profileFields);
   }, [profileFields]);
 
   // Overall Stats
@@ -967,16 +996,14 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
       }
     });
 
-    // 2. Real Profile Completeness Alert
-    const totalProfileFields = 26;
-    const filledCount = profileFields.filter((pf) => pf.value && pf.value.trim().length > 0).length;
-    const emptyCount = Math.max(0, totalProfileFields - filledCount);
+    // 2. Real Profile Completeness Alert (Aligned with 27 Canonical Fields)
+    const completeness = getProfileCompleteness(profileFields);
 
-    if (emptyCount > 0) {
+    if (!completeness.isComplete) {
       list.push({
         id: "profile_incomplete",
-        title: `Profile Incomplete (${emptyCount} details remaining)`,
-        desc: `Your citizen profile is at ${profileStrength}% strength. Fill in remaining academic, income, or bank details.`,
+        title: `Profile Incomplete (${completeness.emptyCount} details remaining)`,
+        desc: `Your citizen profile is at ${completeness.strength}% strength. Fill in remaining academic, income, or bank details.`,
         time: "Action Required",
         category: "PROFILE",
         href: "/profile",
@@ -1022,7 +1049,7 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
     }
 
     return list;
-  }, [documents, profileFields, profileStrength, services, activeServiceId, checklistSummary, user, readNotificationIds]);
+  }, [documents, profileFields, services, activeServiceId, checklistSummary, user, readNotificationIds]);
 
   const unreadNotificationsCount = useMemo(() => {
     return notifications.filter((n) => !n.read).length;
