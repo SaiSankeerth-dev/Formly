@@ -1,7 +1,23 @@
 // Formly — Universal Citizen Application & Portal Autofill Content Engine
 
 (function () {
-  console.log("🇮🇳 [Formly Extension] Initialized on:", window.location.href);
+  // CRITICAL: NEVER run or inject inside any iframe (e.g. Google reCAPTCHA, Cloudflare, payment gateways)
+  if (window !== window.top) {
+    return;
+  }
+
+  // Guard against any captcha or verification URLs
+  const currentUrl = (window.location.href || "").toLowerCase();
+  if (
+    currentUrl.includes("recaptcha") ||
+    currentUrl.includes("hcaptcha") ||
+    currentUrl.includes("turnstile") ||
+    currentUrl.includes("captcha")
+  ) {
+    return;
+  }
+
+  console.log("🇮🇳 [Formly Extension] Initialized on main frame:", window.location.href);
 
   // If on Formly app itself, listen and automatically sync profile to extension storage!
   if (window.location.origin === "http://localhost:3000") {
@@ -321,8 +337,11 @@
     document.getElementById("formly-banner-close").onclick = () => banner.remove();
   }
 
-  // Inject Floating Button onto Website
+  // Inject Floating Button onto Website (Bottom Right Corner Only)
   function injectFloatingTrigger() {
+    // Strictly main window only - NEVER inside iframes/captchas
+    if (window !== window.top) return;
+
     // Avoid injecting inside the Formly web app itself
     if (window.location.origin === "http://localhost:3000") return;
     if (document.getElementById("formly-floating-widget")) return;
@@ -330,8 +349,8 @@
     const widget = document.createElement("div");
     widget.id = "formly-floating-widget";
     widget.innerHTML = `
-      <button id="formly-btn-trigger" style="position: fixed; bottom: 20px; right: 20px; z-index: 2147483647; background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%); color: white; padding: 10px 18px; font-size: 12px; font-weight: bold; border-radius: 9999px; border: 2px solid white; box-shadow: 0 10px 30px rgba(79, 70, 229, 0.5); cursor: pointer; display: flex; align-items: center; gap: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; transition: transform 0.2s ease;">
-        <span style="font-size: 15px;">🤖</span>
+      <button id="formly-btn-trigger" style="position: fixed !important; bottom: 24px !important; right: 24px !important; z-index: 2147483647 !important; background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%) !important; color: white !important; padding: 11px 20px !important; font-size: 13px !important; font-weight: 800 !important; border-radius: 9999px !important; border: 2px solid white !important; box-shadow: 0 10px 30px rgba(79, 70, 229, 0.5) !important; cursor: pointer !important; display: flex !important; align-items: center !important; gap: 8px !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; transition: transform 0.2s ease !important; margin: 0 !important;">
+        <span style="font-size: 16px;">🤖</span>
         <span>Autofill with Formly</span>
       </button>
     `;

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Seva Saarthi — Government & PAN Portal Autofill Assistant",
-  "version": "1.0.1",
+  "name": "Formly — Citizen Application & Portal Autofill Assistant",
+  "version": "1.0.2",
   "description": "Autonomous auto-filling and human-in-the-loop submission for government schemes, PAN card (Protean/NSDL), scholarships, and welfare portals.",
   "permissions": [
     "activeTab",
@@ -13,14 +13,20 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Seva Saarthi Government Assistant"
+    "default_title": "Formly Citizen Assistant"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
+      "exclude_matches": [
+        "*://*.google.com/recaptcha/*",
+        "*://*.recaptcha.net/*",
+        "*://*.hcaptcha.com/*",
+        "*://challenges.cloudflare.com/*"
+      ],
       "js": ["content.js"],
       "run_at": "document_end",
-      "all_frames": true
+      "all_frames": false
     }
   ],
   "commands": {
@@ -29,7 +35,7 @@
         "default": "Alt+Shift+F",
         "mac": "Alt+Shift+F"
       },
-      "description": "Autofill current page with Seva Saarthi"
+      "description": "Autofill current page with Formly"
     }
   }
 }

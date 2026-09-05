@@ -137,7 +137,7 @@ document.getElementById("btn-autofill").addEventListener("click", async () => {
       if (chrome.runtime.lastError || !response) {
         // Fallback: inject content.js and dispatch
         chrome.scripting.executeScript({
-          target: { tabId: tab.id, allFrames: true },
+          target: { tabId: tab.id },
           files: ["content.js"],
         }).then(() => {
           setTimeout(() => {
