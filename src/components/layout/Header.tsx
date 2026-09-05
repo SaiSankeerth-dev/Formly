@@ -93,6 +93,7 @@ export function Header() {
             >
               {user?.avatar ? (
                 <div className="w-9 h-9 rounded-xl overflow-hidden bg-gradient-to-tr from-amber-400 to-indigo-500 p-0.5 shadow-sm">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={user.avatar}
                     alt={user.name}
