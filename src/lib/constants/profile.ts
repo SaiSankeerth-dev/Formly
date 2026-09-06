@@ -13,7 +13,7 @@ export interface ProfileFieldDefinition {
 
 export const CANONICAL_PROFILE_FIELDS: ProfileFieldDefinition[] = [
   // 1. Identity & Personal Info (10 fields)
-  { fieldName: "full_name", label: "Full Name (as per Aadhaar/10th)", placeholder: "e.g. Sai Kumar", category: "IDENTITY", isKeyField: true },
+  { fieldName: "full_name", label: "Full Name (as per Aadhaar/10th)", placeholder: "e.g. Sai Sankeerth", category: "IDENTITY", isKeyField: true },
   { fieldName: "father_name", label: "Father's / Guardian's Full Name", placeholder: "e.g. Ramesh Kumar", category: "IDENTITY" },
   { fieldName: "mother_name", label: "Mother's Full Name", placeholder: "e.g. Lakshmi Devi", category: "IDENTITY" },
   { fieldName: "date_of_birth", label: "Date of Birth", placeholder: "YYYY-MM-DD", type: "date", category: "IDENTITY", isKeyField: true },
@@ -44,7 +44,7 @@ export const CANONICAL_PROFILE_FIELDS: ProfileFieldDefinition[] = [
   { fieldName: "bank_name", label: "Bank Name & Branch", placeholder: "e.g. State Bank of India, Himayathnagar", category: "BANKING" },
   { fieldName: "bank_account_no", label: "Bank Savings Account Number", placeholder: "e.g. 38491029481", category: "BANKING", isKeyField: true },
   { fieldName: "bank_ifsc", label: "Bank IFSC Code", placeholder: "e.g. SBIN0012948", category: "BANKING", isKeyField: true },
-  { fieldName: "account_holder_name", label: "Account Holder Name (Must match Aadhaar)", placeholder: "e.g. Sai Kumar", category: "BANKING" },
+  { fieldName: "account_holder_name", label: "Account Holder Name (Must match Aadhaar)", placeholder: "e.g. Sai Sankeerth", category: "BANKING" },
   { fieldName: "dbt_seeding_status", label: "Aadhaar-NPCI DBT Seeding Status", placeholder: "Seeded (Active) / Linked", category: "BANKING", options: ["Seeded (Active)", "Linked", "Not Seeded"] },
 ];
 

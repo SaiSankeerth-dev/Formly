@@ -169,20 +169,23 @@ export function DocumentVaultPage() {
             return (
               <div
                 key={doc.id}
-                className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs hover:border-slate-300 hover:shadow-md transition-all flex flex-col justify-between"
+                className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs hover:border-slate-300 hover:shadow-md transition-all flex flex-col justify-between overflow-hidden"
               >
                 <div>
                   {/* Top Status & Type */}
                   <div className="flex items-start justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
                         <FileText className="w-5 h-5" />
                       </div>
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <div className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">
                           {doc.document_type.replace(/_/g, " ")}
                         </div>
-                        <h3 className="text-xs font-bold text-slate-900 line-clamp-1">
+                        <h3
+                          className="text-xs font-bold text-slate-900 truncate"
+                          title={doc.original_filename || "Document Scan"}
+                        >
                           {doc.original_filename || "Document Scan"}
                         </h3>
                       </div>
@@ -190,7 +193,7 @@ export function DocumentVaultPage() {
 
                     <span
                       className={cn(
-                        "text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 shrink-0",
+                        "text-[10px] font-bold px-2.5 py-1 rounded-full border flex items-center gap-1 shrink-0 ml-2 shadow-2xs",
                         badge.bg
                       )}
                     >
