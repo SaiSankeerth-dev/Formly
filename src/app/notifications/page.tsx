@@ -16,7 +16,13 @@ import Link from "next/link";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 
 export default function NotificationsPage() {
-  const { notifications, unreadNotificationsCount, markNotificationAsRead, clearAllNotifications, isLoadingAuth } = useSevaSaarthi();
+  const {
+    notifications,
+    unreadNotificationsCount,
+    markNotificationAsRead,
+    clearAllNotifications,
+    isLoadingAuth,
+  } = useSevaSaarthi();
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -32,12 +38,26 @@ export default function NotificationsPage() {
     }
   };
 
+  const getStatusBadgeStyle = (time: string, category: string) => {
+    const t = time.toLowerCase();
+    if (t.includes("action") || t.includes("required")) {
+      return "bg-amber-50 text-amber-700 border-amber-200/80";
+    }
+    if (t.includes("recent") || category === "DOCUMENT") {
+      return "bg-indigo-50 text-indigo-700 border-indigo-200/80";
+    }
+    if (t.includes("active") || t.includes("verified") || t.includes("completed")) {
+      return "bg-emerald-50 text-emerald-700 border-emerald-200/80";
+    }
+    return "bg-slate-100 text-slate-600 border-slate-200/80";
+  };
+
   return (
     <div className="space-y-6 pb-16">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100/60 shadow-xs">
+          <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100/60 shadow-xs shrink-0">
             <Bell className="w-5 h-5" />
           </div>
           <div>
@@ -56,7 +76,7 @@ export default function NotificationsPage() {
         {unreadNotificationsCount > 0 && (
           <button
             onClick={clearAllNotifications}
-            className="self-start sm:self-auto py-2 px-3.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5 shadow-xs"
+            className="self-start sm:self-auto py-2 px-3.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5 shadow-xs shrink-0"
           >
             <CheckCheck className="w-3.5 h-3.5 text-indigo-600" />
             <span>Mark All as Read</span>
@@ -66,9 +86,9 @@ export default function NotificationsPage() {
 
       {/* Notifications List */}
       {isLoadingAuth ? (
-        <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs space-y-3">
+        <div className="bg-white rounded-3xl border border-slate-100 p-4 sm:p-6 shadow-xs space-y-3">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="p-4.5 rounded-2xl border border-slate-100 bg-slate-50/50 animate-pulse flex items-start gap-3.5">
+            <div key={i} className="p-4 sm:p-5 rounded-2xl border border-slate-100 bg-slate-50/50 animate-pulse flex items-start gap-3.5">
               <div className="w-10 h-10 rounded-xl bg-slate-200 shrink-0" />
               <div className="flex-1 space-y-2">
                 <div className="h-3.5 bg-slate-200 rounded-md w-1/3" />
@@ -88,33 +108,33 @@ export default function NotificationsPage() {
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs space-y-3">
+        <div className="bg-white rounded-3xl border border-slate-100 p-4 sm:p-6 shadow-xs space-y-3 overflow-hidden">
           {notifications.map((n) => {
             const { icon: Icon, bg } = getCategoryIcon(n.category);
             return (
               <div
                 key={n.id}
-                className={`relative flex items-start justify-between p-4.5 rounded-2xl border transition-all ${
+                className={`flex flex-col sm:flex-row sm:items-start justify-between p-4 sm:p-5 rounded-2xl border transition-all gap-3 sm:gap-4 overflow-hidden ${
                   !n.read
-                    ? "bg-indigo-50/20 border-indigo-100/80 shadow-xs"
+                    ? "bg-indigo-50/25 border-indigo-100 shadow-xs"
                     : "bg-slate-50/60 border-slate-100 hover:bg-slate-100/70"
                 }`}
               >
-                <div className="flex items-start gap-3.5">
+                <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${bg}`}>
                     <Icon className="w-5 h-5" />
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className={`text-xs font-bold ${!n.read ? "text-slate-900" : "text-slate-700"}`}>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className={`text-xs sm:text-sm font-bold break-words ${!n.read ? "text-slate-900" : "text-slate-700"}`}>
                         {n.title}
                       </h3>
                       {!n.read && (
-                        <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" title="Unread" />
+                        <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0" title="Unread" />
                       )}
                     </div>
-                    <p className="text-xs text-slate-500 mt-1 leading-relaxed max-w-2xl">{n.desc}</p>
-                    
+                    <p className="text-xs text-slate-500 mt-1 leading-relaxed break-words max-w-2xl">{n.desc}</p>
+
                     <div className="flex items-center gap-3 mt-3">
                       <Link
                         href={n.href}
@@ -136,7 +156,16 @@ export default function NotificationsPage() {
                   </div>
                 </div>
 
-                <span className="text-[10px] font-bold text-slate-400 shrink-0 ml-4">{n.time}</span>
+                <div className="shrink-0 self-start sm:self-center pl-13 sm:pl-0">
+                  <span
+                    className={`inline-flex items-center px-2.5 py-1 text-[10px] sm:text-[11px] font-bold rounded-full border shadow-2xs ${getStatusBadgeStyle(
+                      n.time,
+                      n.category
+                    )}`}
+                  >
+                    {n.time}
+                  </span>
+                </div>
               </div>
             );
           })}

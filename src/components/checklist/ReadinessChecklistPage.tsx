@@ -10,33 +10,38 @@ import {
   HelpCircle,
   UploadCloud,
   CheckSquare,
-  RotateCcw,
   Sparkles,
   ChevronDown,
   ChevronUp,
   FileText,
   ShieldCheck,
   AlertCircle,
-  Printer,
   Copy,
   Zap,
-  Bot,
-  Monitor,
+  Clock,
+  Building2,
+  AlertTriangle,
+  ArrowRight,
+  BookOpen,
 } from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { ChecklistItemViewModel, ServiceRequirement } from "@/types";
 import { cn } from "@/lib/utils";
 import { ManualResolveModal } from "@/components/checklist/ManualResolveModal";
 import { UploadDocumentModal } from "@/components/vault/UploadDocumentModal";
-import { BrowserAgentModal } from "@/components/agent/BrowserAgentModal";
+import { AutofillAssistant } from "@/components/assistant/AutofillAssistant";
+import {
+  DOCUMENT_PROCUREMENT_GUIDES,
+  OFFICIAL_NSP_WORKFLOW,
+} from "@/lib/knowledge/government-schemes-knowledge";
 import { toast } from "sonner";
 
 export function ReadinessChecklistPage() {
-  const { checklistSummary, unmarkRequirementResolved, recomputeRequirements } = useSevaSaarthi();
+  const { checklistSummary, unmarkRequirementResolved } = useSevaSaarthi();
   const [selectedReqForResolve, setSelectedReqForResolve] = useState<ServiceRequirement | null>(null);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [isAgentOpen, setIsAgentOpen] = useState(false);
-  const [isLaunchingHeaded, setIsLaunchingHeaded] = useState(false);
+  const [isAutofillAssistantOpen, setIsAutofillAssistantOpen] = useState(false);
+  const [showProcessRoadmap, setShowProcessRoadmap] = useState(false);
   const [expandedGuidance, setExpandedGuidance] = useState<Record<string, boolean>>({});
 
   const toggleGuidance = (id: string) => {
@@ -61,35 +66,6 @@ export function ReadinessChecklistPage() {
 
     navigator.clipboard.writeText(text);
     toast.success("Readiness checklist copied to clipboard!");
-  };
-
-  // Launch agent in new live browser tab
-  const launchLiveAgentInNewTab = () => {
-    window.open("/portal/scholarships", "_blank");
-    toast.success("Opening Autonomous Portal Agent in new tab...");
-  };
-
-  // Launch real headed Chrome on Windows desktop
-  const launchDesktopChrome = async () => {
-    setIsLaunchingHeaded(true);
-    toast.info("Launching real visible Chrome browser on your desktop...");
-    try {
-      const res = await fetch("/api/agent/launch-headed", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ portalUrl: service.official_url }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success(data.message);
-      } else {
-        toast.error("Failed to launch desktop Chrome: " + data.error);
-      }
-    } catch (err: any) {
-      toast.error("Error launching agent: " + err.message);
-    } finally {
-      setIsLaunchingHeaded(false);
-    }
   };
 
   return (
@@ -117,34 +93,31 @@ export function ReadinessChecklistPage() {
 
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-2.5 mt-4">
-              <button
-                onClick={launchLiveAgentInNewTab}
-                className="inline-flex items-center gap-2 text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 px-4 py-2 rounded-xl shadow-sm shadow-indigo-200 transition-all hover:scale-102"
-              >
-                <Bot className="w-4 h-4" />
-                <span>Run Agent in New Tab</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </button>
-
-              <button
-                onClick={launchDesktopChrome}
-                disabled={isLaunchingHeaded}
-                className="inline-flex items-center gap-2 text-xs font-bold text-slate-800 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl border border-slate-200 transition-all"
-                title="Spawns a real Google Chrome window on your desktop using Playwright"
-              >
-                <Monitor className="w-4 h-4 text-indigo-600" />
-                <span>{isLaunchingHeaded ? "Launching Chrome..." : "Launch Real Chrome Window"}</span>
-              </button>
-
               <a
                 href={service.official_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50/70 hover:bg-indigo-100/70 px-3 py-2 rounded-xl border border-indigo-100 transition-colors"
+                className="inline-flex items-center gap-2 text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 px-4 py-2 rounded-xl shadow-sm shadow-indigo-200 transition-all hover:scale-102"
               >
                 <span>Official Portal ({service.official_domain})</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
+
+              <button
+                onClick={() => setIsAutofillAssistantOpen(true)}
+                className="inline-flex items-center gap-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-xl border border-indigo-200 transition-all"
+              >
+                <Zap className="w-4 h-4 text-indigo-600" />
+                <span>Autofill Assistant</span>
+              </button>
+
+              <button
+                onClick={() => setShowProcessRoadmap((prev) => !prev)}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3.5 py-2 rounded-xl border border-slate-200 transition-colors"
+              >
+                <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
+                <span>{showProcessRoadmap ? "Hide Process Guide" : "Application Process & Timeline"}</span>
+              </button>
 
               <button
                 onClick={copySummaryToClipboard}
@@ -188,6 +161,101 @@ export function ReadinessChecklistPage() {
         </div>
       </div>
 
+      {/* Official Government 5-Stage Process & Timeline Roadmap */}
+      {showProcessRoadmap && (
+        <div className="bg-white rounded-3xl border border-indigo-100 p-6 shadow-xs space-y-4 animate-in fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-full border border-indigo-200 uppercase">
+                  Official Government Lifecycle
+                </span>
+                <h2 className="text-base font-bold text-slate-900">
+                  National Scholarship Portal (NSP) Application Workflow
+                </h2>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Official step-by-step verification lifecycle from One-Time Registration to Direct Benefit Transfer.
+              </p>
+            </div>
+
+            <a
+              href="https://scholarships.gov.in"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-3 py-1.5 rounded-xl self-start sm:self-auto"
+            >
+              <span>scholarships.gov.in</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3 pt-1">
+            {OFFICIAL_NSP_WORKFLOW.stages.map((stage) => (
+              <div
+                key={stage.stageNumber}
+                className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 flex flex-col justify-between hover:border-indigo-300 transition-all"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center">
+                      {stage.stageNumber}
+                    </span>
+                    <span className="text-[10px] font-semibold text-slate-500">
+                      {stage.timeline}
+                    </span>
+                  </div>
+
+                  <h3 className="text-xs font-bold text-slate-900 leading-snug mb-1">
+                    {stage.stageName}
+                  </h3>
+                  <div className="text-[10px] font-semibold text-indigo-600 mb-2">
+                    {stage.responsibleParty}
+                  </div>
+                  <p className="text-[11px] text-slate-600 leading-relaxed mb-3">
+                    {stage.description}
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t border-slate-200/60">
+                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    Key Checklist:
+                  </div>
+                  <ul className="text-[10px] text-slate-600 space-y-1">
+                    {stage.actionItems.slice(0, 2).map((action, idx) => (
+                      <li key={idx} className="flex items-start gap-1">
+                        <span className="text-indigo-600 font-bold">•</span>
+                        <span>{action}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Grievance Redressal Banner */}
+          <div className="bg-amber-50/60 border border-amber-200/80 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-900">
+            <div className="flex items-center gap-2.5">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <div>
+                <strong>Need Support or Facing Issues?</strong> NSP Official Helpdesk:{" "}
+                <span className="font-bold">{OFFICIAL_NSP_WORKFLOW.grievanceRedressal.helpline}</span> | Email:{" "}
+                <span className="font-bold">{OFFICIAL_NSP_WORKFLOW.grievanceRedressal.email}</span>
+              </div>
+            </div>
+            <a
+              href="https://scholarships.gov.in"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-amber-800 hover:text-amber-950 font-bold underline shrink-0"
+            >
+              Open Helpdesk FAQ
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* Completion Banner */}
       {isComplete && (
         <div className="bg-emerald-50 border-2 border-emerald-300 rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in">
@@ -200,18 +268,17 @@ export function ReadinessChecklistPage() {
                 You are 100% ready to apply! 🎉
               </h3>
               <p className="text-xs text-emerald-800 mt-0.5 leading-relaxed">
-                All required documents and personal fields are verified. Launch the Autonomous Portal Agent in a live tab to autofill the form with human-in-the-loop submission approval!
+                All required documents and personal fields are verified. Use the Autofill Assistant to review your data package and apply directly on the official portal.
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2.5 shrink-0">
             <button
-              onClick={launchLiveAgentInNewTab}
+              onClick={() => setIsAutofillAssistantOpen(true)}
               className="py-3 px-5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-200 flex items-center gap-2 transition-all hover:scale-102"
             >
-              <Bot className="w-4 h-4" />
-              <span>Autofill in Live Tab</span>
-              <ExternalLink className="w-3.5 h-3.5" />
+              <Zap className="w-4 h-4" />
+              <span>Autofill Assistant</span>
             </button>
             <a
               href={service.official_url}
@@ -253,6 +320,7 @@ export function ReadinessChecklistPage() {
             {missingItems.map((item) => {
               const req = item.requirement;
               const isExpanded = expandedGuidance[req.id];
+              const docGuide = req.notes ? DOCUMENT_PROCUREMENT_GUIDES[req.notes] : null;
 
               return (
                 <div
@@ -297,15 +365,93 @@ export function ReadinessChecklistPage() {
                     </div>
                   </div>
 
-                  {isExpanded && req.guidance_text && (
-                    <div className="mt-3 pt-3 border-t border-amber-200/60 bg-white rounded-xl p-3.5 text-xs text-slate-700 animate-in fade-in">
-                      <div className="font-bold text-slate-900 mb-1 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                        <span>Official Guidance & Obtaining Instructions:</span>
-                      </div>
-                      <p className="text-slate-600 leading-relaxed text-[11px] whitespace-pre-line">
-                        {req.guidance_text}
-                      </p>
+                  {isExpanded && (
+                    <div className="mt-3 pt-3 border-t border-amber-200/60 bg-white rounded-xl p-4 text-xs text-slate-700 animate-in fade-in space-y-3">
+                      {docGuide ? (
+                        <div className="space-y-3">
+                          {/* Badges row */}
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                              <Building2 className="w-3 h-3" />
+                              <span>Authority: {docGuide.issuingAuthority}</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                              <Clock className="w-3 h-3" />
+                              <span>Turnaround: {docGuide.typicalTurnaround}</span>
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                              <span>Validity: {docGuide.validityPeriod}</span>
+                            </span>
+                          </div>
+
+                          {/* Mandatory Criteria */}
+                          <div>
+                            <div className="font-bold text-slate-900 mb-1.5 text-[11px] uppercase tracking-wider text-indigo-900">
+                              Official Requirements & Criteria:
+                            </div>
+                            <ul className="space-y-1 text-[11px] text-slate-600">
+                              {docGuide.mandatoryCriteria.map((crit, idx) => (
+                                <li key={idx} className="flex items-start gap-1.5">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                                  <span>{crit}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          {/* Step-by-Step Procedure */}
+                          <div>
+                            <div className="font-bold text-slate-900 mb-1.5 text-[11px] uppercase tracking-wider text-indigo-900">
+                              Step-by-Step Procurement Instructions:
+                            </div>
+                            <ol className="space-y-1 text-[11px] text-slate-600 list-decimal list-inside">
+                              {docGuide.procurementSteps.map((step, idx) => (
+                                <li key={idx} className="leading-relaxed">
+                                  {step}
+                                </li>
+                              ))}
+                            </ol>
+                          </div>
+
+                          {/* Common Rejections Warning */}
+                          <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-[11px] text-rose-900 space-y-1">
+                            <div className="font-bold flex items-center gap-1.5">
+                              <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                              <span>Common Rejection Pitfalls to Avoid:</span>
+                            </div>
+                            <ul className="list-disc list-inside space-y-0.5 pl-1 text-rose-800">
+                              {docGuide.commonRejectionReasons.map((reason, idx) => (
+                                <li key={idx}>{reason}</li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          {/* Official Portal Link if available */}
+                          {docGuide.portalUrl && (
+                            <div className="pt-2">
+                              <a
+                                href={docGuide.portalUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline"
+                              >
+                                <span>Open Official Portal ({docGuide.portalUrl})</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="font-bold text-slate-900 mb-1 flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>Official Guidance:</span>
+                          </div>
+                          <p className="text-slate-600 leading-relaxed text-[11px] whitespace-pre-line">
+                            {req.guidance_text}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -400,18 +546,12 @@ export function ReadinessChecklistPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
-                      Manual Override
-                    </span>
-                    <button
-                      onClick={() => unmarkRequirementResolved(req.id)}
-                      className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors text-xs flex items-center gap-1"
-                      title="Revert to automatic check"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => unmarkRequirementResolved(req.id)}
+                    className="text-[10px] font-semibold text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    Revert
+                  </button>
                 </div>
               );
             })}
@@ -431,14 +571,11 @@ export function ReadinessChecklistPage() {
       {/* Upload Modal */}
       {isUploadOpen && <UploadDocumentModal isOpen={isUploadOpen} onClose={() => setIsUploadOpen(false)} />}
 
-      {/* Browser Agent In-App Modal */}
-      {isAgentOpen && (
-        <BrowserAgentModal
-          isOpen={isAgentOpen}
-          onClose={() => setIsAgentOpen(false)}
-          serviceName={service.name}
-          portalUrl={service.official_url}
-          portalDomain={service.official_domain}
+      {/* Autofill Assistant In-App Drawer / Modal */}
+      {isAutofillAssistantOpen && (
+        <AutofillAssistant
+          isOpen={isAutofillAssistantOpen}
+          onClose={() => setIsAutofillAssistantOpen(false)}
         />
       )}
     </div>

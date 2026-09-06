@@ -15,8 +15,6 @@ import {
   HelpCircle,
   Headphones,
   Check,
-  Sparkles,
-  RefreshCw,
   X,
 } from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
@@ -37,7 +35,7 @@ interface SidebarProps {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { stats, checklistSummary, resetToPreset, unreadNotificationsCount } = useSevaSaarthi();
+  const { stats, checklistSummary, unreadNotificationsCount } = useSevaSaarthi();
 
   const navItems: NavItem[] = [
     { label: "Home", href: "/dashboard", icon: LayoutDashboard },
@@ -125,42 +123,6 @@ export function Sidebar() {
           </div>
           <span className="text-slate-400 group-hover:translate-x-0.5 transition-transform text-sm">›</span>
         </div>
-
-        {/* Demo Switcher Pill */}
-        <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100/70 rounded-xl p-2.5 text-[11px] overflow-x-auto max-w-full">
-          <div className="flex items-center justify-between text-indigo-900 font-semibold mb-1.5">
-            <span className="flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-indigo-600" /> Demo View:
-            </span>
-            <button
-              onClick={() => resetToPreset("default")}
-              className="text-[10px] text-indigo-600 hover:underline flex items-center gap-0.5"
-              title="Reset state"
-            >
-              <RefreshCw className="w-2.5 h-2.5" /> Reset
-            </button>
-          </div>
-          <div className="grid grid-cols-3 gap-1 min-w-[190px]">
-            <button
-              onClick={() => resetToPreset("first_run")}
-              className="py-1 px-1.5 bg-white hover:bg-slate-50 border border-slate-200/80 rounded-md text-[10px] font-medium text-slate-700 text-center transition-colors"
-            >
-              Empty
-            </button>
-            <button
-              onClick={() => resetToPreset("default")}
-              className="py-1 px-1.5 bg-indigo-600 text-white rounded-md text-[10px] font-medium text-center shadow-xs"
-            >
-              92% Ready
-            </button>
-            <button
-              onClick={() => resetToPreset("completed")}
-              className="py-1 px-1.5 bg-white hover:bg-slate-50 border border-slate-200/80 rounded-md text-[10px] font-medium text-slate-700 text-center transition-colors"
-            >
-              100% Full
-            </button>
-          </div>
-        </div>
       </div>
     </aside>
   );
@@ -174,7 +136,7 @@ export function MobileNavDrawer({
   onClose: () => void;
 }) {
   const pathname = usePathname();
-  const { stats, checklistSummary, resetToPreset, unreadNotificationsCount } = useSevaSaarthi();
+  const { stats, checklistSummary, unreadNotificationsCount } = useSevaSaarthi();
 
   const navItems: NavItem[] = [
     { label: "Home", href: "/dashboard", icon: LayoutDashboard },
@@ -305,8 +267,8 @@ export function MobileNavDrawer({
           </nav>
         </div>
 
-        {/* Bottom Help Card & Demo Switcher inside Drawer */}
-        <div className="space-y-3 pt-4 border-t border-slate-100 mt-6">
+        {/* Bottom Help Card inside Drawer */}
+        <div className="pt-4 border-t border-slate-100 mt-6">
           <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3.5 flex items-center justify-between hover:bg-slate-100/80 transition-colors cursor-pointer group">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
@@ -318,41 +280,6 @@ export function MobileNavDrawer({
               </div>
             </div>
             <span className="text-slate-400 group-hover:translate-x-0.5 transition-transform text-sm">›</span>
-          </div>
-
-          <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100/70 rounded-xl p-2.5 text-[11px] overflow-x-auto max-w-full">
-            <div className="flex items-center justify-between text-indigo-900 font-semibold mb-1.5">
-              <span className="flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-indigo-600" /> Demo View:
-              </span>
-              <button
-                onClick={() => resetToPreset("default")}
-                className="text-[10px] text-indigo-600 hover:underline flex items-center gap-0.5"
-                title="Reset state"
-              >
-                <RefreshCw className="w-2.5 h-2.5" /> Reset
-              </button>
-            </div>
-            <div className="grid grid-cols-3 gap-1 min-w-[190px]">
-              <button
-                onClick={() => resetToPreset("first_run")}
-                className="py-1 px-1.5 bg-white hover:bg-slate-50 border border-slate-200/80 rounded-md text-[10px] font-medium text-slate-700 text-center transition-colors"
-              >
-                Empty
-              </button>
-              <button
-                onClick={() => resetToPreset("default")}
-                className="py-1 px-1.5 bg-indigo-600 text-white rounded-md text-[10px] font-medium text-center shadow-xs"
-              >
-                92% Ready
-              </button>
-              <button
-                onClick={() => resetToPreset("completed")}
-                className="py-1 px-1.5 bg-white hover:bg-slate-50 border border-slate-200/80 rounded-md text-[10px] font-medium text-slate-700 text-center transition-colors"
-              >
-                100% Full
-              </button>
-            </div>
           </div>
         </div>
       </aside>
