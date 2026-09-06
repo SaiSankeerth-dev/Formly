@@ -42,9 +42,9 @@ export function ActiveApplicationsList() {
   ];
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs">
+    <div className="bg-white rounded-3xl border border-slate-100 p-4 sm:p-6 shadow-xs w-full min-w-0">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-4 sm:mb-5">
         <h2 className="text-base font-bold text-slate-900">Active Applications</h2>
         <Link href="/checklist" className="text-xs font-semibold text-indigo-600 hover:underline">
           View all
@@ -52,25 +52,25 @@ export function ActiveApplicationsList() {
       </div>
 
       {/* Applications List */}
-      <div className="space-y-3 mb-5">
+      <div className="space-y-3 mb-5 w-full min-w-0">
         {applications.map((app) => {
           const Icon = app.icon;
           return (
             <Link
               key={app.id}
               href={app.href}
-              className="flex items-center justify-between p-3.5 bg-slate-50/70 hover:bg-slate-100/80 border border-slate-100/90 rounded-2xl transition-all group"
+              className="flex items-center justify-between p-3 sm:p-3.5 bg-slate-50/70 hover:bg-slate-100/80 border border-slate-100/90 rounded-2xl transition-all group min-w-0 gap-3"
             >
               {/* Left: Icon & Info */}
-              <div className="flex items-center gap-3.5 min-w-[200px]">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${app.iconBg}`}>
-                  <Icon className="w-5 h-5" />
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 ${app.iconBg}`}>
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors truncate">
                     {app.title}
                   </div>
-                  <div className="text-[11px] font-medium text-slate-400">
+                  <div className="text-[10px] sm:text-[11px] font-medium text-slate-400 truncate">
                     Application ID: {app.appId}
                   </div>
                 </div>
@@ -88,9 +88,10 @@ export function ActiveApplicationsList() {
               </div>
 
               {/* Right: Status & Chevron */}
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600">
-                <span>{app.statusText}</span>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all" />
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 shrink-0">
+                <span className="hidden min-[380px]:inline">{app.statusText}</span>
+                <span className="inline min-[380px]:hidden text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-bold">{app.progress}%</span>
+                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all shrink-0" />
               </div>
             </Link>
           );

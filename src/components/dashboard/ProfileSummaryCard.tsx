@@ -31,10 +31,10 @@ export function ProfileSummaryCard() {
   }
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs flex flex-col justify-between">
+    <div className="bg-white rounded-3xl border border-slate-100 p-4 sm:p-6 shadow-xs flex flex-col justify-between w-full min-w-0">
       <div>
         {/* Header */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-4 sm:mb-5">
           <h2 className="text-base font-bold text-slate-900">Your Profile Summary</h2>
           <Link href="/profile" className="text-xs font-semibold text-indigo-600 hover:underline">
             Edit
@@ -42,53 +42,53 @@ export function ProfileSummaryCard() {
         </div>
 
         {/* Profile Attributes List */}
-        <div className="space-y-3 mb-6">
-          <div className="flex items-center justify-between text-xs py-1 border-b border-slate-50">
-            <div className="flex items-center gap-2.5 text-slate-500 font-medium">
+        <div className="space-y-3 mb-6 w-full min-w-0">
+          <div className="flex items-center justify-between gap-2 text-xs py-1 border-b border-slate-50 min-w-0">
+            <div className="flex items-center gap-2.5 text-slate-500 font-medium shrink-0">
               <User className="w-4 h-4 text-slate-400" />
               <span>Name</span>
             </div>
-            <span className="font-bold text-slate-800 truncate max-w-[160px]">{name}</span>
+            <span className="font-bold text-slate-800 truncate max-w-[130px] sm:max-w-[160px] text-right">{name}</span>
           </div>
 
-          <div className="flex items-center justify-between text-xs py-1 border-b border-slate-50">
-            <div className="flex items-center gap-2.5 text-slate-500 font-medium">
+          <div className="flex items-center justify-between gap-2 text-xs py-1 border-b border-slate-50 min-w-0">
+            <div className="flex items-center gap-2.5 text-slate-500 font-medium shrink-0">
               <Calendar className="w-4 h-4 text-slate-400" />
               <span>Age</span>
             </div>
-            <span className="font-bold text-slate-800">{ageDisplay}</span>
+            <span className="font-bold text-slate-800 shrink-0">{ageDisplay}</span>
           </div>
 
-          <div className="flex items-center justify-between text-xs py-1 border-b border-slate-50">
-            <div className="flex items-center gap-2.5 text-slate-500 font-medium">
+          <div className="flex items-center justify-between gap-2 text-xs py-1 border-b border-slate-50 min-w-0">
+            <div className="flex items-center gap-2.5 text-slate-500 font-medium shrink-0">
               <MapPin className="w-4 h-4 text-slate-400" />
               <span>Location</span>
             </div>
-            <span className="font-bold text-slate-800 truncate max-w-[160px]">{location}</span>
+            <span className="font-bold text-slate-800 truncate max-w-[130px] sm:max-w-[160px] text-right">{location}</span>
           </div>
 
-          <div className="flex items-center justify-between text-xs py-1 border-b border-slate-50">
-            <div className="flex items-center gap-2.5 text-slate-500 font-medium">
+          <div className="flex items-center justify-between gap-2 text-xs py-1 border-b border-slate-50 min-w-0">
+            <div className="flex items-center gap-2.5 text-slate-500 font-medium shrink-0">
               <GraduationCap className="w-4 h-4 text-slate-400" />
               <span>Education</span>
             </div>
-            <span className="font-bold text-slate-800 truncate max-w-[160px]">{education}</span>
+            <span className="font-bold text-slate-800 truncate max-w-[130px] sm:max-w-[160px] text-right">{education}</span>
           </div>
 
-          <div className="flex items-center justify-between text-xs py-1 border-b border-slate-50">
-            <div className="flex items-center gap-2.5 text-slate-500 font-medium">
+          <div className="flex items-center justify-between gap-2 text-xs py-1 border-b border-slate-50 min-w-0">
+            <div className="flex items-center gap-2.5 text-slate-500 font-medium shrink-0">
               <Banknote className="w-4 h-4 text-slate-400" />
               <span>Income</span>
             </div>
-            <span className="font-bold text-slate-800">{incomeFormatted}</span>
+            <span className="font-bold text-slate-800 shrink-0 text-right">{incomeFormatted}</span>
           </div>
 
-          <div className="flex items-center justify-between text-xs py-1">
-            <div className="flex items-center gap-2.5 text-slate-500 font-medium">
+          <div className="flex items-center justify-between gap-2 text-xs py-1 min-w-0">
+            <div className="flex items-center gap-2.5 text-slate-500 font-medium shrink-0">
               <FileCheck className="w-4 h-4 text-slate-400" />
               <span>Documents</span>
             </div>
-            <span className="font-bold text-slate-800">{stats.verifiedDocuments} Verified</span>
+            <span className="font-bold text-slate-800 shrink-0">{stats.verifiedDocuments} Verified</span>
           </div>
         </div>
       </div>

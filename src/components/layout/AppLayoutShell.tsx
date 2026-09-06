@@ -1,18 +1,24 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { Sidebar, MobileNavDrawer } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 
 export function AppLayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { isAuthenticated, isLoadingAuth } = useSevaSaarthi();
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   const isAuthPage = pathname === "/login" || pathname === "/signup";
   const isPortalPage = pathname.startsWith("/portal");
+
+  // Close mobile navigation drawer whenever route changes
+  useEffect(() => {
+    setIsMobileNavOpen(false);
+  }, [pathname]);
 
   // Route protection: Redirect unauthenticated users to /login
   useEffect(() => {
@@ -45,14 +51,20 @@ export function AppLayoutShell({ children }: { children: React.ReactNode }) {
 
   // Authenticated full dashboard shell
   return (
-    <div className="min-h-screen flex bg-slate-50/50">
+    <div className="min-h-screen flex bg-slate-50/50 w-full max-w-full overflow-x-hidden relative">
       <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0">
-        <Header />
-        <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto">
+      <div className="flex-1 flex flex-col min-w-0 w-full max-w-full overflow-x-hidden">
+        <Header onOpenMobileNav={() => setIsMobileNavOpen(true)} />
+        <main className="flex-1 p-4 sm:p-6 md:p-8 max-w-7xl w-full mx-auto box-border overflow-x-hidden">
           {children}
         </main>
       </div>
+
+      {/* Mobile Drawer placed at root of shell for guaranteed stacking above all components */}
+      <MobileNavDrawer
+        isOpen={isMobileNavOpen}
+        onClose={() => setIsMobileNavOpen(false)}
+      />
     </div>
   );
 }

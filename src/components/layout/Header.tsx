@@ -2,11 +2,15 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ShieldCheck, Bell, ChevronDown, User, LogOut, CheckCircle, Zap } from "lucide-react";
+import { ShieldCheck, Bell, ChevronDown, User, LogOut, CheckCircle, Zap, Menu, Check } from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { AutofillAssistant } from "@/components/assistant/AutofillAssistant";
 
-export function Header() {
+interface HeaderProps {
+  onOpenMobileNav?: () => void;
+}
+
+export function Header({ onOpenMobileNav }: HeaderProps = {}) {
   const { user, profileStrength, logout, unreadNotificationsCount } = useSevaSaarthi();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
@@ -27,7 +31,141 @@ export function Header() {
 
   return (
     <>
-      <header className="flex items-center justify-between px-8 py-5 border-b border-slate-100 bg-white/80 backdrop-blur-md sticky top-0 z-20">
+      {/* 1. MOBILE TOP HEADER (< 768px screens) */}
+      <header className="md:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-100">
+        {/* Top Bar: Hamburger, Logo, Notifications, Avatar */}
+        <div className="flex items-center justify-between px-4 py-2.5">
+          {/* Left: Hamburger & Logo */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <button
+              onClick={onOpenMobileNav}
+              aria-label="Open navigation menu"
+              className="w-10 h-10 -ml-1 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 active:bg-slate-200 flex items-center justify-center transition-colors shrink-0 min-w-[40px] min-h-[40px]"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <Link href="/dashboard" className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-blue-500 flex items-center justify-center shadow-xs shrink-0">
+                <Check className="w-4 h-4 text-white stroke-[3]" />
+              </div>
+              <span className="font-bold text-slate-900 text-base tracking-tight truncate">
+                Seva Saarthi
+              </span>
+            </Link>
+          </div>
+
+          {/* Right: Notifications & User Avatar */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Notification Bell */}
+            <Link
+              href="/notifications"
+              className="relative w-10 h-10 flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
+              title="Notifications"
+              aria-label="Notifications"
+            >
+              <Bell className="w-5 h-5" />
+              {unreadNotificationsCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                  {unreadNotificationsCount}
+                </span>
+              )}
+            </Link>
+
+            {/* User Profile Avatar */}
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                aria-label="User account menu"
+                className="w-9 h-9 rounded-xl overflow-hidden bg-gradient-to-tr from-indigo-600 to-blue-600 text-white font-bold text-xs flex items-center justify-center shadow-xs ring-2 ring-slate-100"
+              >
+                {user?.avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={user.avatar}
+                    alt={user.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  initials
+                )}
+              </button>
+
+              {/* Mobile User Menu Dropdown */}
+              {showUserMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowUserMenu(false)}
+                    aria-hidden="true"
+                  />
+                  <div className="absolute right-0 mt-2 w-56 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2">
+                    <div className="px-4 py-2 border-b border-slate-100">
+                      <div className="text-xs font-bold text-slate-900">{user?.name}</div>
+                      <div className="text-[11px] text-slate-500">{user?.email}</div>
+                    </div>
+                    <Link
+                      href="/profile"
+                      onClick={() => setShowUserMenu(false)}
+                      className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      <User className="w-4 h-4 text-slate-400" /> My Profile
+                    </Link>
+                    <Link
+                      href="/vault"
+                      onClick={() => setShowUserMenu(false)}
+                      className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      <CheckCircle className="w-4 h-4 text-slate-400" /> Document Vault
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        setIsAssistantOpen(true);
+                      }}
+                      className="w-full text-left flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-indigo-600 hover:bg-indigo-50"
+                    >
+                      <Zap className="w-4 h-4" /> Autofill Assistant
+                    </button>
+                    <div className="my-1 border-t border-slate-100" />
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        logout();
+                      }}
+                      className="w-full text-left flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50"
+                    >
+                      <LogOut className="w-4 h-4" /> Sign Out
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Greeting Bar */}
+        <div className="px-4 py-2.5 bg-slate-50/60 border-t border-slate-100/80 flex items-center justify-between gap-2 min-w-0">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 flex items-center gap-1.5 min-w-0">
+              <span className="truncate">{greeting}, {firstName}</span>
+              <span className="text-base shrink-0">👋</span>
+            </h1>
+            <p className="text-[11px] font-medium text-slate-500 truncate">
+              Here&apos;s your application overview
+            </p>
+          </div>
+          <button
+            onClick={() => setIsAssistantOpen(true)}
+            className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl text-[11px] font-bold shadow-xs hover:opacity-95 transition-opacity"
+          >
+            <Zap className="w-3 h-3" />
+            <span>Assistant</span>
+          </button>
+        </div>
+      </header>
+
+      {/* 2. DESKTOP HEADER (100% preserved layout on md: screens and above) */}
+      <header className="hidden md:flex items-center justify-between px-8 py-5 border-b border-slate-100 bg-white/80 backdrop-blur-md sticky top-0 z-20">
         {/* Greeting */}
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
@@ -118,45 +256,52 @@ export function Header() {
 
             {/* User Menu Dropdown */}
             {showUserMenu && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2">
-                <div className="px-4 py-2 border-b border-slate-100">
-                  <div className="text-xs font-bold text-slate-900">{user?.name}</div>
-                  <div className="text-[11px] text-slate-500">{user?.email}</div>
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowUserMenu(false)}
+                  aria-hidden="true"
+                />
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2">
+                  <div className="px-4 py-2 border-b border-slate-100">
+                    <div className="text-xs font-bold text-slate-900">{user?.name}</div>
+                    <div className="text-[11px] text-slate-500">{user?.email}</div>
+                  </div>
+                  <Link
+                    href="/profile"
+                    onClick={() => setShowUserMenu(false)}
+                    className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    <User className="w-4 h-4 text-slate-400" /> My Profile
+                  </Link>
+                  <Link
+                    href="/vault"
+                    onClick={() => setShowUserMenu(false)}
+                    className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    <CheckCircle className="w-4 h-4 text-slate-400" /> Document Vault
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      setIsAssistantOpen(true);
+                    }}
+                    className="w-full text-left flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-indigo-600 hover:bg-indigo-50"
+                  >
+                    <Zap className="w-4 h-4" /> Autofill Assistant
+                  </button>
+                  <div className="my-1 border-t border-slate-100" />
+                  <button
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      logout();
+                    }}
+                    className="w-full text-left flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50"
+                  >
+                    <LogOut className="w-4 h-4" /> Sign Out
+                  </button>
                 </div>
-                <Link
-                  href="/profile"
-                  onClick={() => setShowUserMenu(false)}
-                  className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                >
-                  <User className="w-4 h-4 text-slate-400" /> My Profile
-                </Link>
-                <Link
-                  href="/vault"
-                  onClick={() => setShowUserMenu(false)}
-                  className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                >
-                  <CheckCircle className="w-4 h-4 text-slate-400" /> Document Vault
-                </Link>
-                <button
-                  onClick={() => {
-                    setShowUserMenu(false);
-                    setIsAssistantOpen(true);
-                  }}
-                  className="w-full text-left flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-indigo-600 hover:bg-indigo-50"
-                >
-                  <Zap className="w-4 h-4" /> Autofill Assistant
-                </button>
-                <div className="my-1 border-t border-slate-100" />
-                <button
-                  onClick={() => {
-                    setShowUserMenu(false);
-                    logout();
-                  }}
-                  className="w-full text-left flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50"
-                >
-                  <LogOut className="w-4 h-4" /> Sign Out
-                </button>
-              </div>
+              </>
             )}
           </div>
         </div>

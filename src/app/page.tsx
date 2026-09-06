@@ -18,10 +18,10 @@ export default function HomePage() {
   const isNewUser = stats.totalDocuments === 0 && profileStrength < 50;
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-12 w-full max-w-full overflow-x-hidden">
       {/* First-Run Citizen Onboarding Welcome Banner */}
       {isNewUser && (
-        <div className="bg-gradient-to-r from-indigo-950 via-indigo-900 to-blue-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="bg-gradient-to-r from-indigo-950 via-indigo-900 to-blue-900 rounded-3xl p-5 sm:p-8 text-white shadow-xl relative overflow-hidden w-full min-w-0">
           <div className="relative z-10 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-indigo-200 text-xs font-semibold mb-3">
               <Sparkles className="w-3.5 h-3.5" /> First-Time Citizen Setup
@@ -32,17 +32,17 @@ export default function HomePage() {
             <p className="text-xs sm:text-sm text-indigo-200 leading-relaxed mb-5">
               Build your reusable citizen profile and document vault once, then use it to effortlessly apply for scholarships, welfare schemes, and public services without repetitive manual data entry.
             </p>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <Link
                 href="/profile"
-                className="px-5 py-2.5 bg-white text-indigo-900 font-bold text-xs rounded-xl hover:bg-indigo-50 transition-all shadow-md flex items-center gap-2"
+                className="w-full sm:w-auto px-5 py-2.5 bg-white text-indigo-900 font-bold text-xs rounded-xl hover:bg-indigo-50 transition-all shadow-md flex items-center justify-center gap-2 min-h-[40px]"
               >
                 <Edit3 className="w-4 h-4 text-indigo-600" />
                 <span>Fill Profile Details</span>
               </Link>
               <Link
                 href="/vault"
-                className="px-5 py-2.5 bg-indigo-700/80 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl border border-indigo-500/40 transition-all flex items-center gap-2"
+                className="w-full sm:w-auto px-5 py-2.5 bg-indigo-700/80 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl border border-indigo-500/40 transition-all flex items-center justify-center gap-2 min-h-[40px]"
               >
                 <UploadCloud className="w-4 h-4" />
                 <span>Upload Aadhaar / Certificates</span>
@@ -54,8 +54,8 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Top 4 Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Top 4 Metrics Cards: Single-column on <360px, 2-column on 360-430px, 4-column on desktop */}
+      <div className="grid grid-cols-1 min-[360px]:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 w-full min-w-0">
         <StatCard
           title="Active Applications"
           count={stats.activeApplications}
@@ -91,16 +91,16 @@ export default function HomePage() {
       </div>
 
       {/* Main 2-Column Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full min-w-0">
         {/* Left Column (8 cols) */}
-        <div className="lg:col-span-8 space-y-6">
+        <div className="lg:col-span-8 space-y-6 w-full min-w-0">
           <RecommendedSchemes />
           <ActiveApplicationsList />
           <BottomBanner />
         </div>
 
         {/* Right Column (4 cols) */}
-        <div className="lg:col-span-4 space-y-6">
+        <div className="lg:col-span-4 space-y-6 w-full min-w-0">
           <ProfileSummaryCard />
           <YourTasksList />
           <DocumentVaultCard />

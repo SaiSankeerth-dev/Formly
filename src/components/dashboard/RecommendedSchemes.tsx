@@ -69,49 +69,53 @@ export function RecommendedSchemes() {
   ];
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs relative">
+    <div className="bg-white rounded-3xl border border-slate-100 p-4 sm:p-6 shadow-xs relative w-full min-w-0">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-4 sm:mb-5">
         <h2 className="text-base font-bold text-slate-900">Recommended for You</h2>
         <Link href="/discover" className="text-xs font-semibold text-indigo-600 hover:underline">
           View all
         </Link>
       </div>
 
-      {/* Grid / Carousel of Schemes */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative">
+      {/* Grid of Schemes */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative w-full min-w-0">
         {schemes.map((scheme) => {
           const Icon = scheme.icon;
           return (
             <div
               key={scheme.id}
-              className="bg-white rounded-2xl border border-slate-100/90 p-4 hover:border-slate-300 hover:shadow-md transition-all flex flex-col justify-between"
+              className="bg-white rounded-2xl border border-slate-100/90 p-4 hover:border-slate-300 hover:shadow-md transition-all flex flex-col justify-between w-full min-w-0"
             >
-              <div>
+              <div className="min-w-0">
                 {/* Top icon and Match rate */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className={cn("w-11 h-11 rounded-2xl flex items-center justify-center", scheme.iconBg)}>
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <div className={cn("w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center shrink-0", scheme.iconBg)}>
                     <Icon className="w-5 h-5" />
                   </div>
-                  <span className={cn("text-[11px] font-bold px-2.5 py-0.5 rounded-full border", scheme.matchBg)}>
+                  <span className={cn("text-[11px] font-bold px-2.5 py-0.5 rounded-full border shrink-0 whitespace-nowrap", scheme.matchBg)}>
                     {scheme.matchRate}
                   </span>
                 </div>
 
                 {/* Title and Description */}
-                <h3 className="font-bold text-sm text-slate-900 leading-tight mb-1.5">{scheme.title}</h3>
-                <p className="text-xs text-slate-500 leading-relaxed mb-3">{scheme.description}</p>
+                <h3 className="font-bold text-sm text-slate-900 leading-snug mb-1.5 [overflow-wrap:anywhere] break-normal min-w-0">
+                  {scheme.title}
+                </h3>
+                <p className="text-xs text-slate-500 leading-relaxed mb-3 [overflow-wrap:anywhere] break-normal min-w-0">
+                  {scheme.description}
+                </p>
               </div>
 
               {/* Status and Action */}
-              <div className="pt-2 border-t border-slate-50">
-                <div className={cn("text-xs font-medium mb-3", scheme.docStatusColor)}>
+              <div className="pt-2 border-t border-slate-50 min-w-0">
+                <div className={cn("text-xs font-medium mb-3 min-w-0 truncate", scheme.docStatusColor)}>
                   {scheme.docStatus}
                 </div>
                 <Link
                   href={scheme.href}
                   className={cn(
-                    "w-full py-2 px-3 rounded-xl text-xs font-semibold text-center block transition-colors",
+                    "w-full py-2.5 px-3 rounded-xl text-xs font-semibold text-center block transition-colors min-h-[38px] flex items-center justify-center",
                     scheme.buttonStyle
                   )}
                 >
