@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { authenticateSession, rejectExtractedFieldForUser } from "@/lib/server/db";
 import { cookies } from "next/headers";
 
-function getAuthenticatedUser(request: Request) {
-  const cookieStore = cookies();
+async function getAuthenticatedUser(request: Request) {
+  const cookieStore = await cookies();
   const token =
     cookieStore.get("seva_saarthi_session")?.value ||
     (request.headers.get("Authorization")?.startsWith("Bearer ")
@@ -16,17 +16,18 @@ function getAuthenticatedUser(request: Request) {
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string; fieldId: string } }
+  { params }: { params: Promise<{ id: string; fieldId: string }> }
 ) {
-  const user = getAuthenticatedUser(request);
+  const user = await getAuthenticatedUser(request);
   if (!user) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const success = rejectExtractedFieldForUser(user.id, params.id, params.fieldId);
+  const { id, fieldId } = await params;
+  const success = rejectExtractedFieldForUser(user.id, id, fieldId);
 
   return NextResponse.json({
     success,
-    message: `Extracted field ${params.fieldId} rejected and not written to profile_fields`,
+    message: `Extracted field ${fieldId} rejected and not written to profile_fields`,
   });
 }

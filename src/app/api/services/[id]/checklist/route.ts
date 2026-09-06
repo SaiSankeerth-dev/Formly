@@ -9,8 +9,8 @@ import {
 import { INITIAL_SERVICES, INITIAL_REQUIREMENTS } from "@/lib/mock-data/initial-state";
 import { cookies } from "next/headers";
 
-function getAuthenticatedUser(request: Request) {
-  const cookieStore = cookies();
+async function getAuthenticatedUser(request: Request) {
+  const cookieStore = await cookies();
   const token =
     cookieStore.get("seva_saarthi_session")?.value ||
     (request.headers.get("Authorization")?.startsWith("Bearer ")
@@ -23,12 +23,13 @@ function getAuthenticatedUser(request: Request) {
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const service = INITIAL_SERVICES.find((s) => s.id === params.id) || INITIAL_SERVICES[0];
+  const resolvedParams = await params;
+  const service = INITIAL_SERVICES.find((s) => s.id === resolvedParams.id) || INITIAL_SERVICES[0];
   const reqs = INITIAL_REQUIREMENTS.filter((r) => r.service_id === service.id);
 
-  const user = getAuthenticatedUser(request);
+  const user = await getAuthenticatedUser(request);
 
   let statuses = user ? getUserRequirementStatuses(user.id, service.id) : [];
   if (user && statuses.length === 0) {

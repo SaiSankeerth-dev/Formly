@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { authenticateSession, acceptExtractedFieldForUser } from "@/lib/server/db";
 import { cookies } from "next/headers";
 
-function getAuthenticatedUser(request: Request) {
-  const cookieStore = cookies();
+async function getAuthenticatedUser(request: Request) {
+  const cookieStore = await cookies();
   const token =
     cookieStore.get("seva_saarthi_session")?.value ||
     (request.headers.get("Authorization")?.startsWith("Bearer ")
@@ -16,12 +16,14 @@ function getAuthenticatedUser(request: Request) {
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string; fieldId: string } }
+  { params }: { params: Promise<{ id: string; fieldId: string }> }
 ) {
-  const user = getAuthenticatedUser(request);
+  const user = await getAuthenticatedUser(request);
   if (!user) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
+
+  const { id, fieldId } = await params;
 
   let customValue: string | undefined;
   try {
@@ -31,12 +33,12 @@ export async function POST(
     // No custom value provided, uses raw_value
   }
 
-  const updatedProfileField = acceptExtractedFieldForUser(user.id, params.id, params.fieldId, customValue);
+  const updatedProfileField = acceptExtractedFieldForUser(user.id, id, fieldId, customValue);
 
   return NextResponse.json({
     success: true,
-    message: `Extracted field ${params.fieldId} from doc ${params.id} confirmed into profile_fields`,
-    field_id: params.fieldId,
+    message: `Extracted field ${fieldId} from doc ${id} confirmed into profile_fields`,
+    field_id: fieldId,
     verified: true,
     data: updatedProfileField,
     custom_value: customValue || null,

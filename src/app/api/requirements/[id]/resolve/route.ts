@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { authenticateSession, markRequirementResolvedForUser } from "@/lib/server/db";
 import { cookies } from "next/headers";
 
-function getAuthenticatedUser(request: Request) {
-  const cookieStore = cookies();
+async function getAuthenticatedUser(request: Request) {
+  const cookieStore = await cookies();
   const token =
     cookieStore.get("seva_saarthi_session")?.value ||
     (request.headers.get("Authorization")?.startsWith("Bearer ")
@@ -16,12 +16,14 @@ function getAuthenticatedUser(request: Request) {
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = getAuthenticatedUser(request);
+  const user = await getAuthenticatedUser(request);
   if (!user) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
+
+  const { id } = await params;
 
   let note = "Resolved manually by applicant.";
   try {
@@ -31,11 +33,11 @@ export async function POST(
     // default note
   }
 
-  const updatedStatus = markRequirementResolvedForUser(user.id, params.id, note);
+  const updatedStatus = markRequirementResolvedForUser(user.id, id, note);
 
   return NextResponse.json({
     success: true,
-    message: `Requirement ${params.id} marked as MANUALLY_RESOLVED (locked from auto-recompute)`,
+    message: `Requirement ${id} marked as MANUALLY_RESOLVED (locked from auto-recompute)`,
     data: updatedStatus,
   });
 }

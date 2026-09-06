@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { authenticateSession, getUserProfileFields, updateUserProfileField } from "@/lib/server/db";
 import { cookies } from "next/headers";
 
-function getAuthenticatedUser(request: Request) {
-  const cookieStore = cookies();
+async function getAuthenticatedUser(request: Request) {
+  const cookieStore = await cookies();
   const token = cookieStore.get("seva_saarthi_session")?.value ||
     (request.headers.get("Authorization")?.startsWith("Bearer ") ? request.headers.get("Authorization")?.substring(7) : null);
 
@@ -12,7 +12,7 @@ function getAuthenticatedUser(request: Request) {
 }
 
 export async function GET(request: Request) {
-  const user = getAuthenticatedUser(request);
+  const user = await getAuthenticatedUser(request);
   if (!user) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const user = getAuthenticatedUser(request);
+    const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }

@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { authenticateSession, unmarkRequirementResolvedForUser } from "@/lib/server/db";
 import { cookies } from "next/headers";
 
-function getAuthenticatedUser(request: Request) {
-  const cookieStore = cookies();
+async function getAuthenticatedUser(request: Request) {
+  const cookieStore = await cookies();
   const token =
     cookieStore.get("seva_saarthi_session")?.value ||
     (request.headers.get("Authorization")?.startsWith("Bearer ")
@@ -16,19 +16,20 @@ function getAuthenticatedUser(request: Request) {
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = getAuthenticatedUser(request);
+  const user = await getAuthenticatedUser(request);
   if (!user) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  unmarkRequirementResolvedForUser(user.id, params.id);
+  const { id } = await params;
+  unmarkRequirementResolvedForUser(user.id, id);
 
   return NextResponse.json({
     success: true,
-    message: `Requirement ${params.id} manual resolution reverted. Auto-recompute completed.`,
-    requirement_id: params.id,
+    message: `Requirement ${id} manual resolution reverted. Auto-recompute completed.`,
+    requirement_id: id,
     locked: false,
   });
 }

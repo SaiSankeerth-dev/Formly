@@ -4,8 +4,8 @@ import { extractDocumentFields } from "@/lib/ocr/ocr-engine";
 import { DocumentType, DocumentRow, ExtractedField } from "@/types";
 import { cookies } from "next/headers";
 
-function getAuthenticatedUser(request: Request) {
-  const cookieStore = cookies();
+async function getAuthenticatedUser(request: Request) {
+  const cookieStore = await cookies();
   const token =
     cookieStore.get("seva_saarthi_session")?.value ||
     (request.headers.get("Authorization")?.startsWith("Bearer ")
@@ -17,7 +17,7 @@ function getAuthenticatedUser(request: Request) {
 }
 
 export async function GET(request: Request) {
-  const user = getAuthenticatedUser(request);
+  const user = await getAuthenticatedUser(request);
   if (!user) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const user = getAuthenticatedUser(request);
+    const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }

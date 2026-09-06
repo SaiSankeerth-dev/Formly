@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { authenticateSession, getUserDocuments, getUserExtractedFields, deleteDocumentForUser } from "@/lib/server/db";
 import { cookies } from "next/headers";
 
-function getAuthenticatedUser(request: Request) {
-  const cookieStore = cookies();
+async function getAuthenticatedUser(request: Request) {
+  const cookieStore = await cookies();
   const token =
     cookieStore.get("seva_saarthi_session")?.value ||
     (request.headers.get("Authorization")?.startsWith("Bearer ")
@@ -16,21 +16,22 @@ function getAuthenticatedUser(request: Request) {
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = getAuthenticatedUser(request);
+  const user = await getAuthenticatedUser(request);
   if (!user) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
 
+  const { id } = await params;
   const docs = getUserDocuments(user.id);
-  const doc = docs.find((d) => d.id === params.id);
+  const doc = docs.find((d) => d.id === id);
   if (!doc) {
     return NextResponse.json({ success: false, error: "Document not found" }, { status: 404 });
   }
 
   const allFields = getUserExtractedFields(user.id);
-  const fields = allFields.filter((ef) => ef.document_id === params.id);
+  const fields = allFields.filter((ef) => ef.document_id === id);
 
   return NextResponse.json({
     success: true,
@@ -41,19 +42,20 @@ export async function GET(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = getAuthenticatedUser(request);
+  const user = await getAuthenticatedUser(request);
   if (!user) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const deleted = deleteDocumentForUser(user.id, params.id);
+  const { id } = await params;
+  const deleted = deleteDocumentForUser(user.id, id);
 
   return NextResponse.json({
     success: deleted,
     message: deleted
-      ? `Document ${params.id} deleted. Referenced profile fields preserved as manual provenance.`
+      ? `Document ${id} deleted. Referenced profile fields preserved as manual provenance.`
       : "Document not found",
   });
 }

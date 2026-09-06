@@ -4,8 +4,8 @@ import path from "path";
 import { authenticateSession, getUserProfileFields } from "@/lib/server/db";
 import { cookies } from "next/headers";
 
-function getAuthenticatedUser(request: Request) {
-  const cookieStore = cookies();
+async function getAuthenticatedUser(request: Request) {
+  const cookieStore = await cookies();
   const token =
     cookieStore.get("seva_saarthi_session")?.value ||
     (request.headers.get("Authorization")?.startsWith("Bearer ")
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       // default URL
     }
 
-    const user = getAuthenticatedUser(request);
+    const user = await getAuthenticatedUser(request);
     const fields = user ? getUserProfileFields(user.id) : [];
     const getVal = (name: string) => fields.find((f) => f.field_name === name)?.value || "";
 
