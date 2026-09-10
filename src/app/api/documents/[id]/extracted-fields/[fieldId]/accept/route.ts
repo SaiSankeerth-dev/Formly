@@ -5,6 +5,8 @@ import { cookies } from "next/headers";
 async function getAuthenticatedUser(request: Request) {
   const cookieStore = await cookies();
   const token =
+    cookieStore.get("FORMLY_CITIZEN_SESSION")?.value ||
+    cookieStore.get("formly_citizen_session")?.value ||
     cookieStore.get("seva_saarthi_session")?.value ||
     (request.headers.get("Authorization")?.startsWith("Bearer ")
       ? request.headers.get("Authorization")?.substring(7)

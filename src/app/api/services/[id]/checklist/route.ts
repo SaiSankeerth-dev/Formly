@@ -12,6 +12,8 @@ import { cookies } from "next/headers";
 async function getAuthenticatedUser(request: Request) {
   const cookieStore = await cookies();
   const token =
+    cookieStore.get("FORMLY_CITIZEN_SESSION")?.value ||
+    cookieStore.get("formly_citizen_session")?.value ||
     cookieStore.get("seva_saarthi_session")?.value ||
     (request.headers.get("Authorization")?.startsWith("Bearer ")
       ? request.headers.get("Authorization")?.substring(7)
@@ -31,22 +33,22 @@ export async function GET(
 
   const user = await getAuthenticatedUser(request);
 
-  let statuses = user ? getUserRequirementStatuses(user.id, service.id) : [];
+  let statuses = user ? await getUserRequirementStatuses(user.id, service.id) : [];
   if (user && statuses.length === 0) {
-    statuses = recomputeRequirementStatuses(user.id, service.id);
+    statuses = await recomputeRequirementStatuses(user.id, service.id);
   }
 
-  const profile = user ? getUserProfileFields(user.id) : [];
-  const docs = user ? getUserDocuments(user.id) : [];
+  const profile = user ? await getUserProfileFields(user.id) : [];
+  const docs = user ? await getUserDocuments(user.id) : [];
 
   const items = reqs.map((req) => {
-    const statusRow = statuses.find((rs) => rs.requirement_id === req.id);
+    const statusRow = statuses.find((rs: any) => rs.requirement_id === req.id);
     const status = statusRow?.status || "MISSING";
     const satisfiedByDoc = statusRow?.satisfied_by_document_id
-      ? docs.find((d) => d.id === statusRow.satisfied_by_document_id) || null
+      ? docs.find((d: any) => d.id === statusRow.satisfied_by_document_id) || null
       : null;
     const satisfiedByProfile = statusRow?.satisfied_by_field_name
-      ? profile.find((pf) => pf.field_name === statusRow.satisfied_by_field_name) || null
+      ? profile.find((pf: any) => pf.field_name === statusRow.satisfied_by_field_name) || null
       : null;
 
     return {

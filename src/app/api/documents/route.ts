@@ -7,13 +7,15 @@ import { cookies } from "next/headers";
 async function getAuthenticatedUser(request: Request) {
   const cookieStore = await cookies();
   const token =
+    cookieStore.get("FORMLY_CITIZEN_SESSION")?.value ||
+    cookieStore.get("formly_citizen_session")?.value ||
     cookieStore.get("seva_saarthi_session")?.value ||
     (request.headers.get("Authorization")?.startsWith("Bearer ")
       ? request.headers.get("Authorization")?.substring(7)
       : null);
 
   if (!token) return null;
-  return authenticateSession(token);
+  return await authenticateSession(token);
 }
 
 export async function GET(request: Request) {
@@ -22,8 +24,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const docs = getUserDocuments(user.id);
-  const extracted = getUserExtractedFields(user.id);
+  const docs = await getUserDocuments(user.id);
+  const extracted = await getUserExtractedFields(user.id);
 
   return NextResponse.json({
     success: true,
@@ -82,7 +84,7 @@ export async function POST(request: Request) {
       created_at: new Date().toISOString(),
     }));
 
-    addDocumentForUser(user.id, newDoc, extracted);
+    await addDocumentForUser(user.id, newDoc, extracted);
 
     return NextResponse.json({
       success: true,

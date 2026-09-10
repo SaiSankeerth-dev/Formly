@@ -5,6 +5,8 @@ import { cookies } from "next/headers";
 async function getAuthenticatedUser(request: Request) {
   const cookieStore = await cookies();
   const token =
+    cookieStore.get("FORMLY_CITIZEN_SESSION")?.value ||
+    cookieStore.get("formly_citizen_session")?.value ||
     cookieStore.get("seva_saarthi_session")?.value ||
     (request.headers.get("Authorization")?.startsWith("Bearer ")
       ? request.headers.get("Authorization")?.substring(7)
@@ -24,14 +26,14 @@ export async function GET(
   }
 
   const { id } = await params;
-  const docs = getUserDocuments(user.id);
-  const doc = docs.find((d) => d.id === id);
+  const docs = await getUserDocuments(user.id);
+  const doc = docs.find((d: any) => d.id === id);
   if (!doc) {
     return NextResponse.json({ success: false, error: "Document not found" }, { status: 404 });
   }
 
-  const allFields = getUserExtractedFields(user.id);
-  const fields = allFields.filter((ef) => ef.document_id === id);
+  const allFields = await getUserExtractedFields(user.id);
+  const fields = allFields.filter((ef: any) => ef.document_id === id);
 
   return NextResponse.json({
     success: true,
@@ -50,7 +52,7 @@ export async function DELETE(
   }
 
   const { id } = await params;
-  const deleted = deleteDocumentForUser(user.id, id);
+  const deleted = await deleteDocumentForUser(user.id, id);
 
   return NextResponse.json({
     success: deleted,

@@ -11,6 +11,7 @@ import {
 } from './database';
 
 export * from './database';
+export * from './government';
 
 export interface UserSession {
   id: string;

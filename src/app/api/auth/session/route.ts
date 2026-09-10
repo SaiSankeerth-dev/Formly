@@ -5,7 +5,10 @@ import { cookies } from "next/headers";
 export async function GET(request: Request) {
   try {
     const cookieStore = await cookies();
-    const tokenFromCookie = cookieStore.get("seva_saarthi_session")?.value;
+    const tokenFromCookie =
+      cookieStore.get("FORMLY_CITIZEN_SESSION")?.value ||
+      cookieStore.get("formly_citizen_session")?.value ||
+      cookieStore.get("seva_saarthi_session")?.value;
     const authHeader = request.headers.get("Authorization");
     const tokenFromHeader = authHeader?.startsWith("Bearer ") ? authHeader.substring(7) : null;
 
@@ -15,7 +18,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ authenticated: false, user: null }, { status: 401 });
     }
 
-    const user = authenticateSession(token);
+    const user = await authenticateSession(token);
     if (!user) {
       return NextResponse.json({ authenticated: false, user: null }, { status: 401 });
     }

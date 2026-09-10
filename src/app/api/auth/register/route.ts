@@ -16,7 +16,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Password must be at least 6 characters" }, { status: 400 });
     }
 
-    const { user, token } = registerUser(name, email, password, phone);
+    const { user, token } = await registerUser(name, email, password, phone);
 
     const response = NextResponse.json({
       success: true,
@@ -27,6 +27,16 @@ export async function POST(request: Request) {
 
     // Set secure HTTP cookie
     response.cookies.set({
+      name: "FORMLY_CITIZEN_SESSION",
+      value: token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+      path: "/",
+    });
+
+    response.cookies.set({
       name: "seva_saarthi_session",
       value: token,
       httpOnly: true,
@@ -35,6 +45,9 @@ export async function POST(request: Request) {
       maxAge: 30 * 24 * 60 * 60, // 30 days
       path: "/",
     });
+
+    response.cookies.delete("FORMLY_GOV_SESSION");
+    response.cookies.delete("formly_gov_session");
 
     return response;
   } catch (err: any) {

@@ -28,6 +28,31 @@
 
 ---
 
+## 🎬 Demo — Prototype Walkthrough
+
+> **End-to-end video (Citizen + Government Operations):** [`docs/demo/formly-prototype-walkthrough.webm`](docs/demo/formly-prototype-walkthrough.webm) — recorded with Playwright (`scripts/generate-all-media.mjs`) at 1440×900, authenticated as citizen `sankeerths615@gmail.com` and officer `sankeerthvss@gmail.com`.
+>
+> *Watch the full flow: Citizen login → Dashboard → Document Vault → Live Application Tracker → Government login → Operations Dashboard → Application Queue → Officer Workspace → Interoperability Hub → Audit Trail.*
+
+<video src="docs/demo/formly-prototype-walkthrough.webm" controls width="100%" poster="docs/images/02-citizen-dashboard.png">
+  Your browser does not support the video tag. Download the walkthrough: <a href="docs/demo/formly-prototype-walkthrough.webm">formly-prototype-walkthrough.webm</a>
+</video>
+
+### 📸 Screenshots
+
+| Citizen Platform | Government Operations Platform |
+|---|---|
+| ![Citizen Login](docs/images/01-citizen-login.png) <br/> **Citizen Login** — Secure PBKDF2 auth | ![Government Login](docs/images/05-government-login.png) <br/> **Government Login** — Officer auth (`/gov/login`) |
+| ![Citizen Dashboard](docs/images/02-citizen-dashboard.png) <br/> **Citizen Dashboard** — 27-field profile strength, tasks & schemes | ![Government Dashboard](docs/images/06-government-dashboard.png) <br/> **Operations Dashboard** — Queue metrics & pipeline health |
+| ![Document Vault](docs/images/03-citizen-document-vault.png) <br/> **Document Vault** — OCR lifecycle with confirmation gate | ![Application Queue](docs/images/07-government-queue.png) <br/> **Application Queue** — PAN-2026 triage & assignment |
+| ![Live Tracker](docs/images/04-citizen-live-tracker.png) <br/> **Live Application Tracker** — 5-stage progress + AI explanation | ![Officer Workspace](docs/images/08-government-workspace.png) <br/> **Officer Workspace** — Dual DB verification & workflow actions |
+|  | ![Interoperability Hub](docs/images/09-interoperability-hub.png) <br/> **Interoperability Hub & Data Mapper** — Connector health & schema mapping |
+|  | ![Audit Trail](docs/images/10-audit-trail.png) <br/> **Audit Centre** — Tamper-evident logs & compliance trail |
+
+> All screenshots are **auto-generated and verifiable** — see `scripts/generate-all-media.mjs` (`npm run` via Playwright). Re-generate anytime with a running dev server on `:3000` (citizen) + `:3001` (government proxy).
+
+---
+
 ## 🌟 Key Features
 
 - **🔐 27-Field Canonical Citizen Profile**: Unified schema covering Identity, Education, Income/Reservation, and Banking/DBT Seeding with provenance tracking and field-level OCR confidence meters.

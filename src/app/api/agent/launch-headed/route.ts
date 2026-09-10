@@ -27,8 +27,21 @@ export async function POST(request: Request) {
     }
 
     const user = await getAuthenticatedUser(request);
-    const fields = user ? getUserProfileFields(user.id) : [];
-    const getVal = (name: string) => fields.find((f) => f.field_name === name)?.value || "";
+    if (!user) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Statutory Safeguard: Prohibit unauthorized headless browser automation against sovereign portals
+    if (process.env.ALLOW_LIVE_PORTAL_AUTOMATION !== "true") {
+      return NextResponse.json({
+        success: false,
+        error: "Live browser scraping against external government portals is disabled in compliance with DPDP Act 2023 and IT Act Section 43/66. All sovereign interactions must route through authenticated Formly Gateway Connectors.",
+        statutory_notice: "Section 43/66 Information Technology Act Compliance Safeguard",
+      }, { status: 403 });
+    }
+
+    const fields = await getUserProfileFields(user.id);
+    const getVal = (name: string) => (fields as any[]).find((f: any) => f.field_name === name)?.value || "";
 
     const userProfile = {
       fullName: getVal("full_name") || user?.name || "Citizen Applicant",

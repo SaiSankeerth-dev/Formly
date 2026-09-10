@@ -9,7 +9,10 @@
     "storage"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "http://localhost:3000/*",
+    "http://127.0.0.1:3000/*",
+    "https://*.gov.in/*",
+    "https://*.nic.in/*"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -17,7 +20,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": [
+        "http://localhost:3000/*",
+        "http://127.0.0.1:3000/*",
+        "https://*.gov.in/*",
+        "https://*.nic.in/*"
+      ],
       "exclude_matches": [
         "*://*.google.com/recaptcha/*",
         "*://*.recaptcha.net/*",

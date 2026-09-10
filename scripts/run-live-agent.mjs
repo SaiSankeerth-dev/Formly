@@ -39,6 +39,17 @@ async function runLiveGovernmentAgent() {
     process.argv[2] ||
     "https://onlineservices.proteantech.in/paam/endUserRegisterContact.html";
 
+  if (process.env.ALLOW_LIVE_PORTAL_AUTOMATION !== "true" && !targetUrl.includes("localhost") && !targetUrl.includes("127.0.0.1")) {
+    console.error("==================================================");
+    console.error("⛔ STATUTORY COMPLIANCE SAFEGUARD TRIGGERED");
+    console.error("Automated headless scraping against live production sovereign government endpoints");
+    console.error("(such as proteantech.in / scholarships.gov.in) is prohibited under DPDP Act 2023");
+    console.error("and IT Act 2000 Section 43/66 without formal bilateral sovereign API agreements.");
+    console.error("Execution halted. Please use Formly Standardized Connectors or local mock endpoints.");
+    console.error("==================================================");
+    process.exit(0);
+  }
+
   console.log(`🚀 Launching visible Google Chrome/Chromium window on: ${targetUrl}`);
 
   // Launch a real visible browser window

@@ -1043,7 +1043,7 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
         desc: `Verified session active for ${user.email}. Multi-tenant vault encryption active.`,
         time: "Active",
         category: "SECURITY",
-        href: "/settings",
+        href: "/profile",
         read: readNotificationIds.includes(`security_session_${user.id}`),
       });
     }

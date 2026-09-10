@@ -5,9 +5,11 @@ import Link from "next/link";
 import { GraduationCap, Home, Wallet, CreditCard, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
+import { ApplyPanModal } from "./ApplyPanModal";
 
 export function RecommendedSchemes() {
   const { checklistSummary } = useSevaSaarthi();
+  const [isPanModalOpen, setIsPanModalOpen] = React.useState(false);
 
   const schemes = [
     {
@@ -112,15 +114,36 @@ export function RecommendedSchemes() {
                 <div className={cn("text-xs font-medium mb-3 min-w-0 truncate", scheme.docStatusColor)}>
                   {scheme.docStatus}
                 </div>
-                <Link
-                  href={scheme.href}
-                  className={cn(
-                    "w-full py-2.5 px-3 rounded-xl text-xs font-semibold text-center block transition-colors min-h-[38px] flex items-center justify-center",
-                    scheme.buttonStyle
-                  )}
-                >
-                  {scheme.buttonText}
-                </Link>
+                {scheme.id === "s004" ? (
+                  <div className="space-y-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setIsPanModalOpen(true)}
+                      className={cn(
+                        "w-full py-2.5 px-3 rounded-xl text-xs font-semibold text-center block transition-colors min-h-[38px] flex items-center justify-center",
+                        scheme.buttonStyle
+                      )}
+                    >
+                      {scheme.buttonText}
+                    </button>
+                    <Link
+                      href="/applications/PAN-2026-0001/status"
+                      className="text-[11px] font-semibold text-indigo-600 hover:underline text-center block"
+                    >
+                      Track Live (PAN-0001) →
+                    </Link>
+                  </div>
+                ) : (
+                  <Link
+                    href={scheme.href}
+                    className={cn(
+                      "w-full py-2.5 px-3 rounded-xl text-xs font-semibold text-center block transition-colors min-h-[38px] flex items-center justify-center",
+                      scheme.buttonStyle
+                    )}
+                  >
+                    {scheme.buttonText}
+                  </Link>
+                )}
               </div>
             </div>
           );
@@ -134,6 +157,11 @@ export function RecommendedSchemes() {
           <ChevronRight className="w-4 h-4" />
         </Link>
       </div>
+
+      <ApplyPanModal
+        isOpen={isPanModalOpen}
+        onClose={() => setIsPanModalOpen(false)}
+      />
     </div>
   );
 }

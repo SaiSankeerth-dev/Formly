@@ -14,6 +14,8 @@ export function AppLayoutShell({ children }: { children: React.ReactNode }) {
 
   const isAuthPage = pathname === "/login" || pathname === "/signup";
   const isPortalPage = pathname.startsWith("/portal");
+  const isGovPage = pathname.startsWith("/gov");
+  const isTrackPage = pathname.startsWith("/track");
 
   // Close mobile navigation drawer whenever route changes
   useEffect(() => {
@@ -22,13 +24,13 @@ export function AppLayoutShell({ children }: { children: React.ReactNode }) {
 
   // Route protection: Redirect unauthenticated users to /login
   useEffect(() => {
-    if (!isLoadingAuth && !isAuthenticated && !isAuthPage && !isPortalPage) {
+    if (!isLoadingAuth && !isAuthenticated && !isAuthPage && !isPortalPage && !isGovPage && !isTrackPage) {
       router.push("/login");
     }
-  }, [isAuthenticated, isLoadingAuth, isAuthPage, isPortalPage, router]);
+  }, [isAuthenticated, isLoadingAuth, isAuthPage, isPortalPage, isGovPage, isTrackPage, router]);
 
-  // If on login/signup or portal pages, render clean layout without sidebar/header
-  if (isAuthPage || isPortalPage) {
+  // If on login/signup, portal, gov, or track pages, render clean layout without citizen sidebar/header
+  if (isAuthPage || isPortalPage || isGovPage || isTrackPage) {
     return <div className="min-h-screen">{children}</div>;
   }
 
@@ -52,8 +54,14 @@ export function AppLayoutShell({ children }: { children: React.ReactNode }) {
   // Authenticated full dashboard shell
   return (
     <div className="min-h-screen flex bg-slate-50/50 w-full max-w-full overflow-x-hidden relative">
+      {/* Global Demo Mode Banner */}
+      <div className="fixed top-0 left-0 right-0 z-[100] pointer-events-none">
+        <div className="bg-amber-500 text-white text-center py-1 px-3 text-[10px] font-black uppercase tracking-widest shadow-sm">
+          Simulation Environment • SIH Demo Mode • Government APIs Simulated
+        </div>
+      </div>
       <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0 w-full max-w-full overflow-x-hidden">
+      <div className="flex-1 flex flex-col min-w-0 w-full max-w-full overflow-x-hidden pt-6">
         <Header onOpenMobileNav={() => setIsMobileNavOpen(true)} />
         <main className="flex-1 p-4 sm:p-6 md:p-8 max-w-7xl w-full mx-auto box-border overflow-x-hidden">
           {children}

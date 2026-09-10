@@ -4,11 +4,14 @@ import { cookies } from "next/headers";
 
 async function getAuthenticatedUser(request: Request) {
   const cookieStore = await cookies();
-  const token = cookieStore.get("seva_saarthi_session")?.value ||
+  const token =
+    cookieStore.get("FORMLY_CITIZEN_SESSION")?.value ||
+    cookieStore.get("formly_citizen_session")?.value ||
+    cookieStore.get("seva_saarthi_session")?.value ||
     (request.headers.get("Authorization")?.startsWith("Bearer ") ? request.headers.get("Authorization")?.substring(7) : null);
 
   if (!token) return null;
-  return authenticateSession(token);
+  return await authenticateSession(token);
 }
 
 export async function GET(request: Request) {
@@ -17,7 +20,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const fields = getUserProfileFields(user.id);
+  const fields = await getUserProfileFields(user.id);
   return NextResponse.json({
     success: true,
     data: fields,
@@ -39,14 +42,14 @@ export async function PATCH(request: Request) {
       const updatedFields = [];
       for (const [key, val] of Object.entries(fields)) {
         if (typeof val === "string") {
-          const updated = updateUserProfileField(user.id, key, val);
+          const updated = await updateUserProfileField(user.id, key, val);
           updatedFields.push(updated);
         }
       }
       return NextResponse.json({
         success: true,
         message: `${updatedFields.length} profile fields updated successfully`,
-        data: getUserProfileFields(user.id),
+        data: await getUserProfileFields(user.id),
       });
     }
 
@@ -54,7 +57,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ success: false, error: "field_name or fields is required" }, { status: 400 });
     }
 
-    const updatedField = updateUserProfileField(user.id, field_name, value || "");
+    const updatedField = await updateUserProfileField(user.id, field_name, value || "");
 
     return NextResponse.json({
       success: true,

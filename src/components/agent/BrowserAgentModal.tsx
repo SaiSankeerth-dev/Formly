@@ -176,7 +176,7 @@ export function BrowserAgentModal({
     setGeneratedAppId(appId);
     setAgentState("COMPLETED");
 
-    addLog("SUCCESS", `🎉 OFFICIAL ACKNOWLEDGEMENT RECEIVED!`);
+    addLog("SUCCESS", `🎉 SIMULATED ACKNOWLEDGEMENT RECEIVED (Demo Mode)`);
     addLog("SUCCESS", `Application ID: ${appId}`);
     addLog("SUCCESS", `Timestamp: ${new Date().toISOString()} • Status: SUBMITTED`);
 

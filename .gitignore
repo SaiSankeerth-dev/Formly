@@ -23,6 +23,10 @@
 
 # Local Database & User Store
 /data/*.json
+/data/formly_pg/
+scratch/
+scratch-*.png
+scripts/dual-agent-results.json
 
 # Debug and runtime logs
 npm-debug.log*

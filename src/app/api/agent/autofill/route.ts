@@ -28,7 +28,8 @@ export async function POST(request: Request) {
       const generatedAppId = `NSP2026-${Math.floor(1000000 + Math.random() * 9000000)}`;
       return NextResponse.json({
         success: true,
-        message: "Application successfully submitted to Government of India portal!",
+        message: "Simulation: Application payload validated. Demonstration record generated in local sandbox.",
+        environment: "SANDBOX_DEMO",
         state: "COMPLETED",
         applicationId: generatedAppId,
         submittedAt: new Date().toISOString(),
