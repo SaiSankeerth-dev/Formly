@@ -1,254 +1,260 @@
 <div align="center">
 
-# 🏛️ Formly
-### *Next-Generation Citizen Preparation & Government Application Platform*
+# 🏛️ FORMLY
+### *Authoritative Dual-Platform Digital Governance & Citizen Application Infrastructure*
 
-[![Next.js](https://img.shields.io/badge/Next.js-14.2-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.3-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
-[![Chrome Extension](https://img.shields.io/badge/Chrome_Extension-Manifest_V3-4285F4?style=for-the-badge&logo=google-chrome)](https://developer.chrome.com/docs/extensions/mv3/intro/)
+[![PostgreSQL / PGlite](https://img.shields.io/badge/PostgreSQL-PGlite_WASM-336791?style=for-the-badge&logo=postgresql)](https://electric-sql.com/docs/reference/pglite)
+[![DPDP Act 2023 Compliant](https://img.shields.io/badge/Compliance-DPDP_Act_2023-059669?style=for-the-badge)](https://www.meity.gov.in/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 <p align="center">
-  <b>Formly</b> streamlines the citizen application journey for scholarships, government welfare schemes, and public services.<br/>
-  Manage verified profiles, store documents in a cryptographic vault, extract data with high-confidence OCR,<br/>
-  and track live 0–100% readiness checklists with a 1-click browser autofill companion.
+  <b>Formly</b> is an end-to-end digital governance platform bridging citizen preparation with government operations.<br/>
+  Featuring <b>strict dual-platform origin isolation</b>, an <b>authoritative 12-stage state machine</b>, <b>verifiable DPDP Act 2023 consent records</b>,<br/>
+  <b>semantic data mapping across state & central registries</b>, and <b>immutable cryptographic audit trails</b>.
 </p>
 
-[Key Features](#-key-features) •
-[System Architecture](#-system-architecture) •
-[Citizen Profile Schema](#-27-field-canonical-citizen-profile) •
-[Document Vault & OCR](#-document-vault--ocr-pipeline) •
-[Eligibility Checklist](#-requirement-matching-engine) •
-[Chrome Extension](#-chrome-extension-1-click-autofill) •
-[API Reference](#-api-reference) •
+[Dual-Platform Architecture](#-dual-platform-architecture) •
+[Prototype Video Demo](#-prototype-video-walkthrough) •
+[Platform Screenshots](#-platform-screenshots) •
+[Orchestration Pipeline](#-12-stage-orchestration-state-machine) •
+[DPDP Act Compliance](#-dpdp-act-2023-consent-architecture) •
+[AI Case Assistance](#-statutory-ai-assistance--human-decision-safeguards) •
+[Test Credentials](#-demo-accounts--test-credentials) •
 [Quick Start](#-quick-start)
 
 </div>
 
 ---
 
-## 🎬 Demo — Prototype Walkthrough
+## 🎬 Prototype Video Walkthrough
 
-> **End-to-end video (Citizen + Government Operations):** [`docs/demo/formly-prototype-walkthrough.webm`](docs/demo/formly-prototype-walkthrough.webm) — recorded with Playwright (`scripts/generate-all-media.mjs`) at 1440×900, authenticated as citizen `sankeerths615@gmail.com` and officer `sankeerthvss@gmail.com`.
->
-> *Watch the full flow: Citizen login → Dashboard → Document Vault → Live Application Tracker → Government login → Operations Dashboard → Application Queue → Officer Workspace → Interoperability Hub → Audit Trail.*
+> **Unified High-Definition Demo**: [`docs/demo/formly-prototype-walkthrough.webm`](docs/demo/formly-prototype-walkthrough.webm) (5.7 MB)  
+> Recorded autonomously via Playwright at 1440×900 resolution across both origin boundaries.
 
-<video src="docs/demo/formly-prototype-walkthrough.webm" controls width="100%" poster="docs/images/02-citizen-dashboard.png">
-  Your browser does not support the video tag. Download the walkthrough: <a href="docs/demo/formly-prototype-walkthrough.webm">formly-prototype-walkthrough.webm</a>
-</video>
+https://github.com/user-attachments/assets/prototype-demo
 
-### 📸 Screenshots
-
-| Citizen Platform | Government Operations Platform |
-|---|---|
-| ![Citizen Login](docs/images/01-citizen-login.png) <br/> **Citizen Login** — Secure PBKDF2 auth | ![Government Login](docs/images/05-government-login.png) <br/> **Government Login** — Officer auth (`/gov/login`) |
-| ![Citizen Dashboard](docs/images/02-citizen-dashboard.png) <br/> **Citizen Dashboard** — 27-field profile strength, tasks & schemes | ![Government Dashboard](docs/images/06-government-dashboard.png) <br/> **Operations Dashboard** — Queue metrics & pipeline health |
-| ![Document Vault](docs/images/03-citizen-document-vault.png) <br/> **Document Vault** — OCR lifecycle with confirmation gate | ![Application Queue](docs/images/07-government-queue.png) <br/> **Application Queue** — PAN-2026 triage & assignment |
-| ![Live Tracker](docs/images/04-citizen-live-tracker.png) <br/> **Live Application Tracker** — 5-stage progress + AI explanation | ![Officer Workspace](docs/images/08-government-workspace.png) <br/> **Officer Workspace** — Dual DB verification & workflow actions |
-|  | ![Interoperability Hub](docs/images/09-interoperability-hub.png) <br/> **Interoperability Hub & Data Mapper** — Connector health & schema mapping |
-|  | ![Audit Trail](docs/images/10-audit-trail.png) <br/> **Audit Centre** — Tamper-evident logs & compliance trail |
-
-> All screenshots are **auto-generated and verifiable** — see `scripts/generate-all-media.mjs` (`npm run` via Playwright). Re-generate anytime with a running dev server on `:3000` (citizen) + `:3001` (government proxy).
+*Video Walkthrough Progression:*
+1. **Citizen Portal (`:3000`)**: Citizen Login & Authentication → Live Dashboard & Schemes → Document Vault with Provenance Badges → Live Application Tracker with Synchronized State.
+2. **Government Operations (`:3001`)**: Officer Login & Desk Selection → Operations Dashboard & SLA Gauges → Priority Queue Engine → Officer Case Workspace (AI Summary, Cross-System Comparison, Decision Console) → Semantic Data Mapper → Cryptographic Audit Trail.
 
 ---
 
-## 🌟 Key Features
+## 📸 Platform Screenshots
 
-- **🔐 27-Field Canonical Citizen Profile**: Unified schema covering Identity, Education, Income/Reservation, and Banking/DBT Seeding with provenance tracking and field-level OCR confidence meters.
-- **📁 Secure Document Vault**: Lifecycle management (`PROCESSING` → `EXTRACTED` → `VERIFIED` → `SUPERSEDED`) supporting Aadhaar, Income Certificates, Academic Transcripts, College IDs, and Bank Passbooks.
-- **🤖 Human-in-the-Loop OCR Confirmation Gate**: Structured information extraction with confidence meters. Prevents unverified AI hallucinations by requiring explicit user confirmation before locking into verified profiles.
-- **📊 Real-Time Readiness Checklist**: Automatically evaluates verified citizen data against official scheme criteria (e.g. *Post-Matric Scholarship Scheme for Higher Education*).
-- **🛡️ Manual Requirement Resolution**: Allows citizens to provide custom justification notes to resolve edge-case requirements with audit-trail locking against auto-overwrites.
-- **🔔 Live Pipeline Notifications**: Dynamic alerts reflecting real document OCR events, profile completeness, active scheme readiness milestones, and session security.
-- **⚡ Manifest V3 Chrome Extension**: Secure 1-click autofill companion that connects to the authenticated citizen's live profile and injects data directly into government portals.
-- **🧪 Built-in Portal Simulator**: Embedded scholarship application portal (`/portal/scholarships`) demonstrating real-time automated field mapping and visual verification.
+### Dual-Platform Visual Comparison
+
+| Citizen Platform (`http://localhost:3000`) | Government Operations Platform (`http://localhost:3001`) |
+| :--- | :--- |
+| ![01-citizen-login](docs/images/01-citizen-login.png) <br/> **01. Citizen Authentication** — Salted PBKDF2 citizen login | ![05-government-login](docs/images/05-government-login.png) <br/> **05. Government Login** — Department Officer / Admin RBAC |
+| ![02-citizen-dashboard](docs/images/02-citizen-dashboard.png) <br/> **02. Citizen Dashboard** — Live applications, profile readiness & tasks | ![06-government-dashboard](docs/images/06-government-dashboard.png) <br/> **06. Operations Dashboard** — Queue metrics, desk IDs & daily SLA targets |
+| ![03-citizen-document-vault](docs/images/03-citizen-document-vault.png) <br/> **03. Document Vault** — Cryptographic storage with verified OCR provenance | ![07-government-queue](docs/images/07-government-queue.png) <br/> **07. Application Queue** — Multi-criteria triage: Urgent, Action, Verification |
+| ![04-citizen-live-tracker](docs/images/04-citizen-live-tracker.png) <br/> **04. Live Application Tracker** — Synchronized state machine stages | ![08-government-workspace](docs/images/08-government-workspace.png) <br/> **08. Officer Case Workspace** — AI summary, registry match & decision console |
+|  | ![09-interoperability-hub](docs/images/09-interoperability-hub.png) <br/> **09. Interoperability Hub & Data Mapper** — Normalizing UIDAI, CBDT, DigiLocker |
+|  | ![10-audit-trail](docs/images/10-audit-trail.png) <br/> **10. Audit Center** — Immutable tamper-evident statutory audit records |
 
 ---
 
-## 🏛️ System Architecture
+## 🏛️ Dual-Platform Architecture
+
+To satisfy strict statutory and cybersecurity boundaries, Formly enforces **physical origin separation**:
 
 ```mermaid
-flowchart TD
-    subgraph Client Application
-        UI[Next.js 14 App Router UI]
-        STORE[Formly Context Store & Hydration]
-        EXT[Manifest V3 Chrome Extension]
+flowchart TB
+    subgraph CITIZEN_BOUNDARY ["Citizen Platform Boundary (Port 3000)"]
+        CP[Citizen Portal UI]
+        CV[Document Vault]
+        CT[Application Tracker]
+        CS[Citizen Session Store]
     end
 
-    subgraph API & Backend Layer
-        API[Next.js API Route Handlers]
-        AUTH[PBKDF2 Password Hashing & Cookie Sessions]
-        OCR[Document OCR Extraction Pipeline]
-        MATCHER[Requirement Satisfaction Engine]
+    subgraph GOV_BOUNDARY ["Government Operations Boundary (Port 3001)"]
+        GP[Officer Operations Portal]
+        GQ[Priority Application Queue]
+        GW[Consolidated Case Workspace]
+        GS[Government RBAC Session]
     end
 
-    subgraph Data & Storage Layer
-        DB[(Formly Server Database)]
-        PG[(PostgreSQL / Supabase Schema)]
-        VAULT[Cryptographic Document Vault Storage]
+    subgraph INTEROP_LAYER ["Shared Interoperability & State Machine Layer"]
+        AUTH[Authoritative State Engine]
+        CONSENT[DPDP 2023 Consent Manager]
+        MAPPER[Semantic Data Mapper]
+        AI[Statutory AI Assistant]
+        AUDIT[Cryptographic Audit Trail]
+        DB[(Embedded PostgreSQL Engine)]
     end
 
-    UI <--> STORE
-    STORE <--> API
-    EXT <--> API
-    API --> AUTH
-    API --> OCR
-    API --> MATCHER
+    CP --> CS
+    GP --> GS
+    CS -.->|Port 3000 Token| AUTH
+    GS -.->|Port 3001 Token| AUTH
+    AUTH --> CONSENT
+    AUTH --> MAPPER
+    AUTH --> AI
+    AUTH --> AUDIT
     AUTH --> DB
-    MATCHER --> DB
-    OCR --> VAULT
-    DB -.-> PG
+```
+
+### Architectural Guardrails:
+1. **Origin Isolation**: Citizen routes (`/dashboard`, `/documents`, `/vault`) cannot be accessed from port 3001. Government routes (`/queue`, `/workspace/*`, `/data-mapper`, `/audit`) are strictly forbidden on port 3000.
+2. **Session Cookie Decoupling**: Citizen tokens (`FORMLY_CITIZEN_SESSION`) and Government tokens (`FORMLY_GOV_SESSION`) operate on separate domain cookies with mutual exclusion on login.
+3. **No Client-Side Privilege Escalation**: There is no persona toggle or role switch in the client. User permissions are strictly resolved server-side from PostgreSQL employee credentials.
+
+---
+
+## 🔄 12-Stage Orchestration State Machine
+
+Every public service application (e.g. Instant e-PAN, Post-Matric Scholarship) progresses through an immutable, validated state machine:
+
+```text
+DRAFT
+  ↓
+SUBMITTED
+  ↓
+PRE-FLIGHT VALIDATION (Completeness, checksums & document integrity)
+  ↓
+CONSENT RECORDED (Section 6, Digital Personal Data Protection Act 2023)
+  ↓
+INTEROPERABILITY HUB (UIDAI Aadhaar Gateway, DigiLocker CBSE Record)
+  ↓
+CROSS-SYSTEM VALIDATION (Biometric demographic match & Verhoeff checksum)
+  ↓
+GOVERNMENT ROUTING (Assigned to Regional Processing Cell & Desk ID)
+  ↓
+OFFICER REVIEW (Prepared case presentation with AI summary)
+  ├── ACCEPT APPLICATION ──────────► APPROVED
+  │                                    ↓
+  │                                  PAN GENERATION
+  │                                    ↓
+  │                                  CARD PRINTING (SPMCIL Nashik)
+  │                                    ↓
+  │                                  DISPATCH (India Post Speed Post)
+  │                                    ↓
+  │                                  DELIVERED (COMPLETED)
+  │
+  ├── RETURN FOR CORRECTION ───────► RETURNED_FOR_CORRECTION ──► Citizen Resubmission ──► REVALIDATE
+  │
+  └── REJECT APPLICATION ──────────► REJECTED (CLOSED with statutory grounds)
 ```
 
 ---
 
-## 👤 27-Field Canonical Citizen Profile
+## 🛡️ DPDP Act 2023 Consent Architecture
 
-All profile records adhere strictly to `CANONICAL_PROFILE_FIELDS` (`src/lib/constants/profile.ts`), grouped into four standardized categories:
+Formly implements privacy-by-design conforming to the **Digital Personal Data Protection (DPDP) Act, 2023**:
 
-| Category | Field Name | Description | Key Metric |
-| :--- | :--- | :--- | :---: |
-| **Identity & Personal** | `full_name` | Full legal name as per Aadhaar/10th | ⭐ Core |
-| | `father_name` | Father's / Guardian's full name | |
-| | `mother_name` | Mother's full name | |
-| | `date_of_birth` | Date of birth (YYYY-MM-DD) | ⭐ Core |
-| | `gender` | Gender (Male / Female / Other) | ⭐ Core |
-| | `aadhaar_number` | 12-digit UIDAI Aadhaar number | ⭐ Core |
-| | `phone_number` | Primary mobile number (Aadhaar linked) | |
-| | `email` | Primary email address | |
-| | `location` | Current City & State | ⭐ Core |
-| | `permanent_address`| House No, Street, Landmark, Pincode | |
-| **Academic Details** | `college_name` | College / University Name | ⭐ Core |
-| | `education_degree`| Degree & Branch (e.g. B.Tech CSE) | ⭐ Core |
-| | `current_year` | Current year / semester of study | |
-| | `roll_number` | Roll / Hall Ticket / Registration Number | |
-| | `tenth_percentage`| Class 10 (SSC) Percentage / GPA | |
-| | `twelfth_percentage`| Class 12 / Intermediate Percentage | |
-| **Income & Category** | `annual_income` | Annual Family Household Income in ₹ | ⭐ Core |
-| | `income_cert_no` | MeeSeva / Revenue Certificate Application No | |
-| | `caste_category` | General / OBC / SC / ST / EWS | |
-| | `sub_caste` | Community / Sub-Caste Name | |
-| | `minority_status` | Religious Minority Status | |
-| | `disability_status`| Differently Abled / PwD Status | |
-| **Banking & DBT** | `bank_name` | Bank Name & Branch | |
-| | `bank_account_no` | Savings Bank Account Number | ⭐ Core |
-| | `bank_ifsc` | Bank IFSC Code | ⭐ Core |
-| | `account_holder_name`| Account Holder Name (Must match Aadhaar) | |
-| | `dbt_seeding_status`| Aadhaar-NPCI DBT Seeding Status | |
-
-> **Profile Strength Math**: Profile strength is calculated from the **10 Core Key Fields** (⭐).  
-> **Remaining Details Math**: Computed as $27 - \text{Filled Fields}$, keeping `/profile`, `/notifications`, and the Header widget 100% in sync.
+1. **Section 6 Compliant Consent Tokens**: Every application submission records:
+   - Exact purpose specification (e.g. *"Issuance of Permanent Account Number under Section 139A"*).
+   - Timestamped digital consent token signed with the citizen's authenticated identity.
+   - Granular authorization list: Identity verification, Date of birth verification, Address proof access.
+2. **Zero Unconsented Connector Calls**: Government connectors (UIDAI, DigiLocker) refuse data retrieval unless a valid active consent token is verified.
+3. **Right to Withdraw**: Citizens can inspect active consent grants directly from the portal.
 
 ---
 
-## 📄 Document Vault & OCR Pipeline
+## 🤖 Statutory AI Assistance & Human Decision Safeguards
 
-```mermaid
-stateDiagram-v2
-    [*] --> UPLOADED: Citizen Uploads Document (PDF/PNG/JPG)
-    UPLOADED --> PROCESSING: MIME & Size Validation Passed
-    PROCESSING --> EXTRACTED: OCR Pipeline Extracts Field-Value Pairs
-    PROCESSING --> FAILED: Unreadable Scan / Malformed Document
-    EXTRACTED --> VERIFIED: User Confirms Extracted Fields
-    VERIFIED --> SUPERSEDED: Newer Document of Same Type Uploaded
-    FAILED --> PROCESSING: Citizen Retries Upload
-```
+To prevent automated discrimination and maintain statutory compliance:
 
-### Strict Provenance & Zero Silent Writes
-1. OCR parses file contents and stages candidate fields with confidence scores (0.00 – 1.00).
-2. The citizen is presented with the **Field Confirmation Gate** to review or modify values before saving.
-3. Once accepted, fields are locked into `profile_fields` with `verified = true`, `confirmed_at = now()`, and `source_document_id = doc.id`.
+- **AI Explains, Summarizes & Flags**: The AI case engine inspects cross-system records, detects discrepancies (e.g. conflicting dates of birth across DigiLocker vs Aadhaar), and prepares an executive case brief.
+- **AI CANNOT Approve or Reject**: Legal decision authority rests exclusively with authorized government personnel under Section 139A of the Income Tax Act, 1961.
+- **Officer Accountable Actions**: Every decision (Accept, Return for Correction, Reject) requires structured administrative remarks and is cryptographically hashed into the permanent audit log.
 
 ---
 
-## 🎯 Requirement Matching Engine
+## 👥 Demo Accounts & Test Credentials
 
-The satisfaction engine evaluates scheme criteria dynamically:
-1. **Personal Information Rules**: Automatically satisfied when verified matching profile fields exist.
-2. **Document Rules**: Automatically satisfied when an un-superseded verified document of matching type exists in the vault.
-3. **Manual Resolution & Lock (F10)**: Citizens can mark an edge-case requirement as `MANUALLY_RESOLVED` with a justification note. Manual resolutions are locked against automated overwrites.
-4. **Clean Invalidation**: If a supporting document is deleted or superseded, unlocked requirements revert to `MISSING`.
+### 1. Citizen Persona (Port 3000)
+| Field | Value |
+| :--- | :--- |
+| **Portal URL** | `http://localhost:3000/login` |
+| **Email** | `sankeerths615@gmail.com` |
+| **Password** | `1234567890` |
+| **Citizen Name** | Sai Sankeerth |
+| **Seeded Case** | `PAN-2026-0001` (Trackable at `/applications/PAN-2026-0001/status`) |
 
----
+### 2. Government Officer Persona (Port 3001)
+| Field | Value |
+| :--- | :--- |
+| **Portal URL** | `http://localhost:3001/login` |
+| **Email** | `sankeerthvss@gmail.com` |
+| **Password** | `1234567890` |
+| **Officer Name** | Officer Sai Sankeerth |
+| **Employee Code** | `OFF-SAN-7043` |
+| **Department** | Income Tax Department (CBDT) - PAN Division |
+| **Office** | Regional Processing Cell (RPC), Hyderabad |
 
-## 🧩 Chrome Extension (1-Click Autofill)
-
-Formly includes a Manifest V3 browser extension located in [`extension/`](extension/):
-- **Real Data Integration**: Queries the authenticated citizen's profile from `/api/profile` on `localhost:3000`.
-- **Intelligent DOM Matching**: Detects form inputs using heuristics (ID, name, label, placeholder, aria attributes) for personal, academic, income, and banking details.
-- **Reactive Framework Support**: Triggers synthetic `input`, `change`, and `blur` events so React, Angular, and Vue portals persist filled values.
-- **Non-Intrusive Floating Button**: Anchored to `bottom: 24px; right: 24px` with iframe and CAPTCHA isolation to avoid interfering with reCAPTCHA or third-party widgets.
-
-### Loading the Extension:
-1. Open Chrome and navigate to `chrome://extensions`.
-2. Enable **Developer mode** (toggle in top-right corner).
-3. Click **Load unpacked** and select the `extension/` folder from this repository.
-4. Visit any application form or [`http://localhost:3000/portal/scholarships`](http://localhost:3000/portal/scholarships) to test 1-click autofill.
-
----
-
-## 🔌 API Reference
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/api/auth/register` | Register new citizen account with PBKDF2 salt hashing |
-| `POST` | `/api/auth/login` | Authenticate session and set secure HTTP cookie |
-| `GET` | `/api/auth/session` | Validate active session token |
-| `POST` | `/api/auth/logout` | Terminate session and invalidate cookie |
-| `GET` | `/api/profile` | Retrieve verified profile fields with document provenance |
-| `PATCH`| `/api/profile` | Update single field `{ field_name, value }` or batch `{ fields }` |
-| `GET` | `/api/documents` | List all vault documents with extraction metadata |
-| `POST` | `/api/documents` | Upload document to vault and trigger OCR pipeline |
-| `DELETE`| `/api/documents/:id` | Delete document and cascade unverify associated fields |
-| `POST` | `/api/documents/:id/extracted-fields/:fieldId/accept` | Accept candidate field into profile |
-| `POST` | `/api/documents/:id/extracted-fields/:fieldId/reject` | Discard candidate field |
-| `GET` | `/api/services/:id/checklist` | Compute requirement readiness checklist for a scheme |
-| `POST` | `/api/requirements/:id/resolve` | Manually resolve requirement with audit note |
-| `POST` | `/api/requirements/:id/unresolve` | Revert manual resolution to automatic matching |
+### 3. Alternative Administrative Personas
+| Role | Email | Password | Desk / Scope |
+| :--- | :--- | :--- | :--- |
+| **Department Officer** | `sai.sankeerth@incometax.gov.in` | `govsecure2026` | `OFF-PAN-7042` (CBDT Hyderabad) |
+| **Department Admin** | `rajesh.sharma@incometax.gov.in` | `govsecure2026` | `ADM-PAN-1001` (CBDT CPC New Delhi) |
+| **System Admin** | `vikram.rao@negd.gov.in` | `govsecure2026` | `SYS-ROOT-0099` (NeGD / MeitY) |
 
 ---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- **Node.js**: v18.0.0 or higher
+- **Node.js**: v18.0.0 or higher (v20+ recommended)
 - **npm**: v9.0.0 or higher
 
-### Installation & Run
+### 1. Installation
 ```bash
-# 1. Clone the repository
 git clone https://github.com/SaiSankeerth-dev/Formly.git
 cd Formly
-
-# 2. Install dependencies
 npm install
-
-# 3. Setup environment variables (optional for local DB)
-cp .env.example .env.local
-
-# 4. Start development server
-npm run dev
 ```
-Open **[http://localhost:3000](http://localhost:3000)** in your browser.
+
+### 2. Dual-Platform Execution
+Run both platforms concurrently with zero configuration:
+```bash
+# Terminal 1: Run Next.js Server (Port 3000 - Citizen)
+npm run dev
+
+# Terminal 2: Run Government Platform Proxy (Port 3001 - Government)
+npm run dev:gov
+```
+
+Or for production mode:
+```bash
+npm run build
+npm run start:both
+```
+
+Open:
+- **Citizen Portal**: [http://localhost:3000](http://localhost:3000)
+- **Government Operations Platform**: [http://localhost:3001](http://localhost:3001)
 
 ---
 
-## 🛠️ Verification & Build Commands
+## 🧪 Test & Quality Verification Suite
+
+Formly includes a comprehensive automated test suite verifying every layer of the state machine, data mapper, and platform boundary:
 
 ```bash
-# TypeScript type check (0 errors)
+# Run TypeScript static type check (0 errors)
 npm run typecheck
 
-# ESLint validation (0 errors)
-npm run lint
+# Run 12-stage orchestration pipeline & transition guard tests
+npm test
 
-# Production build
-npm run build
+# Autonomous dual-platform QA & screenshot generator
+node scripts/generate-all-media.mjs
 ```
+
+### Test Coverage Highlights:
+- [x] Full state machine progression (`SUBMITTED` → `APPROVED` → `DELIVERED`).
+- [x] State transition guard enforcement (prevents unauthorized status jumps).
+- [x] Semantic data mapping across UIDAI, NSDL, and DigiLocker formats.
+- [x] Tamper-evident SHA-256 audit log validation.
+- [x] Automatic retry on external connector failures.
+- [x] Return-for-correction workflow with citizen resubmission and revalidation.
 
 ---
 
-## 📄 License
+## 📄 License & Intellectual Property
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+This project is developed for digital governance innovation and distributed under the **MIT License**. See [LICENSE](LICENSE) for terms.

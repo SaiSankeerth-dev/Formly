@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "dev:citizen": "next dev -p 3000",
+    "dev:gov": "node scripts/gov-proxy.mjs",
     "dev:government": "node scripts/gov-proxy.mjs",
+    "media:generate": "node scripts/generate-all-media.mjs",
     "build": "next build",
     "build:citizen": "next build",
     "build:government": "next build",
