@@ -178,7 +178,7 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
         return;
       }
     } catch (e) {
-      console.warn("[Formly Store] API load failed, checking local storage cache", e);
+      console.warn("[Seva Saarthi Store] API load failed, checking local storage cache", e);
     }
 
     // Fallback to local storage keyed by user ID
@@ -240,7 +240,7 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
         isDataLoadedRef.current = true;
       }
     } catch (err) {
-      console.error("[Formly Store] Failed to load local user cache", err);
+      console.error("[Seva Saarthi Store] Failed to load local user cache", err);
     }
   }, []);
 

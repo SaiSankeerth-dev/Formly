@@ -352,7 +352,7 @@ export default function PanTrackerPage() {
                   </p>
                 </div>
                 <div className="mt-4 pt-3 border-t border-slate-200/60 text-[11px] text-slate-500 font-medium">
-                  Owner: <span className="font-bold text-slate-700">Formly Intake Engine</span>
+                  Owner: <span className="font-bold text-slate-700">Seva Saarthi Intake Assistant</span>
                 </div>
               </div>
 
@@ -726,7 +726,7 @@ export default function PanTrackerPage() {
                     ? "India Post Speed Post Division"
                     : application.stage === "DELIVERED"
                     ? "Local Post Office Delivery Division"
-                    : "Formly Orchestration Hub"}
+                    : "Seva Saarthi Application Assistant"}
                 </span>
               </span>
               <span className="inline-flex items-center gap-1 bg-white border border-slate-200 px-2.5 py-1 rounded-lg font-semibold">
@@ -803,7 +803,7 @@ export default function PanTrackerPage() {
                       Discrepancy Flagged for Manual Officer Review
                     </h4>
                     <p className="text-xs text-rose-800 mt-1 leading-relaxed">
-                      A discrepancy was detected between external registry databases (Application states DOB 1999-05-14 vs Aadhaar Registry 2000-05-14). Rather than making an automated assumption, Formly has placed your case with a senior CBDT officer for manual evidence review. No further citizen action is required at this time.
+                      A discrepancy was detected between external registry databases (Application states DOB 1999-05-14 vs Aadhaar Registry 2000-05-14). Rather than making an automated assumption, Seva Saarthi has placed your case with a senior CBDT officer for manual evidence review. No further citizen action is required at this time.
                     </p>
                   </div>
                 </div>

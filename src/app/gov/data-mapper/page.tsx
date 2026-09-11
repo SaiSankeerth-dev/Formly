@@ -112,7 +112,7 @@ export default function DataMapperPage() {
       const parsed = JSON.parse(testPayload);
       const canonical = mapToCanonical(selectedSystem, parsed);
       setNormalizedOutput(canonical);
-      toast.success("Successfully normalized payload to Formly Canonical Schema!");
+      toast.success("Successfully normalized payload to Seva Saarthi Canonical Schema!");
     } catch (err: any) {
       toast.error(`JSON Parse or mapping error: ${err.message}`);
     }
@@ -131,7 +131,7 @@ export default function DataMapperPage() {
             GOVERNMENT DATA MAPPER
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Normalizing disparate state & central department schema vocabularies into Formly Canonical Model.
+            Normalizing disparate state & central department schema vocabularies into the Seva Saarthi canonical model.
           </p>
         </div>
 
@@ -162,7 +162,7 @@ export default function DataMapperPage() {
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div>
             <h2 className="text-sm font-bold text-slate-900">
-              {activeSchema.systemName} ➔ Formly Canonical
+              {activeSchema.systemName} ➔ Seva Saarthi Canonical
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
               Protocol: {activeSchema.protocol} • Spec: {activeSchema.version} • {activeSchema.organization}
@@ -178,7 +178,7 @@ export default function DataMapperPage() {
             <thead>
               <tr className="border-b border-slate-200 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 <th className="pb-3">Source Field (External Department)</th>
-                <th className="pb-3">Formly Canonical Field</th>
+                <th className="pb-3">Seva Saarthi Canonical Field</th>
                 <th className="pb-3">Source Data Type</th>
                 <th className="pb-3">Transformation Function</th>
                 <th className="pb-3">Semantic Purpose</th>
@@ -242,10 +242,10 @@ export default function DataMapperPage() {
             />
           </div>
 
-          {/* Right: Normalized Formly Canonical Output */}
+          {/* Right: Normalized Seva Saarthi Canonical Output */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-              <span>Normalized Formly Canonical Record:</span>
+              <span>Normalized Seva Saarthi Canonical Record:</span>
               <span className="text-[10px] text-emerald-600 font-bold">Standardized Across All Services</span>
             </div>
             <div className="w-full font-mono text-xs p-3.5 bg-slate-900 text-emerald-300 rounded-2xl border border-slate-800 min-h-[280px] overflow-auto leading-relaxed">

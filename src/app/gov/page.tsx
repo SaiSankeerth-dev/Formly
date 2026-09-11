@@ -1235,7 +1235,7 @@ export default function GovernmentDashboardPage() {
           </div>
         </div>
         <div className="text-[11px] text-slate-400 font-medium font-mono">
-          FORMly v2.0.0 | Secure • Reliable • Transparent
+          Seva Saarthi v2.0.0 | Secure • Reliable • Transparent
         </div>
       </div>
     </div>

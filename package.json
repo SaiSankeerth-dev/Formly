@@ -21,6 +21,7 @@
     "test:verification": "npx tsx scripts/test-repair-verification.mjs",
     "test:separation": "npx tsx scripts/test-platform-separation.mjs",
     "test:optimization": "npx tsx scripts/test-document-optimization.mjs",
+    "test:meeseva": "npx tsx scripts/test-meeseva-assistant.mjs",
     "agent": "node scripts/run-live-agent.mjs"
   },
   "dependencies": {

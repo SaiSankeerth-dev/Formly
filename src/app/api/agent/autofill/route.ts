@@ -1,43 +1,41 @@
 import { NextResponse } from "next/server";
-import { AutofillPayload } from "@/lib/agent/browser-agent";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { action, sessionId, payload, userApproved } = body;
-
-    if (action === "START_AGENT") {
-      const newSessionId = `agent_${Date.now()}`;
-      return NextResponse.json({
-        success: true,
-        sessionId: newSessionId,
-        message: "Autonomous Browser Agent started for target portal: " + (payload?.portalUrl || "https://scholarships.gov.in"),
-        initialState: "LAUNCHING_BROWSER",
-      });
-    }
-
-    if (action === "CONFIRM_SUBMIT") {
-      if (!userApproved) {
-        return NextResponse.json({
-          success: true,
-          message: "User declined submission. Browser session safely closed without submitting.",
-          state: "ABORTED",
-        });
+    if (body.action === "START_AGENT") {
+      if (!body.payload?.portalUrl || !/^https:\/\//i.test(body.payload.portalUrl)) {
+        return NextResponse.json(
+          { success: false, error: "A verified HTTPS official portal URL is required." },
+          { status: 400 }
+        );
       }
-
-      const generatedAppId = `NSP2026-${Math.floor(1000000 + Math.random() * 9000000)}`;
       return NextResponse.json({
         success: true,
-        message: "Simulation: Application payload validated. Demonstration record generated in local sandbox.",
-        environment: "SANDBOX_DEMO",
-        state: "COMPLETED",
-        applicationId: generatedAppId,
-        submittedAt: new Date().toISOString(),
+        mode: "BROWSER_EXTENSION_HANDOFF",
+        sessionId: `browser_${crypto.randomUUID()}`,
+        state: "WAITING_FOR_CITIZEN_LOGIN",
+        message: "Open the official portal and use the Seva Saarthi extension after signing in there yourself.",
+        controls: ["LOGIN", "OTP", "CAPTCHA", "PAYMENT", "DECLARATION", "FINAL_SUBMIT"],
       });
     }
 
-    return NextResponse.json({ success: false, error: "Unknown action" }, { status: 400 });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message || "Agent execution error" }, { status: 500 });
+    if (body.action === "CONFIRM_SUBMIT") {
+      return NextResponse.json(
+        {
+          success: false,
+          state: "WAITING_FOR_CITIZEN",
+          error: "The backend never submits an application or creates an acknowledgement number. Use the real Submit button on the official portal.",
+        },
+        { status: 409 }
+      );
+    }
+
+    return NextResponse.json({ success: false, error: "Unknown agent action" }, { status: 400 });
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : "Invalid agent request" },
+      { status: 400 }
+    );
   }
 }

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Formly — Citizen Application & Portal Autofill Assistant",
+  "name": "Seva Saarthi — Government Application Assistant",
   "version": "1.0.2",
-  "description": "Autonomous auto-filling and human-in-the-loop submission for government schemes, PAN card (Protean/NSDL), scholarships, and welfare portals.",
+  "description": "A citizen-controlled browser assistant for discovering and completing official government applications.",
   "permissions": [
     "activeTab",
     "scripting",
@@ -11,20 +11,44 @@
   "host_permissions": [
     "http://localhost:3000/*",
     "http://127.0.0.1:3000/*",
-    "https://*.gov.in/*",
-    "https://*.nic.in/*"
+    "https://onlineservices.nsdl.com/*",
+    "https://*.incometax.gov.in/*",
+    "https://*.tg.meeseva.gov.in/*",
+    "https://*.sarathi.parivahan.gov.in/*",
+    "https://pmkisan.gov.in/*",
+    "https://scholarships.gov.in/*",
+    "https://myaadhaar.uidai.gov.in/*",
+    "https://*.digilocker.gov.in/*",
+    "https://beneficiary.nha.gov.in/*",
+    "https://*.epds.telangana.gov.in/*",
+    "https://*.dharani.telangana.gov.in/*",
+    "https://*.ghmc.gov.in/*",
+    "https://udyamregistration.gov.in/*",
+    "https://*.employment.telangana.gov.in/*"
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Formly Citizen Assistant"
+    "default_title": "Seva Saarthi Assistant"
   },
   "content_scripts": [
     {
       "matches": [
         "http://localhost:3000/*",
         "http://127.0.0.1:3000/*",
-        "https://*.gov.in/*",
-        "https://*.nic.in/*"
+        "https://onlineservices.nsdl.com/*",
+        "https://*.incometax.gov.in/*",
+        "https://*.tg.meeseva.gov.in/*",
+        "https://*.sarathi.parivahan.gov.in/*",
+        "https://pmkisan.gov.in/*",
+        "https://scholarships.gov.in/*",
+        "https://myaadhaar.uidai.gov.in/*",
+        "https://*.digilocker.gov.in/*",
+        "https://beneficiary.nha.gov.in/*",
+        "https://*.epds.telangana.gov.in/*",
+        "https://*.dharani.telangana.gov.in/*",
+        "https://*.ghmc.gov.in/*",
+        "https://udyamregistration.gov.in/*",
+        "https://*.employment.telangana.gov.in/*"
       ],
       "exclude_matches": [
         "*://*.google.com/recaptcha/*",
@@ -43,7 +67,7 @@
         "default": "Alt+Shift+F",
         "mac": "Alt+Shift+F"
       },
-      "description": "Autofill current page with Formly"
+      "description": "Assist with the current official government page using Seva Saarthi"
     }
   }
 }

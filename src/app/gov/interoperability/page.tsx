@@ -74,7 +74,7 @@ export default function InteroperabilityCenterPage() {
         body: JSON.stringify({
           action: "PING",
           systemKey,
-          payload: { healthCheck: true, client: "Formly Orchestration Mesh" },
+          payload: { healthCheck: true, client: "Seva Saarthi Orchestration Mesh" },
         }),
       });
       const data = await res.json();

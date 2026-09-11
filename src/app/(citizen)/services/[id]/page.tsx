@@ -13,6 +13,7 @@ import {
   ExternalLink,
   ShieldCheck,
   Award,
+  ArrowRight,
 } from "lucide-react";
 import { REAL_GOVERNMENT_SCHEMES } from "@/lib/schemes/schemes-data";
 
@@ -152,10 +153,17 @@ export default function ServiceDetailPage() {
           <div className="text-base sm:text-lg font-bold mt-0.5">{scheme.officialPortal}</div>
           <div className="text-xs text-slate-400 font-mono mt-0.5">{scheme.portalDomain}</div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            href={`/assistant?serviceId=${scheme.id}`}
+            className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors inline-flex items-center gap-1.5"
+          >
+            <span>Seva Saarthi Agent</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
           <Link
             href="/checklist"
-            className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors"
+            className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl shadow-sm transition-colors"
           >
             Check Readiness
           </Link>
@@ -163,7 +171,7 @@ export default function ServiceDetailPage() {
             href={scheme.officialUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-colors"
           >
             <span>Official Portal</span>
             <ExternalLink className="w-3.5 h-3.5" />

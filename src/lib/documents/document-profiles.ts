@@ -319,6 +319,190 @@ export const SERVICE_DOCUMENT_PROFILES: Record<string, Record<string, DocumentPr
       optimizerStrategy: "image-progressive",
     },
   },
+
+  // Instant e-PAN Card Application (Service ID: pan-card-new)
+  "pan-card-new": {
+    AADHAAR: {
+      serviceId: "pan-card-new",
+      serviceName: "Instant e-PAN Card",
+      documentType: "AADHAAR",
+      documentLabel: "Aadhaar Card",
+      rules: {
+        maxFileSizeBytes: 200 * 1024,
+        safetyMarginFactor: 0.9,
+        allowedMimeTypes: ["application/pdf", "image/jpeg", "image/jpg"],
+        allowedExtensions: ["pdf", "jpg", "jpeg"],
+        minWidth: 300,
+        minHeight: 400,
+        pdfPageLimit: 2,
+        imageQuality: 0.85,
+        strictFilename: true,
+      },
+      optimizerStrategy: "image-progressive",
+    },
+    PHOTO: {
+      serviceId: "pan-card-new",
+      serviceName: "Instant e-PAN Card",
+      documentType: "PHOTO",
+      documentLabel: "Passport Photo",
+      rules: {
+        maxFileSizeBytes: 50 * 1024,
+        safetyMarginFactor: 0.9,
+        allowedMimeTypes: ["image/jpeg", "image/jpg"],
+        allowedExtensions: ["jpg", "jpeg"],
+        maxWidth: 800,
+        maxHeight: 1000,
+        minWidth: 300,
+        minHeight: 400,
+        imageQuality: 0.9,
+        targetFormat: "jpg",
+        strictFilename: true,
+      },
+      optimizerStrategy: "image-progressive",
+    },
+    SIGNATURE: {
+      serviceId: "pan-card-new",
+      serviceName: "Instant e-PAN Card",
+      documentType: "SIGNATURE",
+      documentLabel: "Signature",
+      rules: {
+        maxFileSizeBytes: 50 * 1024,
+        safetyMarginFactor: 0.9,
+        allowedMimeTypes: ["image/jpeg", "image/jpg"],
+        allowedExtensions: ["jpg", "jpeg"],
+        maxWidth: 600,
+        maxHeight: 300,
+        minWidth: 150,
+        minHeight: 75,
+        imageQuality: 0.9,
+        targetFormat: "jpg",
+        strictFilename: true,
+      },
+      optimizerStrategy: "image-progressive",
+    },
+  },
+
+  // Annual Household Income Certificate (Service ID: income-certificate-meeseva)
+  "income-certificate-meeseva": {
+    AADHAAR: {
+      serviceId: "income-certificate-meeseva",
+      serviceName: "Income Certificate (MeeSeva)",
+      documentType: "AADHAAR",
+      documentLabel: "Aadhaar Card",
+      rules: {
+        maxFileSizeBytes: 200 * 1024,
+        safetyMarginFactor: 0.9,
+        allowedMimeTypes: ["application/pdf", "image/jpeg", "image/jpg"],
+        allowedExtensions: ["pdf", "jpg", "jpeg"],
+        minWidth: 300,
+        minHeight: 400,
+        pdfPageLimit: 2,
+        strictFilename: true,
+      },
+      optimizerStrategy: "image-progressive",
+    },
+    RATION_CARD: {
+      serviceId: "income-certificate-meeseva",
+      serviceName: "Income Certificate (MeeSeva)",
+      documentType: "RATION_CARD",
+      documentLabel: "Food Security Card / Ration Card",
+      rules: {
+        maxFileSizeBytes: 200 * 1024,
+        safetyMarginFactor: 0.9,
+        allowedMimeTypes: ["application/pdf", "image/jpeg", "image/jpg"],
+        allowedExtensions: ["pdf", "jpg", "jpeg"],
+        minWidth: 300,
+        minHeight: 400,
+        strictFilename: true,
+      },
+      optimizerStrategy: "image-progressive",
+    },
+    INCOME_PROOF: {
+      serviceId: "income-certificate-meeseva",
+      serviceName: "Income Certificate (MeeSeva)",
+      documentType: "INCOME_PROOF",
+      documentLabel: "Income Proof / Salary Slip / Affidavit",
+      rules: {
+        maxFileSizeBytes: 200 * 1024,
+        safetyMarginFactor: 0.9,
+        allowedMimeTypes: ["application/pdf", "image/jpeg", "image/jpg"],
+        allowedExtensions: ["pdf", "jpg", "jpeg"],
+        minWidth: 300,
+        minHeight: 400,
+        pdfPageLimit: 3,
+        strictFilename: true,
+      },
+      optimizerStrategy: "image-progressive",
+    },
+    INCOME_CERTIFICATE: {
+      serviceId: "income-certificate-meeseva",
+      serviceName: "Income Certificate (MeeSeva)",
+      documentType: "INCOME_CERTIFICATE",
+      documentLabel: "Income Certificate",
+      rules: {
+        maxFileSizeBytes: 200 * 1024,
+        safetyMarginFactor: 0.9,
+        allowedMimeTypes: ["application/pdf", "image/jpeg", "image/jpg"],
+        allowedExtensions: ["pdf", "jpg", "jpeg"],
+        minWidth: 300,
+        minHeight: 400,
+        pdfPageLimit: 3,
+        strictFilename: true,
+      },
+      optimizerStrategy: "image-progressive",
+    },
+  },
+
+  // Agricultural Land Mutation & e-Pattadar Passbook (Dharani)
+  "dharani-land-mutation": {
+    SALE_DEED: {
+      serviceId: "dharani-land-mutation",
+      serviceName: "Dharani Land Mutation",
+      documentType: "SALE_DEED",
+      documentLabel: "Registered Sale Deed / Title Deed",
+      rules: {
+        maxFileSizeBytes: 200 * 1024,
+        safetyMarginFactor: 0.9,
+        allowedMimeTypes: ["application/pdf", "image/jpeg", "image/jpg"],
+        allowedExtensions: ["pdf", "jpg", "jpeg"],
+        minWidth: 300,
+        minHeight: 400,
+        pdfPageLimit: 10,
+        strictFilename: true,
+      },
+      optimizerStrategy: "pdf-stream-optimize",
+    },
+    PATTADAR_PASSBOOK: {
+      serviceId: "dharani-land-mutation",
+      serviceName: "Dharani Land Mutation",
+      documentType: "PATTADAR_PASSBOOK",
+      documentLabel: "Pattadar Passbook Copy",
+      rules: {
+        maxFileSizeBytes: 200 * 1024,
+        safetyMarginFactor: 0.9,
+        allowedMimeTypes: ["application/pdf", "image/jpeg", "image/jpg"],
+        allowedExtensions: ["pdf", "jpg", "jpeg"],
+        minWidth: 300,
+        minHeight: 400,
+        strictFilename: true,
+      },
+      optimizerStrategy: "image-progressive",
+    },
+    ENCUMBRANCE_CERTIFICATE: {
+      serviceId: "dharani-land-mutation",
+      serviceName: "Dharani Land Mutation",
+      documentType: "ENCUMBRANCE_CERTIFICATE",
+      documentLabel: "Encumbrance Certificate (EC)",
+      rules: {
+        maxFileSizeBytes: 200 * 1024,
+        safetyMarginFactor: 0.9,
+        allowedMimeTypes: ["application/pdf", "image/jpeg", "image/jpg"],
+        allowedExtensions: ["pdf", "jpg", "jpeg"],
+        strictFilename: true,
+      },
+      optimizerStrategy: "pdf-stream-optimize",
+    },
+  },
 };
 
 export function getDefaultDocumentProfile(docType: DocumentType | string = "OTHER"): DocumentProfile {
@@ -355,28 +539,43 @@ export function getDefaultDocumentProfile(docType: DocumentType | string = "OTHE
 
 export function getDocumentProfile(serviceId?: string, documentType?: DocumentType | string): DocumentProfile {
   const normType = (documentType || "OTHER").toUpperCase();
+
+  const aliasMap: Record<string, string[]> = {
+    INCOME_PROOF: ["INCOME_CERTIFICATE", "SALARY_SLIP"],
+    INCOME_CERTIFICATE: ["INCOME_PROOF", "SALARY_SLIP"],
+    PHOTO: ["PASSPORT_PHOTO", "PHOTOGRAPH"],
+    PASSPORT_PHOTO: ["PHOTO", "PHOTOGRAPH"],
+    SIGNATURE: ["SIGN"],
+    SIGN: ["SIGNATURE"],
+    CASTE_CERTIFICATE: ["FAMILY_CASTE_PROOF", "CASTE_PROOF"],
+    FAMILY_CASTE_PROOF: ["CASTE_CERTIFICATE", "CASTE_PROOF"],
+    RESIDENCE_PROOF: ["DOMICILE_CERTIFICATE", "RESIDENCE_CERTIFICATE"],
+    DOMICILE_CERTIFICATE: ["RESIDENCE_PROOF", "RESIDENCE_CERTIFICATE"],
+    MARKSHEET: ["PREVIOUS_MARKSHEET", "QUALIFYING_MARKSHEET"],
+    PREVIOUS_MARKSHEET: ["MARKSHEET", "QUALIFYING_MARKSHEET"],
+  };
+
+  const lookupTypes = [normType, ...(aliasMap[normType] || [])];
+
   if (serviceId && SERVICE_DOCUMENT_PROFILES[serviceId]) {
     const serviceProfiles = SERVICE_DOCUMENT_PROFILES[serviceId];
-    if (serviceProfiles[normType]) {
-      return serviceProfiles[normType];
-    }
-    // Check if alias matches (e.g. PREVIOUS_MARKSHEET -> MARKSHEET)
-    if (normType === "PREVIOUS_MARKSHEET" && serviceProfiles["MARKSHEET"]) {
-      return serviceProfiles["MARKSHEET"];
-    }
-    if (normType === "MARKSHEET" && serviceProfiles["PREVIOUS_MARKSHEET"]) {
-      return serviceProfiles["PREVIOUS_MARKSHEET"];
+    for (const t of lookupTypes) {
+      if (serviceProfiles[t]) {
+        return serviceProfiles[t];
+      }
     }
   }
 
   // Search across other services for default matching this document type
   for (const sId of Object.keys(SERVICE_DOCUMENT_PROFILES)) {
-    const sProfile = SERVICE_DOCUMENT_PROFILES[sId][normType];
-    if (sProfile) {
-      return {
-        ...sProfile,
-        serviceId: serviceId || sProfile.serviceId,
-      };
+    const profiles = SERVICE_DOCUMENT_PROFILES[sId];
+    for (const t of lookupTypes) {
+      if (profiles[t]) {
+        return {
+          ...profiles[t],
+          serviceId: serviceId || profiles[t].serviceId,
+        };
+      }
     }
   }
 

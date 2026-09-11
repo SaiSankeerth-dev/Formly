@@ -1,15 +1,15 @@
-const FORMLY_URL = "http://localhost:3000";
+const SEVA_SAARTHI_URL = "http://localhost:3000";
 
 let currentProfile = null;
 
-async function syncProfileFromFormly() {
+async function syncProfileFromSevaSaarthi() {
   const statusEl = document.getElementById("vault-status");
-  statusEl.innerText = "● Syncing with Formly...";
+  statusEl.innerText = "● Syncing with Seva Saarthi...";
   statusEl.className = "sub";
 
   try {
     // 1. Fetch Session
-    const sessionRes = await fetch(`${FORMLY_URL}/api/auth/session`, {
+    const sessionRes = await fetch(`${SEVA_SAARTHI_URL}/api/auth/session`, {
       credentials: "include",
     });
     const sessionData = await sessionRes.json();
@@ -22,7 +22,7 @@ async function syncProfileFromFormly() {
     }
 
     // 2. Fetch Profile Fields
-    const profileRes = await fetch(`${FORMLY_URL}/api/profile`, {
+    const profileRes = await fetch(`${SEVA_SAARTHI_URL}/api/profile`, {
       credentials: "include",
     });
     const profileData = await profileRes.json();
@@ -77,9 +77,9 @@ async function syncProfileFromFormly() {
 
     return profile;
   } catch (err) {
-    statusEl.innerText = "⚠️ Formly server unreachable";
+    statusEl.innerText = "⚠️ Seva Saarthi is unreachable";
     statusEl.className = "sub offline";
-    document.getElementById("p-name").innerText = "Start Formly on localhost:3000";
+    document.getElementById("p-name").innerText = "Start Seva Saarthi on localhost:3000";
     return null;
   }
 }
@@ -101,14 +101,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  await syncProfileFromFormly();
+  await syncProfileFromSevaSaarthi();
 });
 
 // Manual Sync Button
 document.getElementById("btn-sync").addEventListener("click", async () => {
   const btn = document.getElementById("btn-sync");
   btn.innerText = "⏳...";
-  await syncProfileFromFormly();
+  await syncProfileFromSevaSaarthi();
   btn.innerText = "✓ Synced";
   setTimeout(() => { btn.innerText = "🔄 Sync Vault"; }, 1500);
 });
@@ -120,11 +120,11 @@ document.getElementById("btn-autofill").addEventListener("click", async () => {
 
   let profile = currentProfile;
   if (!profile) {
-    profile = await syncProfileFromFormly();
+    profile = await syncProfileFromSevaSaarthi();
   }
 
   if (!profile || !profile.fullName) {
-    alert("⚠️ Please open Formly at http://localhost:3000 and complete your citizen profile first.");
+    alert("⚠️ Please open Seva Saarthi at http://localhost:3000 and complete your citizen profile first.");
     btn.innerText = "⚡ AUTOFILL CURRENT PAGE";
     return;
   }
@@ -158,7 +158,7 @@ document.getElementById("btn-autofill").addEventListener("click", async () => {
   }
 });
 
-// Open Formly Web App
-document.getElementById("btn-open-formly").addEventListener("click", () => {
-  chrome.tabs.create({ url: FORMLY_URL });
+// Open Seva Saarthi
+document.getElementById("btn-open-seva-saarthi").addEventListener("click", () => {
+  chrome.tabs.create({ url: SEVA_SAARTHI_URL });
 });

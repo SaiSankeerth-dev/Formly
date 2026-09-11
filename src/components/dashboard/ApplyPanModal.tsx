@@ -178,7 +178,7 @@ export function ApplyPanModal({ isOpen, onClose }: ApplyPanModalProps) {
               />
               <label htmlFor="consentCheck" className="text-xs text-slate-700 leading-relaxed cursor-pointer select-none">
                 <span className="font-bold text-slate-900 block mb-0.5">Statutory Consent Authorization</span>
-                I hereby give consent to Seva Saarthi / Formly to authenticate my credentials with UIDAI and Income Tax Department under Section 6 of the Digital Personal Data Protection Act 2023 for statutory PAN issuance.
+                I hereby give consent to Seva Saarthi to authenticate my credentials with UIDAI and Income Tax Department under Section 6 of the Digital Personal Data Protection Act 2023 for statutory PAN issuance.
               </label>
             </div>
           </div>

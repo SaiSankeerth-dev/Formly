@@ -143,7 +143,7 @@ export default function GovernmentSettingsPage() {
             </p>
             <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
               <span>Client Host: 127.0.0.1</span>
-              <span className="font-mono text-emerald-400 font-bold">● Formly-GovNet</span>
+              <span className="font-mono text-emerald-400 font-bold">● Seva Saarthi GovNet</span>
             </div>
           </div>
         </div>

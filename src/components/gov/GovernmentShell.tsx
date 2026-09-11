@@ -225,7 +225,7 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
           />
           <div className="relative w-72 max-w-[85vw] bg-[#0A1128] text-white h-full z-10 flex flex-col shadow-2xl">
             <div className="p-4 flex items-center justify-between border-b border-slate-800">
-              <span className="font-black text-white text-base">FORMly Gov</span>
+              <span className="font-black text-white text-base">Seva Saarthi Gov</span>
               <button
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-1.5 text-slate-400 hover:text-white rounded-lg"

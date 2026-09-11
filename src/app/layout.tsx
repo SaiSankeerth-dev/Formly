@@ -6,7 +6,7 @@ import { Toaster } from "sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "FORMly — Sovereign Public Service & Governance Platform",
+  title: "Seva Saarthi — Official Government Application Assistant",
   description: "Unified public service delivery and government operations platform.",
 };
 

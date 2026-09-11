@@ -64,7 +64,7 @@ export const DOCUMENT_PROCUREMENT_GUIDES: Record<string, DocumentProcurementGuid
       "Submit a written application or fill the institution's Bonafide Request Form attaching a copy of your college ID card.",
       "The academic clerk verifies your active enrollment and fee clearance, then prints the certificate on college letterhead.",
       "The certificate is signed by the Head of Department / Academic Dean and stamped with the Principal's official seal.",
-      "Collect the physical document, scan it at 150-200 DPI as a crisp PDF under 200 KB, and upload to your Formly vault.",
+      "Collect the physical document, scan it at 150-200 DPI as a crisp PDF under 200 KB, and upload to your Seva Saarthi vault.",
     ],
     commonRejectionReasons: [
       "Missing college round seal or Principal's signature",
@@ -125,7 +125,7 @@ export const DOCUMENT_PROCUREMENT_GUIDES: Record<string, DocumentProcurementGuid
       "Enter your 12-digit Aadhaar number and solve the CAPTCHA.",
       "Enter the 6-digit OTP received on your Aadhaar-linked mobile number.",
       "Download the password-protected e-Aadhaar PDF (password is First 4 letters of your name in CAPITALS + Year of Birth).",
-      "Upload the PDF to Formly Vault where our AI engine verifies the digital signature.",
+      "Upload the PDF to Seva Saarthi Vault where our AI engine verifies the digital signature.",
     ],
     commonRejectionReasons: [
       "Mismatch in Name spelling or Date of Birth between Aadhaar and Matriculation certificate",
@@ -154,7 +154,7 @@ export const DOCUMENT_PROCUREMENT_GUIDES: Record<string, DocumentProcurementGuid
       "Submit the 'NPCI Aadhaar Mandate & Seeding Form (Annexure 1)' to the bank branch manager.",
       "Request the bank official to flag the account for DBT credit on the NPCI portal.",
       "Check your DBT status on myaadhaar.uidai.gov.in under 'Bank Seeding Status' to confirm 'Active' status.",
-      "Get your passbook printed with latest transactions, scan the first page clearly showing your name and IFSC, and upload to Formly.",
+      "Get your passbook printed with latest transactions, scan the first page clearly showing your name and IFSC, and upload to Seva Saarthi.",
     ],
     commonRejectionReasons: [
       "Account is linked for SMS/ATM but NOT seeded with NPCI for Government DBT (causes 80% of scholarship disbursement rejections)",
@@ -184,7 +184,7 @@ export const DOCUMENT_PROCUREMENT_GUIDES: Record<string, DocumentProcurementGuid
       "Navigate to 'Education' and select your Board (e.g. CBSE, TSBIE, BIEAP, State Technical Board).",
       "Enter your Roll Number, Passing Year, and Examination Registration Number.",
       "Download the government-signed Class 12 / Intermediate certificate with verified DigiLocker green tick.",
-      "Upload the authentic digital PDF to your Formly Vault.",
+      "Upload the authentic digital PDF to your Seva Saarthi Vault.",
     ],
     commonRejectionReasons: [
       "Uploading internal college midterm marks instead of official Board / University semester grade memo",
@@ -237,7 +237,7 @@ export const DOCUMENT_PROCUREMENT_GUIDES: Record<string, DocumentProcurementGuid
       "Collect your laminated smart student identity card from the college admissions or examination cell.",
       "Ensure your photo, enrollment number, branch, and academic validity are crisp and legible.",
       "Scan both the front and back of the ID card on a single page or as a two-page PDF under 200 KB.",
-      "Upload to your Formly Vault for automated OCR extraction.",
+      "Upload to your Seva Saarthi Vault for automated OCR extraction.",
     ],
     commonRejectionReasons: [
       "Expired validity date stamped on the card",

@@ -62,7 +62,7 @@ export function GovernmentLoginView() {
               ðŸ›ï¸
             </div>
             <h1 className="text-xl font-black tracking-wider uppercase text-white">
-              FORMly GOVERNMENT
+              SEVA SAARTHI GOVERNMENT
             </h1>
             <p className="text-xs font-semibold text-amber-400 uppercase tracking-widest">
               Operations & Orchestration Portal
@@ -173,4 +173,3 @@ export function GovernmentLoginView() {
     </div>
   );
 }
-

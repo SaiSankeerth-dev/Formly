@@ -35,6 +35,7 @@ export function Sidebar() {
 
   const navItems: NavItem[] = [
     { label: "Home", href: "/dashboard", icon: LayoutDashboard },
+    { label: "Seva Saarthi Agent", href: "/assistant", icon: Bot, badge: "AI", badgeColor: "bg-indigo-100 text-indigo-700" },
     { label: "My Applications", href: "/applications", icon: FileCheck2, badge: 3, badgeColor: "bg-blue-100 text-blue-700" },
     { label: "Apply for a Service", href: "/checklist", icon: FilePlus2 },
     { label: "Discover Services", href: "/discover", icon: Compass },
@@ -155,6 +156,7 @@ export function MobileNavDrawer({
 
   const navItems: NavItem[] = [
     { label: "Home", href: "/dashboard", icon: LayoutDashboard },
+    { label: "Seva Saarthi Agent", href: "/assistant", icon: Bot, badge: "AI", badgeColor: "bg-indigo-100 text-indigo-700" },
     { label: "My Applications", href: "/applications", icon: FileCheck2, badge: 3, badgeColor: "bg-blue-100 text-blue-700" },
     { label: "Apply for a Service", href: "/checklist", icon: FilePlus2 },
     { label: "Discover Services", href: "/discover", icon: Compass },
