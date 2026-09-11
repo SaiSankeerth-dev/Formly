@@ -1125,6 +1125,7 @@ export function officerReturnApplication(
     requiredAction: details?.requiredAction || "Please upload a clear copy",
     date: new Date().toISOString(),
   };
+  (app as any).correctionReason = reason;
 
   const auditEntry: AuditLogRecord = {
     id: `AUD-${Math.floor(1000 + Math.random() * 9000)}`,
