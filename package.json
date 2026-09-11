@@ -20,6 +20,7 @@
     "test:schema": "node scripts/test-v2-schema.mjs",
     "test:verification": "npx tsx scripts/test-repair-verification.mjs",
     "test:separation": "npx tsx scripts/test-platform-separation.mjs",
+    "test:optimization": "npx tsx scripts/test-document-optimization.mjs",
     "agent": "node scripts/run-live-agent.mjs"
   },
   "dependencies": {
@@ -28,6 +29,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.453.0",
     "next": "^16.3.4",
+    "pdf-lib": "^1.17.1",
     "playwright": "^1.62.1",
     "playwright-core": "^1.62.1",
     "react": "^18.3.1",

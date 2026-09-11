@@ -62,6 +62,15 @@ export interface DocumentRow {
   status: DocumentStatus;
   ocr_raw_text: string | null;
   is_superseded: boolean;
+  original_size_bytes?: number | null;
+  prepared_size_bytes?: number | null;
+  target_size_bytes?: number | null;
+  original_dimensions?: string | null;
+  prepared_dimensions?: string | null;
+  prepared_filename?: string | null;
+  readability_score?: number | null;
+  readability_status?: string | null;
+  optimization_metadata?: Record<string, any> | null;
   created_at: string;
   updated_at: string;
 }

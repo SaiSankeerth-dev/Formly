@@ -175,6 +175,42 @@ begin
     );
   end if;
 
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'documents' and column_name = 'prepared_filename') then
+    alter table documents add column prepared_filename text;
+  end if;
+
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'documents' and column_name = 'original_size_bytes') then
+    alter table documents add column original_size_bytes bigint;
+  end if;
+
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'documents' and column_name = 'prepared_size_bytes') then
+    alter table documents add column prepared_size_bytes bigint;
+  end if;
+
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'documents' and column_name = 'target_size_bytes') then
+    alter table documents add column target_size_bytes bigint;
+  end if;
+
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'documents' and column_name = 'original_dimensions') then
+    alter table documents add column original_dimensions text;
+  end if;
+
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'documents' and column_name = 'prepared_dimensions') then
+    alter table documents add column prepared_dimensions text;
+  end if;
+
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'documents' and column_name = 'readability_score') then
+    alter table documents add column readability_score integer;
+  end if;
+
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'documents' and column_name = 'readability_status') then
+    alter table documents add column readability_status text;
+  end if;
+
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'documents' and column_name = 'optimization_metadata') then
+    alter table documents add column optimization_metadata jsonb;
+  end if;
+
   -- Clean up legacy V1 trigger
   drop trigger if exists documents_recompute on documents;
 end $$;

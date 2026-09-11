@@ -51,13 +51,13 @@ export async function extractDocumentFields(
     const fields: { fieldName: string; rawValue: string; normalizedValue?: string; confidence: number }[] = [];
 
     if (inferredType === 'AADHAAR') {
-      const aadhaarMatch = rawText.match(/\\d{4}\\s?\\d{4}\\s?\\d{4}/);
+      const aadhaarMatch = rawText.match(/\d{4}\s?\d{4}\s?\d{4}/);
       if (aadhaarMatch) fields.push({ fieldName: 'aadhaar_number', rawValue: aadhaarMatch[0], confidence: 0.95 });
 
-      const dobMatch = rawText.match(/(\\d{2}[/-]\\d{2}[/-]\\d{4})/);
+      const dobMatch = rawText.match(/(\d{2}[/-]\d{2}[/-]\d{4})/);
       if (dobMatch) fields.push({ fieldName: 'date_of_birth', rawValue: dobMatch[0], confidence: 0.90 });
     } else if (inferredType === 'BANK_PASSBOOK') {
-      const accMatch = rawText.match(/\\d{9,18}/);
+      const accMatch = rawText.match(/\d{9,18}/);
       if (accMatch) fields.push({ fieldName: 'bank_account_no', rawValue: accMatch[0], confidence: 0.95 });
 
       const ifscMatch = rawText.match(/[A-Z]{4}0[A-Z0-9]{6}/);

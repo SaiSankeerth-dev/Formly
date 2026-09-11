@@ -472,6 +472,40 @@ async function seedInitialData(db: PGlite) {
       ('d0000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000001', 'CASTE_CERTIFICATE', '/vault/caste.pdf', 'OBC_Community_Certificate.pdf', 'application/pdf', '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6', 'VERIFIED')
     ON CONFLICT (id) DO NOTHING;
   `);
+
+  // Ensure document optimization and audit columns exist
+  await db.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'documents' AND column_name = 'prepared_filename') THEN
+        ALTER TABLE documents ADD COLUMN prepared_filename text;
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'documents' AND column_name = 'original_size_bytes') THEN
+        ALTER TABLE documents ADD COLUMN original_size_bytes bigint;
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'documents' AND column_name = 'prepared_size_bytes') THEN
+        ALTER TABLE documents ADD COLUMN prepared_size_bytes bigint;
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'documents' AND column_name = 'target_size_bytes') THEN
+        ALTER TABLE documents ADD COLUMN target_size_bytes bigint;
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'documents' AND column_name = 'original_dimensions') THEN
+        ALTER TABLE documents ADD COLUMN original_dimensions text;
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'documents' AND column_name = 'prepared_dimensions') THEN
+        ALTER TABLE documents ADD COLUMN prepared_dimensions text;
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'documents' AND column_name = 'readability_score') THEN
+        ALTER TABLE documents ADD COLUMN readability_score integer;
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'documents' AND column_name = 'readability_status') THEN
+        ALTER TABLE documents ADD COLUMN readability_status text;
+      END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'documents' AND column_name = 'optimization_metadata') THEN
+        ALTER TABLE documents ADD COLUMN optimization_metadata jsonb;
+      END IF;
+    END $$;
+  `).catch(() => {});
 }
 
 export async function pgQuery<T = any>(sql: string, params: any[] = []): Promise<T[]> {

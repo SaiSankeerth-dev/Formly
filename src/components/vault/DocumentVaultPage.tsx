@@ -19,6 +19,7 @@ import { DocumentRow, DocumentStatus } from "@/types";
 import { cn, formatDate } from "@/lib/utils";
 import { UploadDocumentModal } from "@/components/vault/UploadDocumentModal";
 import { FieldConfirmationModal } from "@/components/vault/FieldConfirmationModal";
+import { formatBytes } from "@/lib/documents/document-profiles";
 
 export function DocumentVaultPage() {
   const { documents, extractedFields, deleteDocument, retryOcr } = useSevaSaarthi();
@@ -208,6 +209,27 @@ export function DocumentVaultPage() {
                       <span>Uploaded on:</span>
                       <span className="font-semibold text-slate-700">{formatDate(doc.created_at)}</span>
                     </div>
+                    {doc.prepared_size_bytes && (
+                      <div className="flex items-center justify-between">
+                        <span>Prepared Size:</span>
+                        <span className="font-semibold text-emerald-600">
+                          {formatBytes(doc.prepared_size_bytes)}
+                          {doc.original_size_bytes && doc.original_size_bytes > doc.prepared_size_bytes && (
+                            <span className="text-slate-400 font-normal text-[10px] ml-1">
+                              (from {formatBytes(doc.original_size_bytes)})
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    )}
+                    {doc.readability_score !== undefined && doc.readability_score !== null && (
+                      <div className="flex items-center justify-between">
+                        <span>Readability:</span>
+                        <span className="font-semibold text-indigo-600">
+                          {doc.readability_score}/100 • {doc.readability_status || "GOOD"}
+                        </span>
+                      </div>
+                    )}
                     {docExtracted.length > 0 && (
                       <div className="flex items-center justify-between">
                         <span>Extracted fields:</span>

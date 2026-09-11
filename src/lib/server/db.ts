@@ -358,18 +358,41 @@ export async function addDocumentForUser(
   );
 
   await pgQuery(`
-    INSERT INTO documents (id, user_id, document_type, storage_path, original_filename, mime_type, sha256_hash, status)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-    [doc.id, actorUuid, doc.document_type, doc.storage_path, doc.original_filename, doc.mime_type, (doc as any).sha256_hash || (doc as any).sha256 || null, doc.status]
+    INSERT INTO documents (
+      id, user_id, document_type, storage_path, original_filename, prepared_filename,
+      mime_type, sha256_hash, status, original_size_bytes, prepared_size_bytes,
+      target_size_bytes, original_dimensions, prepared_dimensions, readability_score,
+      readability_status, optimization_metadata
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+    [
+      doc.id,
+      actorUuid,
+      doc.document_type,
+      doc.storage_path,
+      doc.original_filename,
+      doc.prepared_filename || doc.original_filename,
+      doc.mime_type,
+      (doc as any).sha256_hash || (doc as any).sha256 || null,
+      doc.status,
+      doc.original_size_bytes || null,
+      doc.prepared_size_bytes || null,
+      doc.target_size_bytes || null,
+      doc.original_dimensions || null,
+      doc.prepared_dimensions || null,
+      doc.readability_score ?? null,
+      doc.readability_status || null,
+      doc.optimization_metadata ? JSON.stringify(doc.optimization_metadata) : null,
+    ]
   );
 
   for (const field of fields) {
     const fKey = (field as any).field_key || (field as any).field_name;
-    const fVal = (field as any).extracted_value || (field as any).raw_value || (field as any).value;
+    const fVal = (field as any).extracted_value || (field as any).raw_value || (field as any).value || "";
     await pgQuery(`
-      INSERT INTO extracted_fields (id, document_id, field_key, extracted_value, confidence, accepted)
-      VALUES ($1, $2, $3, $4, $5, $6)`,
-      [field.id, doc.id, fKey, fVal, field.confidence, field.accepted]
+      INSERT INTO extracted_fields (id, document_id, field_name, field_key, raw_value, extracted_value, confidence, accepted)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [field.id, doc.id, fKey, fKey, fVal, fVal, field.confidence, field.accepted]
     );
   }
 }

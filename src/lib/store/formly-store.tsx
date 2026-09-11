@@ -74,7 +74,12 @@ interface SevaSaarthiContextType {
   clearAllNotifications: () => void;
 
   // Actions
-  uploadDocument: (file: File, documentType?: DocumentType) => Promise<string>;
+  uploadDocument: (
+    file: File | Blob,
+    documentType?: DocumentType | string,
+    serviceId?: string,
+    preparationMetadata?: any
+  ) => Promise<string>;
   acceptExtractedField: (documentId: string, fieldId: string, customValue?: string) => Promise<void>;
   rejectExtractedField: (documentId: string, fieldId: string) => Promise<void>;
   acceptAllExtractedFields: (documentId: string) => Promise<void>;
@@ -451,20 +456,37 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
   }, [requirements, activeServiceId, user, profileFields, documents]);
 
   // Upload document
-  const uploadDocument = async (file: File, documentType?: DocumentType): Promise<string> => {
+  const uploadDocument = async (
+    file: File | Blob,
+    documentType?: DocumentType | string,
+    serviceId?: string,
+    preparationMetadata?: any
+  ): Promise<string> => {
     if (!user) throw new Error("Please log in to upload documents.");
 
+    const fileName =
+      (file as any).name ||
+      preparationMetadata?.preparedFileName ||
+      preparationMetadata?.originalFileName ||
+      "document.pdf";
     const docId = `doc_${Date.now()}`;
     const newDoc: DocumentRow = {
       id: docId,
       user_id: user.id,
       document_type: documentType || "OTHER",
-      storage_path: `vault/${file.name}`,
-      original_filename: file.name,
-      mime_type: file.type || "application/octet-stream",
+      storage_path: `vault/${fileName}`,
+      original_filename: preparationMetadata?.originalFileName || fileName,
+      prepared_filename: fileName,
+      mime_type: (file as any).type || "application/octet-stream",
       status: "PROCESSING",
       ocr_raw_text: null,
       is_superseded: false,
+      original_size_bytes: preparationMetadata?.originalSizeBytes || file.size,
+      prepared_size_bytes: file.size,
+      target_size_bytes: preparationMetadata?.targetSizeBytes || null,
+      readability_score: preparationMetadata?.readabilityScore ?? 85,
+      readability_status: preparationMetadata?.readabilityStatus ?? "GOOD",
+      optimization_metadata: preparationMetadata || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -475,8 +497,12 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
     try {
       // Send to backend API
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", file, fileName);
       if (documentType) formData.append("document_type", documentType);
+      if (serviceId) formData.append("service_id", serviceId);
+      if (preparationMetadata) {
+        formData.append("preparation_metadata", JSON.stringify(preparationMetadata));
+      }
 
       const apiRes = await fetch("/api/documents", {
         method: "POST",
@@ -498,7 +524,12 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
       }
 
       // Local extraction fallback
-      const ocrResult = await extractDocumentFields(file, documentType);
+      const ocrResult = await extractDocumentFields(
+        file instanceof File
+          ? file
+          : { name: fileName, type: (file as any).type || "application/pdf", size: file.size },
+        documentType as any
+      );
       const newExtracted: ExtractedField[] = ocrResult.fields.map((f, i) => ({
         id: `ef_${Date.now()}_${i}`,
         document_id: docId,
