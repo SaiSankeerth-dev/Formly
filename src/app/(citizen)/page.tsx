@@ -1,369 +1,359 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
-import Link from "next/link";
+import React, { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import {
-  FileText,
-  CheckCircle2,
-  Clock,
-  Folder,
-  ArrowRight,
-  Search,
-  ChevronDown,
   Sparkles,
-  ExternalLink,
+  Search,
+  ArrowRight,
 } from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
-import { IndiaMonumentsBanner } from "@/components/ui/IndiaMonumentsBanner";
-import { CitizenApplicationTrackerCard } from "@/components/dashboard/CitizenApplicationTrackerCard";
-import { YourProfileCard } from "@/components/dashboard/YourProfileCard";
-import { YourTasksRemindersCard } from "@/components/dashboard/YourTasksRemindersCard";
-import { NeedHelpCard } from "@/components/dashboard/NeedHelpCard";
-import { CITIZEN_APPLICATIONS, CitizenTrackedApplication } from "@/lib/mock-data/citizen-applications";
+import { IndiaHeroVisual } from "@/components/dashboard/IndiaHeroVisual";
+import { QuickActionCard } from "@/components/dashboard/QuickActionCard";
+import { PopularServicesRow } from "@/components/dashboard/PopularServicesRow";
+import { SaarthiTipCard } from "@/components/dashboard/SaarthiTipCard";
+import { ContinueWorkSection } from "@/components/dashboard/ContinueWorkSection";
+import { ServiceDetailDrawer, ServiceDetail, AnyService } from "@/components/services/ServiceDetailDrawer";
+import { FloatingSaarthiAI } from "@/components/assistant/FloatingSaarthiAI";
+import { CommandPalette } from "@/components/layout/CommandPalette";
+import { POPULAR_SERVICES_LIST } from "@/lib/services/popular-services-data";
+import { CitizenSessionRecord } from "@/lib/server/db";
 
 export default function HomePage() {
-  const { user, checklistSummary, documents } = useSevaSaarthi();
+  const router = useRouter();
+  const { user, isLoadingAuth } = useSevaSaarthi();
 
-  // Real Greeting
+  // Dynamic greeting based on time of day
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-  const firstName = user?.name ? user.name.split(" ")[0] : "Citizen";
+  const timeOfDay = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+  const firstName = user?.name ? user.name.trim().split(/\s+/)[0] : "Citizen";
 
-  // Navigation tab state
-  const [activeTab, setActiveTab] = useState<"MY_APPS" | "HISTORY">("MY_APPS");
+  // Dashboard API state
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
+  const [sessions, setSessions] = useState<CitizenSessionRecord[]>([]);
 
-  // Filter state
-  const [statusFilter, setStatusFilter] = useState<"ALL" | "IN_PROGRESS" | "ACTION_REQUIRED" | "COMPLETED" | "DRAFTS">("ALL");
+  // Modals & Drawers state
+  const [selectedService, setSelectedService] = useState<ServiceDetail | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isAIOpen, setIsAIOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  // Search state
   const [searchQuery, setSearchQuery] = useState("");
-  const [serviceFilter, setServiceFilter] = useState("ALL");
 
-  // Real Citizen Applications from storage / session
-  const [applications, setApplications] = useState<CitizenTrackedApplication[]>(CITIZEN_APPLICATIONS);
-  const [isLoadingApps, setIsLoadingApps] = useState(false);
+  // Suggestion tags matching specification
+  const searchSuggestions = [
+    { label: "PAN", serviceId: "pan-application-protean" },
+    { label: "Income certificate", serviceId: "income-certificate" },
+    { label: "Caste certificate", serviceId: "caste-certificate" },
+    { label: "Scholarship", serviceId: "scholarship-nsp" },
+    { label: "Driving licence", serviceId: "driving-licence" },
+  ];
 
+  // Fetch verified dashboard data for the authenticated user
   useEffect(() => {
-    try {
-      if (user?.id) {
-        const stored = localStorage.getItem(`citizen_apps_${user.id}`);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          setApplications(Array.isArray(parsed) && parsed.length > 0 ? parsed : CITIZEN_APPLICATIONS);
-        } else {
-          setApplications(CITIZEN_APPLICATIONS);
+    let isMounted = true;
+
+    async function fetchDashboard() {
+      try {
+        const res = await fetch("/api/dashboard");
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted && data.success) {
+            setDashboardData(data);
+            if (Array.isArray(data.recentSessions)) {
+              setSessions(data.recentSessions);
+            }
+          }
         }
-      } else {
-        setApplications(CITIZEN_APPLICATIONS);
+      } catch (err) {
+        console.warn("[HomePage] Failed to fetch /api/dashboard", err);
+      } finally {
+        if (isMounted) {
+          setIsLoadingDashboard(false);
+        }
       }
-    } catch {
-      setApplications(CITIZEN_APPLICATIONS);
-    } finally {
-      setIsLoadingApps(false);
     }
-  }, [user?.id]);
 
-  // Filter applications
-  const filteredApps = useMemo(() => {
-    return applications.filter((app) => {
-      // Tab filter
-      if (activeTab === "HISTORY" && app.statusCategory !== "COMPLETED") {
-        return false;
+    if (!isLoadingAuth) {
+      if (!user) {
+        // Unauthenticated -> redirect to login
+        router.push("/login");
+      } else {
+        fetchDashboard();
       }
+    }
 
-      // Status pill filter
-      if (statusFilter === "IN_PROGRESS" && app.statusCategory !== "IN_PROGRESS") return false;
-      if (statusFilter === "ACTION_REQUIRED" && app.statusCategory !== "ACTION_REQUIRED") return false;
-      if (statusFilter === "COMPLETED" && app.statusCategory !== "COMPLETED") return false;
-      if (statusFilter === "DRAFTS" && app.statusCategory !== "DRAFTS") return false;
+    return () => {
+      isMounted = false;
+    };
+  }, [user, isLoadingAuth, router]);
 
-      // Service filter
-      if (serviceFilter !== "ALL" && app.serviceId !== serviceFilter) return false;
-
-      // Search query
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        return (
-          app.id.toLowerCase().includes(q) ||
-          app.title.toLowerCase().includes(q) ||
-          app.department.toLowerCase().includes(q) ||
-          app.statusText.toLowerCase().includes(q)
-        );
+  // Keyboard shortcut Ctrl + K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsCommandPaletteOpen(true);
       }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
-      return true;
+  const handleOpenService = (service: ServiceDetail) => {
+    setSelectedService(service);
+    setIsDrawerOpen(true);
+  };
+
+  const handleSuggestionClick = (serviceId: string) => {
+    const target = POPULAR_SERVICES_LIST.find((s) => s.id === serviceId);
+    if (target) {
+      handleOpenService(target);
+    }
+  };
+
+  const handleHeroSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return;
+
+    // Find best match in service registry
+    const match = POPULAR_SERVICES_LIST.find(
+      (s) =>
+        s.name.toLowerCase().includes(query) ||
+        s.category.toLowerCase().includes(query) ||
+        s.authority.toLowerCase().includes(query)
+    );
+
+    if (match) {
+      handleOpenService(match);
+    } else {
+      // Open Saarthi AI to assist with unknown or general queries
+      setIsAIOpen(true);
+    }
+  };
+
+  const handleSessionCreated = (service: AnyService) => {
+    const sId = "id" in service ? service.id : service.serviceId;
+    const sName = "name" in service ? service.name : service.serviceName;
+    const newSession: CitizenSessionRecord = {
+      id: `sess_${Date.now()}`,
+      userId: user?.id || "citizen",
+      serviceId: sId,
+      serviceName: sName,
+      department: service.authority,
+      officialUrl: service.officialApplicationUrl,
+      status: "Work in progress",
+      lastEditedAt: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
+      nextAction: "Continue form",
+    };
+
+    setSessions((prev) => {
+      const filtered = prev.filter((s) => s.serviceId !== sId);
+      return [newSession, ...filtered];
     });
-  }, [applications, activeTab, statusFilter, serviceFilter, searchQuery]);
+  };
 
-  // Real Counts for pills and KPIs
-  const inProgressCount = applications.filter((a) => a.statusCategory === "IN_PROGRESS").length;
-  const actionRequiredCount = applications.filter((a) => a.statusCategory === "ACTION_REQUIRED").length;
-  const completedCount = applications.filter((a) => a.statusCategory === "COMPLETED").length;
-  const draftsCount = applications.filter((a) => a.statusCategory === "DRAFTS").length;
-  const pendingTasksCount = checklistSummary.missingCount;
-  const savedDocsCount = documents.filter((d) => !d.is_superseded).length;
+  // 1. Loading Skeleton state (Rule 24: No hardcoded demo user flash)
+  if (isLoadingAuth || isLoadingDashboard) {
+    return (
+      <div className="space-y-6 pb-12 animate-pulse">
+        {/* Skeleton Hero */}
+        <div className="h-64 sm:h-72 bg-white/70 rounded-3xl border border-slate-100 p-8 shadow-xs flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="w-48 h-6 bg-slate-200 rounded-full" />
+            <div className="w-72 h-8 bg-slate-200 rounded-xl" />
+            <div className="w-96 h-4 bg-slate-200 rounded-lg" />
+          </div>
+          <div className="w-full max-w-xl h-12 bg-slate-100 rounded-full" />
+        </div>
+
+        {/* Skeleton Quick Actions */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-28 bg-white/70 rounded-3xl border border-slate-100 p-5 shadow-xs" />
+          ))}
+        </div>
+
+        {/* Skeleton Popular Services */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="lg:col-span-3 h-44 bg-white/70 rounded-3xl border border-slate-100 p-6 shadow-xs" />
+          <div className="h-44 bg-white/70 rounded-3xl border border-slate-100 p-6 shadow-xs" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-12 w-full max-w-full overflow-x-hidden">
-      {/* 1. TOP WELCOME HERO BANNER */}
-      <div className="bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-amber-50/40 rounded-3xl border border-slate-200/80 p-5 sm:p-7 shadow-xs relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="relative z-10 max-w-xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100/70 text-blue-700 text-xs font-bold rounded-full mb-3">
-            <Sparkles className="w-3.5 h-3.5" />
-            Your Trusted Government Services Companion
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <span>{greeting}, {firstName}!</span>
-            <span className="text-2xl">👋</span>
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-600 font-medium mt-1.5 leading-relaxed">
-            Discover verified government schemes, prepare documents to exact specifications, and apply on live official portals.
-          </p>
-        </div>
+      {/* ========================================================
+          1. HERO BANNER matching Reference Image
+          ======================================================== */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#F0F4FF] via-[#F8FAFF] to-[#FFFFFF] border border-blue-100/80 p-6 sm:p-8 md:p-10 shadow-xs">
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+          {/* Left Text & Search Content */}
+          <div className="max-w-2xl space-y-4">
+            {/* Small Badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50/90 text-[#2F27CE] text-xs font-bold rounded-full border border-indigo-100 shadow-2xs">
+              <Sparkles className="w-3.5 h-3.5 text-[#433BFF]" />
+              <span>Your AI-Powered Government Services Companion</span>
+            </div>
 
-        {/* Right Sovereign Monument Banner */}
-        <IndiaMonumentsBanner className="w-full md:w-auto" />
-      </div>
+            {/* Dynamic Personalized Headline */}
+            <div className="space-y-1">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                <span>Good {timeOfDay}, {firstName}!</span>
+                <span className="text-2xl sm:text-3xl">👋</span>
+              </h1>
+              <h2 className="text-base sm:text-lg font-bold text-slate-700">
+                What do you need to get done?
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed max-w-xl pt-0.5">
+                Discover government services, prepare documents, and complete official applications with intelligent guidance.
+              </p>
+            </div>
 
-      {/* 2. REAL DYNAMIC KPI STAT CARDS */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full min-w-0">
-        {/* Live Applications */}
-        <Link
-          href="/applications"
-          className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs hover:border-blue-300 hover:shadow-md transition-all flex items-center justify-between group"
-        >
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100/80 shrink-0 group-hover:scale-105 transition-transform">
-              <FileText className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-2xl font-black text-slate-900 font-mono">{inProgressCount}</div>
-              <div className="text-xs font-semibold text-slate-500 mt-0.5">Live Applications</div>
-            </div>
-          </div>
-          <ArrowRight className="w-4 h-4 text-blue-600 group-hover:translate-x-1 transition-transform shrink-0" />
-        </Link>
-
-        {/* Completed */}
-        <Link
-          href="/applications?tab=history"
-          className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs hover:border-emerald-300 hover:shadow-md transition-all flex items-center justify-between group"
-        >
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100/80 shrink-0 group-hover:scale-105 transition-transform">
-              <CheckCircle2 className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-2xl font-black text-slate-900 font-mono">{completedCount}</div>
-              <div className="text-xs font-semibold text-slate-500 mt-0.5">Completed</div>
-            </div>
-          </div>
-          <ArrowRight className="w-4 h-4 text-emerald-600 group-hover:translate-x-1 transition-transform shrink-0" />
-        </Link>
-
-        {/* Pending Tasks */}
-        <Link
-          href="/tasks"
-          className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs hover:border-amber-300 hover:shadow-md transition-all flex items-center justify-between group"
-        >
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100/80 shrink-0 group-hover:scale-105 transition-transform">
-              <Clock className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-2xl font-black text-slate-900 font-mono">{pendingTasksCount}</div>
-              <div className="text-xs font-semibold text-slate-500 mt-0.5">Pending Tasks</div>
-            </div>
-          </div>
-          <ArrowRight className="w-4 h-4 text-amber-600 group-hover:translate-x-1 transition-transform shrink-0" />
-        </Link>
-
-        {/* Saved Documents */}
-        <Link
-          href="/vault"
-          className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs hover:border-rose-300 hover:shadow-md transition-all flex items-center justify-between group"
-        >
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100/80 shrink-0 group-hover:scale-105 transition-transform">
-              <Folder className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-2xl font-black text-slate-900 font-mono">{savedDocsCount}</div>
-              <div className="text-xs font-semibold text-slate-500 mt-0.5">Saved Documents</div>
-            </div>
-          </div>
-          <ArrowRight className="w-4 h-4 text-rose-600 group-hover:translate-x-1 transition-transform shrink-0" />
-        </Link>
-      </div>
-
-      {/* 3. MAIN 2-COLUMN GRID */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full min-w-0">
-        {/* Left Column (8 cols): Applications Tracker Cards */}
-        <div className="lg:col-span-8 space-y-4 w-full min-w-0">
-          {/* Top Tabs & Filters */}
-          <div className="bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs space-y-4">
-            {/* Tabs Row */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-6">
+            {/* Main Hero Search Bar */}
+            <form
+              onSubmit={handleHeroSearchSubmit}
+              className="pt-2"
+            >
+              <div className="relative flex items-center max-w-xl bg-white border border-slate-200/90 rounded-full shadow-md shadow-indigo-100/40 p-1.5 pl-4 transition-all focus-within:ring-2 focus-within:ring-[#2F27CE]/20 focus-within:border-[#2F27CE]">
+                <Search className="w-5 h-5 text-slate-400 shrink-0 mr-3" />
+                <input
+                  type="text"
+                  placeholder="I want to apply for an income certificate..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 bg-transparent text-xs sm:text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none min-w-0"
+                />
                 <button
-                  onClick={() => setActiveTab("MY_APPS")}
-                  className={`text-sm font-bold pb-2 relative transition-colors ${
-                    activeTab === "MY_APPS"
-                      ? "text-blue-600"
-                      : "text-slate-500 hover:text-slate-800"
-                  }`}
+                  type="submit"
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#2F27CE] hover:bg-[#231CA8] active:scale-95 text-white flex items-center justify-center transition-all shadow-md shadow-indigo-300/50 cursor-pointer shrink-0"
+                  aria-label="Search service"
                 >
-                  <span>My Applications</span>
-                  {activeTab === "MY_APPS" && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
-                  )}
-                </button>
-                <button
-                  onClick={() => setActiveTab("HISTORY")}
-                  className={`text-sm font-bold pb-2 relative transition-colors ${
-                    activeTab === "HISTORY"
-                      ? "text-blue-600"
-                      : "text-slate-500 hover:text-slate-800"
-                  }`}
-                >
-                  <span>Application History</span>
-                  {activeTab === "HISTORY" && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
-                  )}
+                  <ArrowRight className="w-5 h-5" />
                 </button>
               </div>
+            </form>
 
-              {/* Search & Service Filter */}
-              <div className="flex items-center gap-2.5">
-                <div className="relative hidden sm:block w-48">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    type="text"
-                    placeholder="Search your applications..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="relative">
-                  <select
-                    value={serviceFilter}
-                    onChange={(e) => setServiceFilter(e.target.value)}
-                    className="appearance-none pl-3 pr-7 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-                  >
-                    <option value="ALL">All Services</option>
-                    <option value="income-certificate">Income Certificate</option>
-                    <option value="pan-card-new">PAN Card</option>
-                    <option value="caste-certificate">Caste Certificate</option>
-                    <option value="learners-licence">Learner's Licence</option>
-                  </select>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
-              </div>
-            </div>
-
-            {/* Status Filter Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs">
-              <button
-                onClick={() => setStatusFilter("ALL")}
-                className={`px-3 py-1.5 rounded-full font-bold transition-all shrink-0 ${
-                  statusFilter === "ALL"
-                    ? "bg-blue-600 text-white shadow-xs"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                All ({applications.length})
-              </button>
-              <button
-                onClick={() => setStatusFilter("IN_PROGRESS")}
-                className={`px-3 py-1.5 rounded-full font-bold transition-all shrink-0 ${
-                  statusFilter === "IN_PROGRESS"
-                    ? "bg-blue-600 text-white shadow-xs"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                In Progress ({inProgressCount})
-              </button>
-              <button
-                onClick={() => setStatusFilter("ACTION_REQUIRED")}
-                className={`px-3 py-1.5 rounded-full font-bold transition-all shrink-0 ${
-                  statusFilter === "ACTION_REQUIRED"
-                    ? "bg-blue-600 text-white shadow-xs"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                Action Required ({actionRequiredCount})
-              </button>
-              <button
-                onClick={() => setStatusFilter("COMPLETED")}
-                className={`px-3 py-1.5 rounded-full font-bold transition-all shrink-0 ${
-                  statusFilter === "COMPLETED"
-                    ? "bg-blue-600 text-white shadow-xs"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                Completed ({completedCount})
-              </button>
-              <button
-                onClick={() => setStatusFilter("DRAFTS")}
-                className={`px-3 py-1.5 rounded-full font-bold transition-all shrink-0 ${
-                  statusFilter === "DRAFTS"
-                    ? "bg-blue-600 text-white shadow-xs"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                Drafts ({draftsCount})
-              </button>
+            {/* Clickable Search Suggestions */}
+            <div className="flex flex-wrap items-center gap-2 pt-1 text-xs font-semibold text-slate-500">
+              <span className="text-slate-400">Try searching:</span>
+              {searchSuggestions.map((sug) => (
+                <button
+                  key={sug.label}
+                  type="button"
+                  onClick={() => handleSuggestionClick(sug.serviceId)}
+                  className="px-3 py-1 bg-indigo-50/70 hover:bg-indigo-100/80 text-[#2F27CE] rounded-full text-xs font-semibold transition-colors cursor-pointer border border-indigo-100/60"
+                >
+                  {sug.label}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Application Live Tracker Cards or REAL EMPTY State */}
-          <div className="space-y-4">
-            {isLoadingApps ? (
-              <div className="bg-white rounded-3xl border border-slate-200 p-8 text-center text-slate-500">
-                <p className="text-sm font-semibold">Loading applications...</p>
-              </div>
-            ) : filteredApps.length > 0 ? (
-              filteredApps.map((app) => (
-                <CitizenApplicationTrackerCard key={app.id} app={app} />
-              ))
-            ) : (
-              <div className="bg-white rounded-3xl border border-slate-200/90 p-8 text-center shadow-xs">
-                <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3 border border-blue-100">
-                  <FileText className="w-7 h-7" />
-                </div>
-                <h3 className="text-base font-bold text-slate-900 mb-1">
-                  No applications recorded yet
-                </h3>
-                <p className="text-xs text-slate-500 max-w-md mx-auto mb-5 leading-relaxed">
-                  Seva Saarthi assists directly on live official portals. When you complete an application on an official government portal, your real acknowledgement and tracking reference will appear here.
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-3">
-                  <Link
-                    href="/assistant"
-                    className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5"
-                  >
-                    <span>Discover Verified Services</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                  <Link
-                    href="/vault"
-                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5"
-                  >
-                    <span>Upload Documents to Vault</span>
-                  </Link>
-                </div>
-              </div>
-            )}
+          {/* Right India Hero Visual Illustration */}
+          <div className="shrink-0 flex justify-center lg:justify-end">
+            <IndiaHeroVisual />
           </div>
-        </div>
-
-        {/* Right Column (4 cols): Profile, Tasks, Need Help */}
-        <div className="lg:col-span-4 space-y-4 w-full min-w-0">
-          <YourProfileCard />
-          <YourTasksRemindersCard />
-          <NeedHelpCard />
         </div>
       </div>
+
+      {/* ========================================================
+          2. QUICK ACTIONS (4 lightweight cards)
+          ======================================================== */}
+      <QuickActionCard
+        onAskSaarthiClick={() => setIsAIOpen(true)}
+        onDiscoverClick={() => {
+          const el = document.getElementById("popular-services");
+          el?.scrollIntoView({ behavior: "smooth" });
+        }}
+      />
+
+      {/* ========================================================
+          3. POPULAR SERVICES & SAARTHI TIP (Side-by-side)
+          ======================================================== */}
+      <div id="popular-services" className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
+        <div className="lg:col-span-3">
+          <PopularServicesRow
+            onSelectService={handleOpenService}
+            onViewAllClick={() => setIsCommandPaletteOpen(true)}
+          />
+        </div>
+
+        <div className="lg:col-span-1">
+          <SaarthiTipCard />
+        </div>
+      </div>
+
+      {/* ========================================================
+          4. CONTINUE YOUR WORK (User-specific local sessions)
+          ======================================================== */}
+      <ContinueWorkSection
+        sessions={sessions}
+        onContinueSession={(session) => {
+          const matched = POPULAR_SERVICES_LIST.find((s) => s.id === session.serviceId);
+          if (matched) {
+            handleOpenService(matched);
+          } else if (session.officialUrl) {
+            window.open(session.officialUrl, "_blank", "noopener,noreferrer");
+          }
+        }}
+        onDiscoverClick={() => {
+          const el = document.getElementById("popular-services");
+          el?.scrollIntoView({ behavior: "smooth" });
+        }}
+      />
+
+      {/* ========================================================
+          5. MINIMAL FOOTER matching Reference Image
+          ======================================================== */}
+      <footer className="pt-6 pb-2 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 border-t border-slate-100 gap-4">
+        <div className="flex items-center gap-4">
+          <span className="hover:text-slate-600 transition-colors cursor-pointer">Privacy</span>
+          <span className="hover:text-slate-600 transition-colors cursor-pointer">Terms</span>
+          <span className="hover:text-slate-600 transition-colors cursor-pointer">Contact</span>
+        </div>
+        <div className="text-[11px] font-mono text-slate-400">
+          v2.0.0
+        </div>
+      </footer>
+
+      {/* ========================================================
+          6. SERVICE DETAIL DRAWER (Real Official URLs)
+          ======================================================== */}
+      <ServiceDetailDrawer
+        service={selectedService}
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        onSessionCreated={handleSessionCreated}
+      />
+
+      {/* ========================================================
+          7. FLOATING SAARTHI AI ASSISTANT WIDGET
+          ======================================================== */}
+      <FloatingSaarthiAI
+        isOpen={isAIOpen}
+        onOpen={() => setIsAIOpen(true)}
+        onClose={() => setIsAIOpen(false)}
+        onSelectService={(srv) => {
+          setIsAIOpen(false);
+          handleOpenService(srv);
+        }}
+      />
+
+      {/* ========================================================
+          8. COMMAND PALETTE (Ctrl + K)
+          ======================================================== */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onSelectService={handleOpenService}
+        onAskSaarthi={() => setIsAIOpen(true)}
+      />
     </div>
   );
 }

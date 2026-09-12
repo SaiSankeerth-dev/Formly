@@ -111,38 +111,38 @@ export function buildEnrichedProfileMap(profileFields: ProfileField[], user: Use
     }
   });
 
-  const fullName = map.full_name || user?.name || "Sai Sankeerth";
-  const mobile = map.phone_number || map.mobile || user?.phone || "9876543210";
-  const email = map.email || user?.email || "sankeerths615@gmail.com";
-  const dob = map.date_of_birth || "2001-08-15";
-  const gender = map.gender || "Male";
-  const aadhaar = map.aadhaar_number || "5492 8173 9012";
-  const address = map.permanent_address || map.address || map.location || "H.No 4-52/1, Green Hills Colony, Gachibowli, Hyderabad, Telangana - 500032";
-  const pincode = map.pincode || "500032";
+  const fullName = map.full_name || user?.name || "";
+  const mobile = map.phone_number || map.mobile || user?.phone || "";
+  const email = map.email || user?.email || "";
+  const dob = map.date_of_birth || "";
+  const gender = map.gender || "";
+  const aadhaar = map.aadhaar_number || "";
+  const address = map.permanent_address || map.address || map.location || "";
+  const pincode = map.pincode || "";
 
   // Disaggregate full name
-  const nameParts = fullName.trim().split(/\s+/);
-  const firstName = nameParts[0] || fullName;
-  const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : firstName;
+  const nameParts = fullName.trim().split(/\s+/).filter(Boolean);
+  const firstName = nameParts[0] || fullName || "";
+  const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
   const middleName = nameParts.length > 2 ? nameParts.slice(1, -1).join(" ") : "";
 
   // Disaggregate father name
-  const fatherName = map.father_name || "Suresh Kumar";
-  const fParts = fatherName.trim().split(/\s+/);
+  const fatherName = map.father_name || "";
+  const fParts = fatherName.trim().split(/\s+/).filter(Boolean);
   const fatherFirstName = fParts[0] || fatherName;
   const fatherLastName = fParts.length > 1 ? fParts[fParts.length - 1] : "";
 
   // Disaggregate mother name
-  const motherName = map.mother_name || "Laxmi Devi";
-  const mParts = motherName.trim().split(/\s+/);
+  const motherName = map.mother_name || "";
+  const mParts = motherName.trim().split(/\s+/).filter(Boolean);
   const motherFirstName = mParts[0] || motherName;
   const motherLastName = mParts.length > 1 ? mParts[mParts.length - 1] : "";
 
   // DOB variations
-  let dobFormatted = "15/08/2001";
-  let dobDay = "15";
-  let dobMonth = "08";
-  let dobYear = "2001";
+  let dobFormatted = "";
+  let dobDay = "";
+  let dobMonth = "";
+  let dobYear = "";
   if (dob.includes("-")) {
     const parts = dob.split("-");
     if (parts.length === 3) {
@@ -151,11 +151,13 @@ export function buildEnrichedProfileMap(profileFields: ProfileField[], user: Use
       dobDay = parts[2];
       dobFormatted = `${dobDay}/${dobMonth}/${dobYear}`;
     }
+  } else if (dob.includes("/")) {
+    dobFormatted = dob;
   }
 
   // Aadhaar variations
   const aadhaarClean = aadhaar.replace(/\s+/g, "");
-  const uidParts = aadhaar.split(/\s+/);
+  const uidParts = aadhaar.split(/\s+/).filter(Boolean);
   const uid1 = uidParts[0] || aadhaarClean.slice(0, 4);
   const uid2 = uidParts[1] || aadhaarClean.slice(4, 8);
   const uid3 = uidParts[2] || aadhaarClean.slice(8, 12);
@@ -189,46 +191,46 @@ export function buildEnrichedProfileMap(profileFields: ProfileField[], user: Use
     address,
     pincode,
     pin_code: pincode,
-    district: map.district || "Ranga Reddy",
-    mandal: map.mandal || "Serilingampally",
-    location: map.location || "Hyderabad, Telangana",
-    city: map.location || "Hyderabad, Telangana",
+    district: map.district || "",
+    mandal: map.mandal || "",
+    location: map.location || "",
+    city: map.city || map.village || map.location || "",
     father_name: fatherName,
     father_first_name: fatherFirstName,
     father_last_name: fatherLastName,
     mother_name: motherName,
     mother_first_name: motherFirstName,
     mother_last_name: motherLastName,
-    annual_income: map.annual_income || "180000",
-    income: map.annual_income || "180000",
-    caste_category: map.caste_category || "OBC",
-    category: map.caste_category || "OBC",
-    college_name: map.college_name || "National Institute of Technology",
-    education_degree: map.education_degree || "B.Tech Computer Science and Engineering",
-    roll_number: map.roll_number || "22071A0589",
-    current_year: map.current_year || "3rd Year / 5th Sem",
-    tenth_percentage: map.tenth_percentage || "94.2%",
-    twelfth_percentage: map.twelfth_percentage || "88.4%",
-    bank_name: map.bank_name || "State Bank of India",
-    bank_account_no: map.bank_account_no || "38920194821",
-    bank_ifsc: map.bank_ifsc || "SBIN0020184",
+    annual_income: map.annual_income || "",
+    income: map.annual_income || "",
+    caste_category: map.caste_category || "",
+    category: map.caste_category || "",
+    college_name: map.college_name || "",
+    education_degree: map.education_degree || "",
+    roll_number: map.roll_number || "",
+    current_year: map.current_year || "",
+    tenth_percentage: map.tenth_percentage || "",
+    twelfth_percentage: map.twelfth_percentage || "",
+    bank_name: map.bank_name || "",
+    bank_account_no: map.bank_account_no || "",
+    bank_ifsc: map.bank_ifsc || "",
     account_holder_name: map.account_holder_name || fullName,
-    dbt_seeding_status: map.dbt_seeding_status || "Seeded (Active)",
+    dbt_seeding_status: map.dbt_seeding_status || "",
   };
 }
 
 export function SevaSaarthiProvider({ children }: { children: React.ReactNode }) {
-  const [isLoadingAuth, setIsLoadingAuth] = useState(false);
-  const [user, setUser] = useState<UserSession | null>(DEFAULT_USER);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [user, setUser] = useState<UserSession | null>(null);
 
   const [services, setServices] = useState<ServiceRow[]>(INITIAL_SERVICES);
   const [requirements, setRequirements] = useState<ServiceRequirement[]>(INITIAL_REQUIREMENTS);
-  const [documents, setDocuments] = useState<DocumentRow[]>(INITIAL_DOCUMENTS);
-  const [extractedFields, setExtractedFields] = useState<ExtractedField[]>(INITIAL_EXTRACTED_FIELDS);
-  const [profileFields, setProfileFields] = useState<ProfileField[]>(INITIAL_PROFILE_FIELDS);
-  const [requirementStatuses, setRequirementStatuses] = useState<RequirementStatusRow[]>(INITIAL_REQUIREMENT_STATUS);
+  const [documents, setDocuments] = useState<DocumentRow[]>([]);
+  const [extractedFields, setExtractedFields] = useState<ExtractedField[]>([]);
+  const [profileFields, setProfileFields] = useState<ProfileField[]>([]);
+  const [requirementStatuses, setRequirementStatuses] = useState<RequirementStatusRow[]>([]);
   const [activeServiceId, setActiveServiceId] = useState<string>("s001");
-  const isDataLoadedRef = React.useRef(true);
+  const isDataLoadedRef = React.useRef(false);
 
   // Load user data from server / localStorage for this specific authenticated user
   const loadUserData = useCallback(async (activeUser: UserSession) => {
@@ -507,6 +509,20 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
       localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(data.user));
       await loadUserData(data.user);
       toast.success(`Welcome back, ${data.user.name}!`);
+
+      // Check whether profile is complete
+      try {
+        const profRes = await fetch("/api/profile");
+        if (profRes.ok) {
+          const profData = await profRes.json();
+          if (!profData.completed) {
+            window.location.href = `/onboarding/profile?step=${profData.currentStep || 1}`;
+            return true;
+          }
+        }
+      } catch {}
+
+      window.location.href = "/dashboard";
       return true;
     } catch (err: any) {
       toast.error(err.message || "Network error while signing in.");
@@ -533,6 +549,7 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
       localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(data.user));
       await loadUserData(data.user);
       toast.success(`Account created successfully! Welcome to Seva Saarthi, ${data.user.name}.`);
+      window.location.href = "/onboarding/profile?step=1";
       return true;
     } catch (err: any) {
       toast.error(err.message || "Network error while signing up.");
@@ -547,6 +564,7 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
     } catch {}
 
     localStorage.removeItem(STORAGE_SESSION_KEY);
+    localStorage.removeItem("seva_saarthi_active_profile");
     setUser(null);
     setDocuments([]);
     setExtractedFields([]);

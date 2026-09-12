@@ -5,32 +5,37 @@ import { usePathname } from "next/navigation";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { Sidebar, MobileNavDrawer } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
+import { CommandPalette } from "@/components/layout/CommandPalette";
+import { ServiceDetailDrawer, AnyService } from "@/components/services/ServiceDetailDrawer";
 
 export function CitizenLayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { isLoadingAuth } = useSevaSaarthi();
+  const { isLoadingAuth, user } = useSevaSaarthi();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<AnyService | null>(null);
 
   const isAuthPage = pathname === "/login" || pathname === "/signup";
   const isPortalPage = pathname.startsWith("/portal");
   const isTrackPage = pathname.startsWith("/track") || pathname.includes("/status");
+  const isOnboarding = pathname.startsWith("/onboarding");
 
   // Close mobile navigation drawer whenever route changes
   useEffect(() => {
     setIsMobileNavOpen(false);
   }, [pathname]);
 
-  // If on login/signup, portal simulation, or full tracker screen, render clean layout without citizen sidebar/header
-  if (isAuthPage || isPortalPage || isTrackPage) {
+  // If on login/signup, portal simulation, full tracker, or onboarding screen, render clean layout without citizen sidebar/header
+  if (isAuthPage || isPortalPage || isTrackPage || isOnboarding) {
     return <div className="min-h-screen">{children}</div>;
   }
 
   // Show loading spinner while determining authentication state
   if (isLoadingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-[#FBFBFE]">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          <div className="w-10 h-10 border-4 border-[#2F27CE] border-t-transparent rounded-full animate-spin" />
           <p className="text-xs font-semibold text-slate-500">Checking secure citizen session...</p>
         </div>
       </div>
@@ -39,16 +44,33 @@ export function CitizenLayoutShell({ children }: { children: React.ReactNode }) 
 
   // Authenticated full citizen dashboard shell
   return (
-    <div className="min-h-screen flex bg-slate-50/50 w-full max-w-full overflow-x-hidden relative">
+    <div className="min-h-screen flex bg-[#FBFBFE] w-full max-w-full overflow-x-hidden relative">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 w-full max-w-full overflow-x-hidden">
-        <Header onOpenMobileNav={() => setIsMobileNavOpen(true)} />
+        <Header
+          onOpenMobileNav={() => setIsMobileNavOpen(true)}
+          onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+        />
         <main className="flex-1 p-4 sm:p-6 md:p-8 max-w-7xl w-full mx-auto box-border overflow-x-hidden">
           {children}
         </main>
       </div>
 
-      {/* Mobile Drawer placed at root of shell for guaranteed stacking above all components */}
+      {/* Global Command Palette */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onSelectService={(s) => setSelectedService(s)}
+      />
+
+      {/* Global Service Detail Drawer */}
+      <ServiceDetailDrawer
+        service={selectedService}
+        isOpen={!!selectedService}
+        onClose={() => setSelectedService(null)}
+      />
+
+      {/* Mobile Drawer */}
       <MobileNavDrawer
         isOpen={isMobileNavOpen}
         onClose={() => setIsMobileNavOpen(false)}

@@ -88,3 +88,42 @@ export function getProfileCompleteness(profileFields: ProfileField[]) {
     isComplete: emptyCount === 0,
   };
 }
+
+export function checkOnboardingStatus(fields: ProfileField[]) {
+  const map: Record<string, string> = {};
+  if (Array.isArray(fields)) {
+    for (const f of fields) {
+      if (f.field_name && f.value && f.value.trim()) {
+        map[f.field_name] = f.value.trim();
+      }
+    }
+  }
+
+  const isStep1 = Boolean(map.full_name && map.date_of_birth && map.gender);
+  const isStep2 = Boolean(map.phone_number || map.mobile || map.email);
+  const isStep3 = Boolean(
+    (map.state || map.location) &&
+      map.district &&
+      (map.permanent_address || map.address || map.pincode)
+  );
+  const isStep4 = Boolean(map.occupation || map.education_degree || map.caste_category);
+
+  let currentStep = 1;
+  if (!isStep1) currentStep = 1;
+  else if (!isStep2) currentStep = 2;
+  else if (!isStep3) currentStep = 3;
+  else if (!isStep4) currentStep = 4;
+  else currentStep = 4;
+
+  const isComplete = isStep1 && isStep2 && isStep3 && isStep4;
+  return {
+    isStep1,
+    isStep2,
+    isStep3,
+    isStep4,
+    currentStep,
+    isComplete,
+    profileMap: map,
+  };
+}
+

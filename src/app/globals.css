@@ -4,16 +4,26 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222.2 84% 4.9%;
+    --background: #FBFBFE;
+    --foreground: #050315;
+    --primary: #2F27CE;
+    --primary-hover: #261FA8;
+    --accent: #433BFF;
+    --surface: #FFFFFF;
+    --surface-hover: #F6F7FB;
+    --border: #E5E7EB;
+    --muted: #6B7280;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --error: #EF4444;
   }
 
   html,
   body {
     max-width: 100vw;
     overflow-x: hidden;
-    background-color: #f8fafc;
-    color: #0f172a;
+    background-color: var(--background);
+    color: var(--foreground);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     -webkit-font-smoothing: antialiased;
   }

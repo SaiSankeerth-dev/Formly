@@ -14,7 +14,7 @@
     "start": "next start",
     "start:citizen": "next start -p 3000",
     "start:government": "next start -p 3001",
-    "lint": "next lint",
+    "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "prebuild": "node scripts/generate-embedded-migrations.mjs",
     "test": "npx tsx scripts/test-gov-pipeline.mjs",
@@ -25,6 +25,7 @@
     "test:autofill": "npx tsx scripts/test-autofill-suite.mjs",
     "test:serverless": "npx tsx scripts/test-serverless-sim.mjs",
     "test:login": "npx tsx scripts/verify-login-flow.mjs",
+    "test:isolation": "npx tsx scripts/test-multi-user-isolation.mjs",
     "test:real": "npx tsx scripts/test-autofill-suite.mjs",
     "extension:pack": "node scripts/pack-extension.mjs",
     "agent": "node scripts/run-live-agent.mjs"

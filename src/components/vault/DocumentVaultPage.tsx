@@ -13,24 +13,55 @@ import {
   FileText,
   Clock,
   Sparkles,
+  Eye,
+  SlidersHorizontal,
+  FolderPlus,
 } from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { DocumentRow, DocumentStatus } from "@/types";
 import { cn, formatDate } from "@/lib/utils";
 import { UploadDocumentModal } from "@/components/vault/UploadDocumentModal";
+import { SmartPrepareModal } from "@/components/vault/SmartPrepareModal";
 import { FieldConfirmationModal } from "@/components/vault/FieldConfirmationModal";
 import { formatBytes } from "@/lib/documents/document-profiles";
+import { toast } from "sonner";
 
 export function DocumentVaultPage() {
   const { documents, extractedFields, deleteDocument, retryOcr } = useSevaSaarthi();
-  const [filter, setFilter] = useState<"ALL" | DocumentStatus>("ALL");
+  const [activeCategory, setActiveCategory] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [preparingDoc, setPreparingDoc] = useState<DocumentRow | null>(null);
   const [reviewingDoc, setReviewingDoc] = useState<DocumentRow | null>(null);
+
+  const categories = [
+    { key: "ALL", label: "All Documents" },
+    { key: "IDENTITY", label: "Identity" },
+    { key: "CERTIFICATES", label: "Certificates" },
+    { key: "EDUCATION", label: "Education" },
+    { key: "ADDRESS", label: "Address" },
+    { key: "INCOME", label: "Income" },
+    { key: "PHOTO_SIGNATURE", label: "Photo & Signature" },
+    { key: "OTHER", label: "Other" },
+  ];
+
+  // Match document type to category
+  const getDocCategory = (docType: string): string => {
+    const t = docType.toUpperCase();
+    if (t.includes("AADHAAR") || t.includes("PAN") || t.includes("VOTER") || t.includes("PASSPORT")) return "IDENTITY";
+    if (t.includes("CASTE") || t.includes("DOMICILE") || t.includes("BIRTH")) return "CERTIFICATES";
+    if (t.includes("MARKSHEET") || t.includes("BONAFIDE") || t.includes("COLLEGE") || t.includes("DEGREE")) return "EDUCATION";
+    if (t.includes("ADDRESS") || t.includes("ELECTRICITY") || t.includes("RENT")) return "ADDRESS";
+    if (t.includes("INCOME") || t.includes("SALARY") || t.includes("FORM16")) return "INCOME";
+    if (t.includes("PHOTO") || t.includes("SIGNATURE")) return "PHOTO_SIGNATURE";
+    return "OTHER";
+  };
 
   // Filter documents
   const filteredDocs = documents.filter((doc) => {
-    if (filter !== "ALL" && doc.status !== filter) return false;
+    if (activeCategory !== "ALL" && getDocCategory(doc.document_type) !== activeCategory) {
+      return false;
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const nameMatch = (doc.original_filename || "").toLowerCase().includes(q);
@@ -50,7 +81,7 @@ export function DocumentVaultPage() {
         };
       case "EXTRACTED":
         return {
-          bg: "bg-amber-50 text-amber-700 border-amber-200 animate-pulse",
+          bg: "bg-amber-50 text-amber-700 border-amber-200",
           icon: FileSearch,
           label: "Review Needed",
         };
@@ -58,240 +89,219 @@ export function DocumentVaultPage() {
         return {
           bg: "bg-blue-50 text-blue-700 border-blue-200",
           icon: RotateCw,
-          label: "Processing OCR",
+          label: "Processing",
           spin: true,
         };
       case "FAILED":
         return {
           bg: "bg-rose-50 text-rose-700 border-rose-200",
           icon: AlertTriangle,
-          label: "OCR Failed",
+          label: "Failed",
         };
       default:
         return {
           bg: "bg-slate-50 text-slate-700 border-slate-200",
           icon: Clock,
-          label: "Uploaded",
+          label: "Ready",
         };
     }
   };
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 pb-12 max-w-6xl mx-auto">
+      {/* Page Header matching Section 15 */}
+      <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2.5 mb-1">
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <FolderOpen className="w-5 h-5" />
-            </div>
-            <h1 className="text-xl font-bold text-slate-900">Document Vault</h1>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-[#2F27CE] text-xs font-bold rounded-full mb-2">
+            <FolderOpen className="w-3.5 h-3.5" />
+            <span>Document Vault</span>
           </div>
-          <p className="text-xs text-slate-500">
-            Secure, verified personal document storage with provenance tracking and instant OCR field extraction.
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            Your Documents
+          </h1>
+          <p className="text-xs text-slate-500 font-medium mt-1">
+            Keep your important documents ready for government applications.
           </p>
         </div>
 
         <button
           onClick={() => setIsUploadOpen(true)}
-          className="py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm shadow-indigo-200 transition-all self-start sm:self-auto"
+          className="py-2.5 px-5 bg-[#2F27CE] hover:bg-[#231CA8] active:scale-95 text-white rounded-2xl text-xs font-bold flex items-center gap-2 shadow-xs transition-all self-start sm:self-auto cursor-pointer"
         >
           <UploadCloud className="w-4 h-4" />
           <span>Upload Document</span>
         </button>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="bg-white rounded-2xl border border-slate-100 p-3 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
-        {/* Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          {(
-            [
-              { key: "ALL", label: `All (${documents.length})` },
-              { key: "VERIFIED", label: `Verified (${documents.filter((d) => d.status === "VERIFIED").length})` },
-              { key: "EXTRACTED", label: `Review Needed (${documents.filter((d) => d.status === "EXTRACTED").length})` },
-              { key: "PROCESSING", label: `Processing (${documents.filter((d) => d.status === "PROCESSING").length})` },
-              { key: "FAILED", label: `Failed (${documents.filter((d) => d.status === "FAILED").length})` },
-            ] as const
-          ).map((tab) => (
+      {/* Filter Categories and Search Bar */}
+      <div className="bg-white rounded-3xl border border-slate-200/80 p-4 shadow-xs space-y-4">
+        {/* Category Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          {categories.map((cat) => (
             <button
-              key={tab.key}
-              onClick={() => setFilter(tab.key)}
+              key={cat.key}
+              onClick={() => setActiveCategory(cat.key)}
               className={cn(
-                "px-3 py-1.5 rounded-xl text-xs font-semibold transition-all",
-                filter === tab.key
-                  ? "bg-indigo-600 text-white shadow-2xs"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                "px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer",
+                activeCategory === cat.key
+                  ? "bg-[#2F27CE] text-white shadow-2xs"
+                  : "bg-slate-50 text-slate-600 hover:bg-slate-100"
               )}
             >
-              {tab.label}
+              {cat.label}
             </button>
           ))}
         </div>
 
-        {/* Search Input */}
-        <div className="w-full md:w-64">
+        {/* Search */}
+        <div className="relative">
           <input
             type="text"
-            placeholder="Search documents by name or type..."
+            placeholder="Search documents by name or category..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:bg-white"
+            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2F27CE]/20 focus:border-[#2F27CE]"
           />
         </div>
       </div>
 
-      {/* Documents Grid */}
-      {filteredDocs.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-slate-100 p-12 text-center shadow-xs">
-          <div className="w-16 h-16 rounded-3xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-4">
-            <UploadCloud className="w-8 h-8" />
-          </div>
-          <h3 className="text-base font-bold text-slate-900 mb-1">No documents found</h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto mb-6">
-            Upload your Aadhaar, Income Certificate, College Bonafide, or Marksheet to start building your verified profile.
-          </p>
-          <button
-            onClick={() => setIsUploadOpen(true)}
-            className="py-2.5 px-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold inline-flex items-center gap-2 shadow-sm shadow-indigo-200"
-          >
-            <UploadCloud className="w-4 h-4" />
-            <span>Upload Document</span>
-          </button>
-        </div>
-      ) : (
+      {/* Documents Grid or Empty State */}
+      {filteredDocs.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredDocs.map((doc) => {
             const badge = getStatusBadge(doc.status);
-            const BadgeIcon = badge.icon;
-            const docExtracted = extractedFields.filter((ef) => ef.document_id === doc.id);
-            const pendingFields = docExtracted.filter((ef) => !ef.accepted).length;
+            const StatusIcon = badge.icon;
+            const fileSize = doc.prepared_size_bytes || doc.original_size_bytes || 2400000;
+            const isOptimized = Boolean(doc.prepared_size_bytes);
 
             return (
               <div
                 key={doc.id}
-                className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs hover:border-slate-300 hover:shadow-md transition-all flex flex-col justify-between overflow-hidden"
+                className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-xs flex flex-col justify-between hover:border-indigo-100 hover:shadow-md transition-all space-y-4"
               >
                 <div>
-                  {/* Top Status & Type */}
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
-                        <FileText className="w-5 h-5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">
-                          {doc.document_type.replace(/_/g, " ")}
-                        </div>
-                        <h3
-                          className="text-xs font-bold text-slate-900 truncate"
-                          title={doc.original_filename || "Document Scan"}
-                        >
-                          {doc.original_filename || "Document Scan"}
-                        </h3>
-                      </div>
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-[#2F27CE] flex items-center justify-center shrink-0 border border-indigo-100">
+                      <FileText className="w-5 h-5 stroke-[2]" />
                     </div>
 
                     <span
                       className={cn(
-                        "text-[10px] font-bold px-2.5 py-1 rounded-full border flex items-center gap-1 shrink-0 ml-2 shadow-2xs",
+                        "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border",
                         badge.bg
                       )}
                     >
-                      <BadgeIcon className={cn("w-3 h-3", badge.spin && "animate-spin")} />
+                      <StatusIcon className={cn("w-3 h-3", badge.spin && "animate-spin")} />
                       <span>{badge.label}</span>
                     </span>
                   </div>
 
-                  {/* Metadata */}
-                  <div className="text-[11px] text-slate-500 space-y-1 mb-4">
-                    <div className="flex items-center justify-between">
-                      <span>Uploaded on:</span>
-                      <span className="font-semibold text-slate-700">{formatDate(doc.created_at)}</span>
-                    </div>
-                    {doc.prepared_size_bytes && (
-                      <div className="flex items-center justify-between">
-                        <span>Prepared Size:</span>
-                        <span className="font-semibold text-emerald-600">
-                          {formatBytes(doc.prepared_size_bytes)}
-                          {doc.original_size_bytes && doc.original_size_bytes > doc.prepared_size_bytes && (
-                            <span className="text-slate-400 font-normal text-[10px] ml-1">
-                              (from {formatBytes(doc.original_size_bytes)})
-                            </span>
-                          )}
-                        </span>
-                      </div>
+                  <h3 className="text-sm font-bold text-slate-900 truncate" title={doc.original_filename || undefined}>
+                    {doc.original_filename || "Document"}
+                  </h3>
+
+                  <div className="flex items-center gap-2 mt-1 text-[11px] font-medium text-slate-500">
+                    <span className="font-semibold text-slate-700">{doc.document_type.replace(/_/g, " ")}</span>
+                    <span>&bull;</span>
+                    <span>{formatBytes(fileSize)}</span>
+                    {isOptimized && (
+                      <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.2 rounded">
+                        Optimized
+                      </span>
                     )}
-                    {doc.readability_score !== undefined && doc.readability_score !== null && (
-                      <div className="flex items-center justify-between">
-                        <span>Readability:</span>
-                        <span className="font-semibold text-indigo-600">
-                          {doc.readability_score}/100 • {doc.readability_status || "GOOD"}
-                        </span>
-                      </div>
-                    )}
-                    {docExtracted.length > 0 && (
-                      <div className="flex items-center justify-between">
-                        <span>Extracted fields:</span>
-                        <span className="font-semibold text-indigo-600">
-                          {docExtracted.length} fields ({pendingFields} unconfirmed)
-                        </span>
-                      </div>
-                    )}
+                  </div>
+
+                  <div className="text-[10px] text-slate-400 mt-1">
+                    Uploaded {formatDate(doc.created_at)}
                   </div>
                 </div>
 
-                {/* Bottom Actions */}
+                {/* Actions: View, Prepare, Delete matching Section 15 */}
                 <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                  {doc.status === "EXTRACTED" ? (
+                  <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => setReviewingDoc(doc)}
-                      className="flex-1 py-2 px-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-colors"
+                      className="p-2 text-slate-600 hover:text-[#2F27CE] hover:bg-slate-50 rounded-xl text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                      title="View document details"
                     >
-                      <FileSearch className="w-3.5 h-3.5" />
-                      <span>Review Fields ({pendingFields})</span>
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>View</span>
                     </button>
-                  ) : doc.status === "FAILED" ? (
+
                     <button
-                      onClick={() => retryOcr(doc.id)}
-                      className="flex-1 py-2 px-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-colors"
+                      onClick={() => setPreparingDoc(doc)}
+                      className="p-2 text-[#2F27CE] hover:bg-indigo-50 rounded-xl text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                      title="Prepare document to portal limits"
                     >
-                      <RotateCw className="w-3.5 h-3.5" />
-                      <span>Retry OCR</span>
+                      <SlidersHorizontal className="w-3.5 h-3.5" />
+                      <span>Prepare</span>
                     </button>
-                  ) : (
-                    <button
-                      onClick={() => setReviewingDoc(doc)}
-                      className="flex-1 py-2 px-3 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <FileSearch className="w-3.5 h-3.5 text-slate-500" />
-                      <span>View OCR Fields</span>
-                    </button>
-                  )}
+                  </div>
 
                   <button
-                    onClick={() => deleteDocument(doc.id)}
-                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors shrink-0"
+                    onClick={async () => {
+                      if (confirm("Are you sure you want to delete this document?")) {
+                        await deleteDocument(doc.id);
+                        toast.success("Document removed from vault");
+                      }
+                    }}
+                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
                     title="Delete document"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
             );
           })}
         </div>
+      ) : (
+        /* Empty State */
+        <div className="bg-white rounded-3xl border border-dashed border-slate-200 p-12 text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-[#2F27CE] flex items-center justify-center mx-auto border border-indigo-100">
+            <FolderPlus className="w-7 h-7 stroke-[1.8]" />
+          </div>
+          <div className="space-y-1 max-w-sm mx-auto">
+            <h3 className="text-sm font-bold text-slate-900">
+              No documents added yet.
+            </h3>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Upload your Aadhaar card, income proof, or marksheet to have them automatically prepared for government applications.
+            </p>
+          </div>
+          <button
+            onClick={() => setIsUploadOpen(true)}
+            className="inline-flex items-center gap-2 py-2.5 px-5 bg-[#2F27CE] hover:bg-[#231CA8] text-white text-xs font-bold rounded-2xl shadow-sm transition-all cursor-pointer"
+          >
+            <UploadCloud className="w-4 h-4" />
+            <span>Upload Document</span>
+          </button>
+        </div>
       )}
 
       {/* Upload Modal */}
-      {isUploadOpen && <UploadDocumentModal isOpen={isUploadOpen} onClose={() => setIsUploadOpen(false)} />}
+      <UploadDocumentModal
+        isOpen={isUploadOpen}
+        onClose={() => setIsUploadOpen(false)}
+      />
 
-      {/* Review Fields Modal */}
+      {/* Smart Document Preparation Modal */}
+      <SmartPrepareModal
+        document={preparingDoc}
+        isOpen={Boolean(preparingDoc)}
+        onClose={() => setPreparingDoc(null)}
+      />
+
+      {/* Field Review / View Modal */}
       {reviewingDoc && (
         <FieldConfirmationModal
           document={reviewingDoc}
-          isOpen={!!reviewingDoc}
+          isOpen={Boolean(reviewingDoc)}
           onClose={() => setReviewingDoc(null)}
+          onRetryOcr={async () => {
+            await retryOcr(reviewingDoc.id);
+            setReviewingDoc(null);
+          }}
         />
       )}
     </div>

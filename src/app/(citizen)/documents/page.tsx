@@ -1,7 +1,7 @@
 "use client";
 
-import { DocumentVaultPage } from "@/components/vault/DocumentVaultPage";
+import { DocumentsManager } from "@/components/documents/DocumentsManager";
 
 export default function DocumentsPage() {
-  return <DocumentVaultPage />;
+  return <DocumentsManager />;
 }

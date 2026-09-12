@@ -684,15 +684,39 @@ export async function resolveActorUuid(actorType: string, actorId?: string | nul
     } else {
       const u = await db.query(`
         SELECT au.id 
-        FROM auth.users au 
-        LEFT JOIN users u ON lower(au.email) = lower(u.email)
-        WHERE u.id = $1 OR au.email = $1 OR au.id::text = $1 
+        FROM users u
+        JOIN auth.users au ON lower(au.email) = lower(u.email)
+        WHERE u.id = $1 OR lower(u.email) = lower($1) OR au.id::text = $1 
         LIMIT 1`,
         [actorId]
       );
       if (u.rows.length > 0 && isValidUuid((u.rows[0] as any).id)) {
         return (u.rows[0] as any).id;
       }
+
+      // Check auth.users directly by email or id
+      const directAuth = await db.query(
+        `SELECT id FROM auth.users WHERE lower(email) = lower($1) OR id::text = $1 LIMIT 1`,
+        [actorId]
+      );
+      if (directAuth.rows.length > 0 && isValidUuid((directAuth.rows[0] as any).id)) {
+        return (directAuth.rows[0] as any).id;
+      }
+
+      // If user exists in users table, create an auth.users record with a new UUID
+      const userRows = await db.query(`SELECT id, email FROM users WHERE id = $1 OR lower(email) = lower($1)`, [actorId]);
+      if (userRows.rows.length > 0) {
+        const uEmail = (userRows.rows[0] as any).email;
+        const newAuthId = crypto.randomUUID();
+        await db.query(`INSERT INTO auth.users (id, email) VALUES ($1, $2)`, [newAuthId, uEmail]);
+        return newAuthId;
+      }
+
+      // If actorId is a user id like u_... or email, generate a deterministic UUID so it's isolated per user
+      const hash = crypto.createHash("md5").update("actor_" + actorId).digest("hex");
+      const deterministicUuid = `${hash.substring(0, 8)}-${hash.substring(8, 12)}-4${hash.substring(13, 16)}-a${hash.substring(17, 20)}-${hash.substring(20, 32)}`;
+      await db.query(`INSERT INTO auth.users (id, email) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [deterministicUuid, `${actorId}@formly.local`]).catch(() => {});
+      return deterministicUuid;
     }
   } catch {}
   return "00000000-0000-0000-0000-000000000001";

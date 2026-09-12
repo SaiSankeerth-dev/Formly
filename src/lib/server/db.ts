@@ -119,6 +119,12 @@ export async function registerUser(
     [newUser.id, newUser.name, newUser.email, newUser.phone, newUser.passwordHash, newUser.salt, newUser.role, newUser.createdAt]
   );
 
+  const authUuid = crypto.randomUUID();
+  await pgQuery(
+    `INSERT INTO auth.users (id, email) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+    [authUuid, newUser.email]
+  );
+
   const token = crypto.randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
   await pgQuery(
@@ -307,10 +313,11 @@ export async function updateUserProfileField(
   const now = new Date().toISOString();
 
   const result = await pgQuery(`
-    INSERT INTO profile_fields (user_id, field_key, value, source_document_id, confidence, verification_status, confirmed_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, 'VERIFIED', $6, $6)
+    INSERT INTO profile_fields (user_id, field_name, field_key, value, source_document_id, confidence, verification_status, confirmed_at, updated_at)
+    VALUES ($1, $2, $2, $3, $4, $5, 'VERIFIED', $6, $6)
     ON CONFLICT (user_id, field_key) DO UPDATE SET
       value = EXCLUDED.value,
+      field_name = EXCLUDED.field_name,
       source_document_id = COALESCE(EXCLUDED.source_document_id, profile_fields.source_document_id),
       confidence = COALESCE(EXCLUDED.confidence, profile_fields.confidence),
       verification_status = 'VERIFIED',
@@ -438,6 +445,78 @@ export async function rejectExtractedFieldForUser(
   await getAuthoritativeDb();
   await pgQuery(`UPDATE extracted_fields SET accepted = false WHERE id = $1 AND document_id = $2`, [fieldId, docId]);
   return true;
+}
+
+// ----------------------------------------------------------------------
+// Citizen Application Sessions ("Continue Your Work")
+// ----------------------------------------------------------------------
+
+export interface CitizenSessionRecord {
+  id: string;
+  userId: string;
+  serviceId: string;
+  serviceName: string;
+  department: string;
+  officialUrl: string;
+  status: "Work in progress" | "Submitted" | "Action required";
+  lastEditedAt: string;
+  nextAction?: string;
+}
+
+const citizenSessionsMemory: CitizenSessionRecord[] = [
+  {
+    id: "sess_pan_001",
+    userId: "u_0bc5a3b6-f059-4ab2-9870-46a9c25178b7",
+    serviceId: "pan-application-protean",
+    serviceName: "PAN Application",
+    department: "Income Tax Department",
+    officialUrl: "https://onlineservices.proteantech.in/paam/endUserRegisterContact.html",
+    status: "Work in progress",
+    lastEditedAt: "12 Sept 2024",
+    nextAction: "Continue form",
+  },
+];
+
+export async function getCitizenSessions(userId: string): Promise<CitizenSessionRecord[]> {
+  await getAuthoritativeDb();
+  return citizenSessionsMemory.filter((s) => s.userId === userId);
+}
+
+export async function saveCitizenSession(
+  userId: string,
+  sessionData: {
+    serviceId: string;
+    serviceName: string;
+    department: string;
+    officialUrl: string;
+    status?: "Work in progress" | "Submitted" | "Action required";
+    nextAction?: string;
+  }
+): Promise<CitizenSessionRecord> {
+  await getAuthoritativeDb();
+  const existingIndex = citizenSessionsMemory.findIndex(
+    (s) => s.userId === userId && s.serviceId === sessionData.serviceId
+  );
+
+  const record: CitizenSessionRecord = {
+    id: existingIndex >= 0 ? citizenSessionsMemory[existingIndex].id : `sess_${crypto.randomUUID()}`,
+    userId,
+    serviceId: sessionData.serviceId,
+    serviceName: sessionData.serviceName,
+    department: sessionData.department,
+    officialUrl: sessionData.officialUrl,
+    status: sessionData.status || "Work in progress",
+    lastEditedAt: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
+    nextAction: sessionData.nextAction || "Continue form",
+  };
+
+  if (existingIndex >= 0) {
+    citizenSessionsMemory[existingIndex] = record;
+  } else {
+    citizenSessionsMemory.unshift(record);
+  }
+
+  return record;
 }
 
 // ----------------------------------------------------------------------

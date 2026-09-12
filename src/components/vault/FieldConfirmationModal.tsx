@@ -20,9 +20,10 @@ interface FieldConfirmationModalProps {
   document: DocumentRow;
   isOpen: boolean;
   onClose: () => void;
+  onRetryOcr?: () => Promise<void> | void;
 }
 
-export function FieldConfirmationModal({ document, isOpen, onClose }: FieldConfirmationModalProps) {
+export function FieldConfirmationModal({ document, isOpen, onClose, onRetryOcr }: FieldConfirmationModalProps) {
   const { extractedFields, acceptExtractedField, rejectExtractedField, acceptAllExtractedFields } =
     useSevaSaarthi();
 
