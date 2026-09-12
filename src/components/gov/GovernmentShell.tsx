@@ -77,7 +77,7 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
   const handleSignOut = async () => {
     try {
       await fetch("/api/gov/auth/logout", { method: "POST" });
-      toast.info("Signed out from Government Operations Console");
+      toast.info("Signed out from Sarkaar Seva Operations Console");
       window.location.href = "/gov/login";
     } catch {
       window.location.href = "/gov/login";
@@ -128,11 +128,11 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
           <div>
             <div className="flex items-center gap-2">
               <span className="font-black text-lg tracking-tight text-white leading-tight">
-                FORM<span className="text-amber-400">ly</span>
+                Sarkaar <span className="text-blue-400">Seva</span>
               </span>
             </div>
             <div className="text-[11px] font-medium text-slate-400 leading-none mt-0.5">
-              Government Platform
+              Government Operations Platform
             </div>
           </div>
         </div>
@@ -364,7 +364,7 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 text-xs font-bold transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
-                        <span>Sign Out of Government Operations</span>
+                        <span>Sign Out of Sarkaar Seva</span>
                       </button>
                     </div>
                   </div>

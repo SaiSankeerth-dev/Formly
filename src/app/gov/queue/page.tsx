@@ -302,7 +302,7 @@ function QueueContent() {
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-slate-700 text-[11px]">
-                      {app.assignedOfficerName || "Sai Sankeerth"}
+                      {app.assignedOfficerName || currentUser.name || "Assigned Officer"}
                     </td>
                     <td className="py-3.5 px-4 sm:px-6 text-right">
                       <div className="inline-flex items-center gap-1.5">

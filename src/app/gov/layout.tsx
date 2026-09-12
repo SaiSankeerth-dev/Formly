@@ -1,13 +1,14 @@
-"use client";
+import type { Metadata } from "next";
+import { GovLayoutClient } from "./GovLayoutClient";
 
-import React from "react";
-import { GovProvider } from "@/lib/store/gov-store";
-import { GovernmentShell } from "@/components/gov/GovernmentShell";
+export const metadata: Metadata = {
+  title: {
+    template: "%s | Sarkaar Seva",
+    default: "Sarkaar Seva — Government Operations Platform",
+  },
+  description: "Secure access to the Sarkaar Seva government operations platform.",
+};
 
 export default function GovLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <GovProvider>
-      <GovernmentShell>{children}</GovernmentShell>
-    </GovProvider>
-  );
+  return <GovLayoutClient>{children}</GovLayoutClient>;
 }

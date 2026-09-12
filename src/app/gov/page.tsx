@@ -180,7 +180,7 @@ export default function GovernmentDashboardPage() {
         {/* Left: Officer metadata */}
         <div className="relative z-10 max-w-2xl">
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <span>{greeting}, Sai Sankeerth</span>
+            <span>{greeting}, {currentUser.name}</span>
             <span className="text-2xl">👋</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 font-medium mt-1">
