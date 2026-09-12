@@ -171,7 +171,7 @@ export function DocumentVaultPage() {
           {filteredDocs.map((doc) => {
             const badge = getStatusBadge(doc.status);
             const StatusIcon = badge.icon;
-            const fileSize = doc.prepared_size_bytes || doc.original_size_bytes || 2400000;
+            const fileSize = doc.prepared_size_bytes || doc.original_size_bytes || 0;
             const isOptimized = Boolean(doc.prepared_size_bytes);
 
             return (

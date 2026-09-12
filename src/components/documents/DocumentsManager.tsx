@@ -180,7 +180,7 @@ export function DocumentsManager() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredDocs.map((doc) => {
-            const size = doc.prepared_size_bytes || doc.original_size_bytes || 2400000;
+            const size = doc.prepared_size_bytes || doc.original_size_bytes || 0;
             const isOptimized = Boolean(doc.prepared_size_bytes && doc.prepared_size_bytes < (doc.original_size_bytes || 0));
 
             return (
@@ -303,7 +303,7 @@ export function DocumentsManager() {
               <div className="p-4 bg-amber-50/70 rounded-2xl border border-amber-200/80 space-y-1">
                 <div className="text-[11px] font-bold text-amber-700 uppercase">Current File</div>
                 <div className="text-sm font-black text-slate-900">
-                  {formatBytes(preparingDoc.original_size_bytes || 2400000)}
+                  {formatBytes(preparingDoc.original_size_bytes || 0)}
                 </div>
                 <div className="text-[11px] text-amber-800 font-semibold">Exceeds portal limit ⚠</div>
               </div>
@@ -439,7 +439,7 @@ export function DocumentsManager() {
               <div className="flex justify-between">
                 <span className="text-slate-500">Size:</span>
                 <span className="font-semibold text-slate-800">
-                  {formatBytes(viewingDoc.prepared_size_bytes || viewingDoc.original_size_bytes || 2400000)}
+                  {formatBytes(viewingDoc.prepared_size_bytes || viewingDoc.original_size_bytes || 0)}
                 </span>
               </div>
               <div className="flex justify-between">

@@ -24,7 +24,6 @@ import {
 import { extractDocumentFields } from "@/lib/ocr/ocr-engine";
 import { toast } from "sonner";
 import { CANONICAL_PROFILE_FIELDS, computeProfileStrength, getProfileCompleteness } from "@/lib/constants/profile";
-import { CITIZEN_APPLICATIONS } from "@/lib/mock-data/citizen-applications";
 
 export interface UserSession {
   id: string;

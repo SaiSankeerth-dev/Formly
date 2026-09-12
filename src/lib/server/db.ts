@@ -728,19 +728,7 @@ export interface CitizenSessionRecord {
   nextAction?: string;
 }
 
-const citizenSessionsMemory: CitizenSessionRecord[] = [
-  {
-    id: "sess_pan_001",
-    userId: "u_0bc5a3b6-f059-4ab2-9870-46a9c25178b7",
-    serviceId: "pan-application-protean",
-    serviceName: "PAN Application",
-    department: "Income Tax Department",
-    officialUrl: "https://onlineservices.proteantech.in/paam/endUserRegisterContact.html",
-    status: "Work in progress",
-    lastEditedAt: "12 Sept 2024",
-    nextAction: "Continue form",
-  },
-];
+const citizenSessionsMemory: CitizenSessionRecord[] = [];
 
 export async function getCitizenSessions(userId: string): Promise<CitizenSessionRecord[]> {
   await getAuthoritativeDb();
@@ -1312,7 +1300,7 @@ export function createPanApplication(data: {
     action: "APPLICATION_SUBMITTED",
     stage: "OFFICER_REVIEW",
     source: "Citizen Portal",
-    target: "Formly Orchestration Hub",
+    target: "Sarkaar Seva Orchestration Hub",
     purpose: isScholarship ? "Statutory Scholarship Application" : "Statutory PAN card issuance application",
     consentToken,
     result: "SUCCESS",

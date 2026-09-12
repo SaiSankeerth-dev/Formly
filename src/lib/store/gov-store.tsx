@@ -169,8 +169,7 @@ export function GovProvider({ children }: { children: React.ReactNode }) {
   ).length;
   const myQueue = applications.filter(
     (a) =>
-      a.assignedOfficerId === currentUser.id ||
-      a.assignedOfficerId === "OFF-PAN-7042" ||
+      (currentUser.id && a.assignedOfficerId === currentUser.id) ||
       a.status === "ACTION_REQUIRED" ||
       a.stage === "OFFICER_REVIEW"
   ).length;

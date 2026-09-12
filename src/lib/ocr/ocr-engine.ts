@@ -74,45 +74,18 @@ export async function extractDocumentFields(
       };
     }
 
-    // Fallback for demo purposes: if OCR finds nothing, return a believable mock based on type
-    // but mark the rawText as what Tesseract actually found.
-    return getMockResult(inferredType, rawText);
+    return {
+      documentType: inferredType,
+      rawText: rawText || "Document uploaded successfully. No structured text fields automatically recognized.",
+      fields,
+    };
 
   } catch (error) {
     console.error("OCR Engine Error:", error);
-    return getMockResult(inferredType, "OCR Processing Failed");
-  }
-}
-
-function getMockResult(type: DocumentType, actualText: string): OcrExtractionResult {
-  switch (type) {
-    case 'AADHAAR':
-      return {
-        documentType: 'AADHAAR',
-        rawText: actualText || "GOVERNMENT OF INDIA\nUnique Identification Authority of India\nName: Sai Sankeerth\nDOB: 14/08/2004\nGender: Male\nAadhaar No: 5492 8173 9012",
-        fields: [
-          { fieldName: 'full_name', rawValue: 'Sai Sankeerth', confidence: 0.99 },
-          { fieldName: 'date_of_birth', rawValue: '2004-08-14', normalizedValue: '14/08/2004', confidence: 0.98 },
-          { fieldName: 'gender', rawValue: 'Male', confidence: 0.99 },
-          { fieldName: 'aadhaar_number', rawValue: '5492 8173 9012', confidence: 0.99 },
-        ],
-      };
-    case 'INCOME_CERTIFICATE':
-      return {
-        documentType: 'INCOME_CERTIFICATE',
-        rawText: actualText || "GOVERNMENT OF TELANGANA\nAnnual Household Income: Rs. 1,80,000/-",
-        fields: [
-          { fieldName: 'full_name', rawValue: 'Sai Sankeerth', confidence: 0.97 },
-          { fieldName: 'annual_income', rawValue: '180000', normalizedValue: '₹1,80,000 / year', confidence: 0.96 },
-        ],
-      };
-    default:
-      return {
-        documentType: type,
-        rawText: actualText || "Official Document Processed",
-        fields: [
-          { fieldName: 'full_name', rawValue: 'Sai Sankeerth', confidence: 0.88 },
-        ],
-      };
+    return {
+      documentType: inferredType,
+      rawText: "Document uploaded. OCR text extraction could not process this file.",
+      fields: [],
+    };
   }
 }

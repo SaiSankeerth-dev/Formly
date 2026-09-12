@@ -321,7 +321,7 @@ export function GovernmentLoginView() {
                 <StateEmblem size={18} className="text-amber-400 shrink-0" />
                 <span className="tracking-wide">Digital Governance &nbsp;•&nbsp; Efficient Services &nbsp;•&nbsp; Empowered Citizens</span>
               </div>
-              <span className="hidden sm:inline text-amber-300/90 text-[10px] uppercase tracking-wider font-mono">CBDT RPC</span>
+              <span className="hidden sm:inline text-amber-300/90 text-[10px] uppercase tracking-wider font-mono">OPERATIONS</span>
             </div>
           </div>
         </div>

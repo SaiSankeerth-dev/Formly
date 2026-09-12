@@ -541,34 +541,16 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
                   <div className="p-4 text-xs text-slate-400 space-y-2">
                     <div className="font-bold text-slate-600">Quick Navigation Suggestions:</div>
                     <div className="grid grid-cols-2 gap-2">
-                      <Link
-                        href={getAppWorkspaceUrl("PAN-2026-0001")}
-                        onClick={() => setSearchOpen(false)}
-                        className="p-2.5 bg-slate-50 hover:bg-blue-50 rounded-xl font-mono text-blue-700 font-bold"
-                      >
-                        PAN-2026-0001 (Sai Sankeerth)
-                      </Link>
-                      <Link
-                        href={getAppWorkspaceUrl("PAN-2026-0002")}
-                        onClick={() => setSearchOpen(false)}
-                        className="p-2.5 bg-slate-50 hover:bg-blue-50 rounded-xl font-mono text-blue-700 font-bold"
-                      >
-                        PAN-2026-0002 (Anjali Sharma)
-                      </Link>
-                      <Link
-                        href={getAppWorkspaceUrl("PAN-2026-0003")}
-                        onClick={() => setSearchOpen(false)}
-                        className="p-2.5 bg-slate-50 hover:bg-blue-50 rounded-xl font-mono text-blue-700 font-bold"
-                      >
-                        PAN-2026-0003 (Rahul Verma)
-                      </Link>
-                      <Link
-                        href={getAppWorkspaceUrl("PAN-2026-0004")}
-                        onClick={() => setSearchOpen(false)}
-                        className="p-2.5 bg-slate-50 hover:bg-blue-50 rounded-xl font-mono text-blue-700 font-bold"
-                      >
-                        PAN-2026-0004 (Priya Patel)
-                      </Link>
+                      {applications.slice(0, 4).map((app) => (
+                        <Link
+                          key={app.id}
+                          href={getAppWorkspaceUrl(app.id)}
+                          onClick={() => setSearchOpen(false)}
+                          className="p-2.5 bg-slate-50 hover:bg-blue-50 rounded-xl font-mono text-blue-700 font-bold text-xs truncate"
+                        >
+                          {app.id} ({app.applicantName})
+                        </Link>
+                      ))}
                     </div>
                   </div>
                 )}

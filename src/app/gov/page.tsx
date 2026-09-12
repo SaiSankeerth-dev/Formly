@@ -36,7 +36,12 @@ export default function GovernmentDashboardPage() {
         year: "numeric",
       }).format(new Date());
     } catch {
-      return "Tuesday, 10 September 2026";
+      return new Date().toLocaleDateString("en-IN", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
     }
   }, []);
 
@@ -401,7 +406,15 @@ export default function GovernmentDashboardPage() {
                     <div className="flex items-center gap-1.5">
                       <Calendar className="w-3.5 h-3.5 text-slate-400" />
                       <span className="text-slate-400">Submitted:</span>
-                      <span className="text-slate-700 font-medium">8 Sept 2026, 11:22 AM</span>
+                      <span className="text-slate-700 font-medium">
+                        {topActionCase.createdAt
+                          ? new Date(topActionCase.createdAt).toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })
+                          : "Recently"}
+                      </span>
                     </div>
                   </div>
                 </div>

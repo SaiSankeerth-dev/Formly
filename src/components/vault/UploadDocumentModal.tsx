@@ -41,7 +41,7 @@ export function UploadDocumentModal({
   initialServiceId,
   initialDocumentType,
 }: UploadDocumentModalProps) {
-  const { uploadDocument, activeServiceId } = useSevaSaarthi();
+  const { uploadDocument, activeServiceId, user } = useSevaSaarthi();
   const [selectedService, setSelectedService] = useState<string>(initialServiceId || activeServiceId || "s001");
   const [selectedType, setSelectedType] = useState<DocumentType>(initialDocumentType || "INCOME_CERTIFICATE");
   const [file, setFile] = useState<File | null>(null);
@@ -217,7 +217,7 @@ export function UploadDocumentModal({
 
         ctx.fillStyle = "#334155";
         ctx.font = "26px sans-serif";
-        ctx.fillText("Citizen Name: Sai Sankeerth", 120, 320);
+        ctx.fillText(`Citizen Name: ${user?.name || "Citizen Applicant"}`, 120, 320);
         ctx.fillText("Application Ref: GOV-2026-894103", 120, 370);
         ctx.fillText("Issuing Authority: Revenue Department & e-Governance Portal", 120, 420);
         ctx.fillText(`Date of Verification: ${new Date().toLocaleDateString()}`, 120, 470);

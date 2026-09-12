@@ -13,8 +13,8 @@ export async function GET(request: NextRequest) {
 
     const employee = auth.employee;
 
-    let departmentName = "Income Tax Department (CBDT) - PAN Division";
-    let officeName = "Regional Processing Cell, Hyderabad";
+    let departmentName = "Operations Directorate";
+    let officeName = "Operations Processing Cell";
 
     try {
       const db = await getAuthoritativeDb();
