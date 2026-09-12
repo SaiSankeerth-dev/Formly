@@ -1,27 +1,41 @@
-(() => {
-  // 1. Listen for ACTIVATE_SERVICE event
+  // 1. Listen for ACTIVATE_SERVICE and LAUNCH_SERVICE events
   const handleActivateService = (e) => {
-    chrome.runtime.sendMessage({
-      type: "ACTIVATE_SERVICE",
-      payload: e.detail,
-    });
+    const payload = e.detail || (e.data && e.data.data);
+    if (payload) {
+      chrome.runtime.sendMessage({
+        type: "ACTIVATE_SERVICE",
+        payload: payload,
+      });
+    }
   };
 
   // 2. Listen for SYNC_PROFILE event from web app
   const handleSyncProfile = (e) => {
-    if (e.detail) {
+    const payload = e.detail || (e.data && e.data.data);
+    if (payload) {
       chrome.runtime.sendMessage({
         type: "SYNC_PROFILE_DATA",
-        payload: e.detail,
+        payload: payload,
       });
     }
   };
 
   window.addEventListener("SEVA_SAARTHI_ACTIVATE_SERVICE", handleActivateService);
   document.addEventListener("SEVA_SAARTHI_ACTIVATE_SERVICE", handleActivateService);
+  window.addEventListener("SEVA_SAARTHI_LAUNCH_SERVICE", handleActivateService);
+  document.addEventListener("SEVA_SAARTHI_LAUNCH_SERVICE", handleActivateService);
 
   window.addEventListener("SEVA_SAARTHI_SYNC_PROFILE", handleSyncProfile);
   document.addEventListener("SEVA_SAARTHI_SYNC_PROFILE", handleSyncProfile);
+
+  window.addEventListener("message", (e) => {
+    if (e.data && (e.data.type === "SEVA_SAARTHI_ACTIVATE_SERVICE" || e.data.type === "SEVA_SAARTHI_LAUNCH_SERVICE")) {
+      handleActivateService(e);
+    }
+    if (e.data && e.data.type === "SEVA_SAARTHI_SYNC_PROFILE") {
+      handleSyncProfile(e);
+    }
+  });
 
   // 3. Proactively read saved profile from localStorage if present
   try {

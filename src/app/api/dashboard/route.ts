@@ -35,7 +35,7 @@ export async function GET(request: Request) {
       getCitizenSessions(user.id),
     ]);
 
-    const onboardingStatus = checkOnboardingStatus(profileFields);
+    const onboardingStatus = checkOnboardingStatus(profileFields, user);
     const completeness = getProfileCompleteness(profileFields);
     const firstName = user.name ? user.name.trim().split(/\s+/)[0] : "Citizen";
 
@@ -51,6 +51,7 @@ export async function GET(request: Request) {
       },
       profile: {
         completed: onboardingStatus.isComplete,
+        currentStep: onboardingStatus.currentStep,
         completionScore: completeness.strength,
         emptyCount: completeness.emptyCount,
         fields: onboardingStatus.profileMap,

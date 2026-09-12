@@ -23,10 +23,19 @@ function ProfileOnboardingContent() {
   const searchParams = useSearchParams();
   const { user, profileFields, batchUpdateProfileFields } = useSevaSaarthi();
 
-  const initialStepParam = Number(searchParams.get("step")) || 1;
+  const rawStep = Number(searchParams.get("step")) || 1;
+  const initialStepParam = rawStep >= 1 && rawStep <= 4 ? rawStep : 1;
   const [currentStep, setCurrentStep] = useState<number>(initialStepParam);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+
+  // Synchronize wizard step with URL query parameter
+  useEffect(() => {
+    const raw = Number(searchParams.get("step"));
+    if (raw >= 1 && raw <= 4) {
+      setCurrentStep(raw);
+    }
+  }, [searchParams]);
 
   // Form State
   const [fullName, setFullName] = useState("");
@@ -138,6 +147,7 @@ function ProfileOnboardingContent() {
         toast.success("Profile setup completed successfully!");
       } else {
         setCurrentStep(nextStep);
+        router.replace(`/onboarding/profile?step=${nextStep}`);
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to save profile information.");

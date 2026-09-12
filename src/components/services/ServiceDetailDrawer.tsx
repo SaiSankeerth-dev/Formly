@@ -89,7 +89,9 @@ export function ServiceDetailDrawer({
       };
 
       if (typeof window !== "undefined") {
+        window.postMessage({ type: "SEVA_SAARTHI_ACTIVATE_SERVICE", data: handoffPayload }, "*");
         window.postMessage({ type: "SEVA_SAARTHI_LAUNCH_SERVICE", data: handoffPayload }, "*");
+        window.dispatchEvent(new CustomEvent("SEVA_SAARTHI_ACTIVATE_SERVICE", { detail: handoffPayload }));
         window.dispatchEvent(new CustomEvent("SEVA_SAARTHI_LAUNCH_SERVICE", { detail: handoffPayload }));
       }
 

@@ -1,4 +1,4 @@
-import { User, GraduationCap, Banknote, Landmark } from "lucide-react";
+import { User, Phone, MapPin, GraduationCap, Banknote, Landmark, Sparkles } from "lucide-react";
 import { ProfileField } from "@/types";
 
 export interface ProfileFieldDefinition {
@@ -6,28 +6,32 @@ export interface ProfileFieldDefinition {
   label: string;
   placeholder: string;
   type?: string;
-  category: "IDENTITY" | "EDUCATION" | "INCOME" | "BANKING";
+  category: "PERSONAL" | "CONTACT" | "ADDRESS" | "EDUCATION" | "OTHER" | "IDENTITY" | "INCOME" | "BANKING";
   isKeyField?: boolean;
   options?: string[];
 }
 
 export const CANONICAL_PROFILE_FIELDS: ProfileFieldDefinition[] = [
-  // 1. Identity & Personal Info (13 fields)
-  { fieldName: "full_name", label: "Full Name (as per Aadhaar/10th)", placeholder: "Enter your full legal name", category: "IDENTITY", isKeyField: true },
-  { fieldName: "father_name", label: "Father's / Guardian's Full Name", placeholder: "Enter father's or guardian's full name", category: "IDENTITY" },
-  { fieldName: "mother_name", label: "Mother's Full Name", placeholder: "Enter mother's full name", category: "IDENTITY" },
-  { fieldName: "date_of_birth", label: "Date of Birth", placeholder: "YYYY-MM-DD", type: "date", category: "IDENTITY", isKeyField: true },
-  { fieldName: "gender", label: "Gender", placeholder: "Male / Female / Other", category: "IDENTITY", isKeyField: true, options: ["Male", "Female", "Other"] },
-  { fieldName: "aadhaar_number", label: "Aadhaar Number (12-digit UID)", placeholder: "12-digit Aadhaar UID", category: "IDENTITY", isKeyField: true },
-  { fieldName: "phone_number", label: "Primary Mobile Number (Aadhaar Linked)", placeholder: "10-digit mobile number", category: "IDENTITY" },
-  { fieldName: "email", label: "Primary Email Address", placeholder: "name@example.com", category: "IDENTITY" },
-  { fieldName: "location", label: "Current City & State", placeholder: "City, State", category: "IDENTITY", isKeyField: true },
-  { fieldName: "district", label: "District", placeholder: "e.g. Hyderabad / Ranga Reddy", category: "IDENTITY", isKeyField: true },
-  { fieldName: "mandal", label: "Mandal / Tahsil", placeholder: "e.g. Serilingampally / Gandipet", category: "IDENTITY", isKeyField: true },
-  { fieldName: "village", label: "Village / Ward / Locality", placeholder: "e.g. Gachibowli / Madhapur", category: "IDENTITY" },
-  { fieldName: "permanent_address", label: "Permanent Address & Pincode", placeholder: "House No, Street, Landmark, Pincode", category: "IDENTITY" },
+  // 1. Personal Information (Section 17)
+  { fieldName: "full_name", label: "Full Name (as per Aadhaar/10th)", placeholder: "Enter your full legal name", category: "PERSONAL", isKeyField: true },
+  { fieldName: "father_name", label: "Father's / Guardian's Full Name", placeholder: "Enter father's or guardian's full name", category: "PERSONAL" },
+  { fieldName: "mother_name", label: "Mother's Full Name", placeholder: "Enter mother's full name", category: "PERSONAL" },
+  { fieldName: "date_of_birth", label: "Date of Birth", placeholder: "YYYY-MM-DD", type: "date", category: "PERSONAL", isKeyField: true },
+  { fieldName: "gender", label: "Gender", placeholder: "Male / Female / Other", category: "PERSONAL", isKeyField: true, options: ["Male", "Female", "Other"] },
+  { fieldName: "aadhaar_number", label: "Aadhaar Number (12-digit UID)", placeholder: "12-digit Aadhaar UID", category: "PERSONAL", isKeyField: true },
 
-  // 2. Academic & College Details (6 fields)
+  // 2. Contact (Section 17)
+  { fieldName: "phone_number", label: "Primary Mobile Number (Aadhaar Linked)", placeholder: "10-digit mobile number", category: "CONTACT" },
+  { fieldName: "email", label: "Primary Email Address", placeholder: "name@example.com", category: "CONTACT" },
+
+  // 3. Address (Section 17)
+  { fieldName: "location", label: "Current City & State", placeholder: "City, State", category: "ADDRESS", isKeyField: true },
+  { fieldName: "district", label: "District", placeholder: "e.g. Hyderabad / Ranga Reddy", category: "ADDRESS", isKeyField: true },
+  { fieldName: "mandal", label: "Mandal / Tahsil", placeholder: "e.g. Serilingampally / Gandipet", category: "ADDRESS", isKeyField: true },
+  { fieldName: "village", label: "Village / Ward / Locality", placeholder: "e.g. Gachibowli / Madhapur", category: "ADDRESS" },
+  { fieldName: "permanent_address", label: "Permanent Address & Pincode", placeholder: "House No, Street, Landmark, Pincode", category: "ADDRESS" },
+
+  // 4. Education (Section 17)
   { fieldName: "college_name", label: "College / University Name", placeholder: "College / University name", category: "EDUCATION", isKeyField: true },
   { fieldName: "education_degree", label: "Course / Degree & Branch", placeholder: "Course / Degree name", category: "EDUCATION", isKeyField: true },
   { fieldName: "current_year", label: "Current Year / Semester of Study", placeholder: "e.g. 3rd Year / 5th Sem", category: "EDUCATION" },
@@ -35,27 +39,26 @@ export const CANONICAL_PROFILE_FIELDS: ProfileFieldDefinition[] = [
   { fieldName: "tenth_percentage", label: "Class 10 (SSC) Percentage / GPA", placeholder: "e.g. 92.4% or 9.5 GPA", category: "EDUCATION" },
   { fieldName: "twelfth_percentage", label: "Class 12 / Intermediate Percentage / Marks", placeholder: "e.g. 88.6% or 886/1000", category: "EDUCATION" },
 
-  // 3. Income & Reservation Category (6 fields)
-  { fieldName: "annual_income", label: "Annual Family Household Income (₹)", placeholder: "e.g. 180000", type: "number", category: "INCOME", isKeyField: true },
-  { fieldName: "income_cert_no", label: "Income Certificate Application / Certificate No", placeholder: "e.g. IC01240982312", category: "INCOME" },
-  { fieldName: "caste_category", label: "Caste / Social Category", placeholder: "General / OBC / SC / ST / EWS", category: "INCOME", options: ["General", "OBC", "SC", "ST", "EWS"] },
-  { fieldName: "sub_caste", label: "Sub-Caste / Community Name", placeholder: "e.g. Yadava, Kapu, Reddy, Brahmin, Mala, Madiga", category: "INCOME" },
-  { fieldName: "minority_status", label: "Religious Minority Status", placeholder: "No / Muslim / Christian / Sikh / Jain / Buddhist", category: "INCOME", options: ["No", "Muslim", "Christian", "Sikh", "Jain", "Buddhist", "Parsi"] },
-  { fieldName: "disability_status", label: "Differently Abled / PwD Status", placeholder: "No / Yes (40%+ disability)", category: "INCOME", options: ["No", "Yes (40%+ disability)", "Yes (Less than 40%)"] },
-
-  // 4. Banking & DBT Seeding (5 fields)
-  { fieldName: "bank_name", label: "Bank Name & Branch", placeholder: "e.g. State Bank of India", category: "BANKING" },
-  { fieldName: "bank_account_no", label: "Bank Savings Account Number", placeholder: "11 to 16 digit bank account number", category: "BANKING", isKeyField: true },
-  { fieldName: "bank_ifsc", label: "Bank IFSC Code", placeholder: "11-character IFSC (e.g. SBIN0001234)", category: "BANKING", isKeyField: true },
-  { fieldName: "account_holder_name", label: "Account Holder Name (Must match Aadhaar)", placeholder: "Name as per bank passbook", category: "BANKING" },
-  { fieldName: "dbt_seeding_status", label: "Aadhaar-NPCI DBT Seeding Status", placeholder: "Seeded (Active) / Linked", category: "BANKING", options: ["Seeded (Active)", "Linked", "Not Seeded"] },
+  // 5. Other reusable application information (Section 17)
+  { fieldName: "annual_income", label: "Annual Family Household Income (₹)", placeholder: "e.g. 180000", type: "number", category: "OTHER", isKeyField: true },
+  { fieldName: "income_cert_no", label: "Income Certificate Application / Certificate No", placeholder: "e.g. IC01240982312", category: "OTHER" },
+  { fieldName: "caste_category", label: "Caste / Social Category", placeholder: "General / OBC / SC / ST / EWS", category: "OTHER", options: ["General", "OBC", "SC", "ST", "EWS"] },
+  { fieldName: "sub_caste", label: "Sub-Caste / Community Name", placeholder: "e.g. Yadava, Kapu, Reddy, Brahmin, Mala, Madiga", category: "OTHER" },
+  { fieldName: "minority_status", label: "Religious Minority Status", placeholder: "No / Muslim / Christian / Sikh / Jain / Buddhist", category: "OTHER", options: ["No", "Muslim", "Christian", "Sikh", "Jain", "Buddhist", "Parsi"] },
+  { fieldName: "disability_status", label: "Differently Abled / PwD Status", placeholder: "No / Yes (40%+ disability)", category: "OTHER", options: ["No", "Yes (40%+ disability)", "Yes (Less than 40%)"] },
+  { fieldName: "bank_name", label: "Bank Name & Branch", placeholder: "e.g. State Bank of India", category: "OTHER" },
+  { fieldName: "bank_account_no", label: "Bank Savings Account Number", placeholder: "11 to 16 digit bank account number", category: "OTHER", isKeyField: true },
+  { fieldName: "bank_ifsc", label: "Bank IFSC Code", placeholder: "11-character IFSC (e.g. SBIN0001234)", category: "OTHER", isKeyField: true },
+  { fieldName: "account_holder_name", label: "Account Holder Name (Must match Aadhaar)", placeholder: "Name as per bank passbook", category: "OTHER" },
+  { fieldName: "dbt_seeding_status", label: "Aadhaar-NPCI DBT Seeding Status", placeholder: "Seeded (Active) / Linked", category: "OTHER", options: ["Seeded (Active)", "Linked", "Not Seeded"] },
 ];
 
 export const PROFILE_CATEGORIES = [
-  { key: "IDENTITY" as const, title: "Identity & Personal Info", icon: User, iconBg: "bg-indigo-50 text-indigo-600" },
-  { key: "EDUCATION" as const, title: "Academic & College Details", icon: GraduationCap, iconBg: "bg-blue-50 text-blue-600" },
-  { key: "INCOME" as const, title: "Income & Reservation Category", icon: Banknote, iconBg: "bg-amber-50 text-amber-600" },
-  { key: "BANKING" as const, title: "Bank Account (DBT Seeding)", icon: Landmark, iconBg: "bg-emerald-50 text-emerald-600" },
+  { key: "PERSONAL" as const, title: "Personal Information", icon: User, iconBg: "bg-indigo-50 text-indigo-600" },
+  { key: "CONTACT" as const, title: "Contact", icon: Phone, iconBg: "bg-blue-50 text-blue-600" },
+  { key: "ADDRESS" as const, title: "Address", icon: MapPin, iconBg: "bg-emerald-50 text-emerald-600" },
+  { key: "EDUCATION" as const, title: "Education", icon: GraduationCap, iconBg: "bg-purple-50 text-purple-600" },
+  { key: "OTHER" as const, title: "Other reusable application information", icon: Sparkles, iconBg: "bg-amber-50 text-amber-600" },
 ];
 
 export function computeProfileStrength(profileFields: ProfileField[]): number {
@@ -89,7 +92,7 @@ export function getProfileCompleteness(profileFields: ProfileField[]) {
   };
 }
 
-export function checkOnboardingStatus(fields: ProfileField[]) {
+export function checkOnboardingStatus(fields: ProfileField[], user?: { email?: string; phone?: string }) {
   const map: Record<string, string> = {};
   if (Array.isArray(fields)) {
     for (const f of fields) {
@@ -99,8 +102,11 @@ export function checkOnboardingStatus(fields: ProfileField[]) {
     }
   }
 
+  const effectivePhone = map.phone_number || map.mobile || user?.phone;
+  const effectiveEmail = map.email || user?.email;
+
   const isStep1 = Boolean(map.full_name && map.date_of_birth && map.gender);
-  const isStep2 = Boolean(map.phone_number || map.mobile || map.email);
+  const isStep2 = Boolean(effectivePhone && effectiveEmail);
   const isStep3 = Boolean(
     (map.state || map.location) &&
       map.district &&

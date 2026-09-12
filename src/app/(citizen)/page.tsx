@@ -6,6 +6,7 @@ import {
   Sparkles,
   Search,
   ArrowRight,
+  AlertCircle,
 } from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { IndiaHeroVisual } from "@/components/dashboard/IndiaHeroVisual";
@@ -26,11 +27,10 @@ export default function HomePage() {
   // Dynamic greeting based on time of day
   const hour = new Date().getHours();
   const timeOfDay = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
-  const firstName = user?.name ? user.name.trim().split(/\s+/)[0] : "Citizen";
-
   // Dashboard API state
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
   const [sessions, setSessions] = useState<CitizenSessionRecord[]>([]);
 
   // Modals & Drawers state
@@ -41,6 +41,8 @@ export default function HomePage() {
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
+
+  const firstName = dashboardData?.user?.firstName || (user?.name ? user.name.trim().split(/\s+/)[0] : "Citizen");
 
   // Suggestion tags matching specification
   const searchSuggestions = [
@@ -56,19 +58,32 @@ export default function HomePage() {
     let isMounted = true;
 
     async function fetchDashboard() {
+      setDashboardError(null);
       try {
         const res = await fetch("/api/dashboard");
         if (res.ok) {
           const data = await res.json();
           if (isMounted && data.success) {
+            // First-login onboarding detection: If citizen profile is not yet complete, route to wizard
+            if (data.profile && !data.profile.completed) {
+              const step = data.profile.currentStep || 1;
+              router.push(`/onboarding/profile?step=${step}`);
+              return;
+            }
+
             setDashboardData(data);
             if (Array.isArray(data.recentSessions)) {
               setSessions(data.recentSessions);
             }
+          } else {
+            if (isMounted) setDashboardError("Your dashboard couldn't be loaded.");
           }
+        } else {
+          if (isMounted) setDashboardError("Your dashboard couldn't be loaded.");
         }
       } catch (err) {
         console.warn("[HomePage] Failed to fetch /api/dashboard", err);
+        if (isMounted) setDashboardError("Your dashboard couldn't be loaded.");
       } finally {
         if (isMounted) {
           setIsLoadingDashboard(false);
@@ -89,18 +104,6 @@ export default function HomePage() {
       isMounted = false;
     };
   }, [user, isLoadingAuth, router]);
-
-  // Keyboard shortcut Ctrl + K
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setIsCommandPaletteOpen(true);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
 
   const handleOpenService = (service: ServiceDetail) => {
     setSelectedService(service);
@@ -182,6 +185,31 @@ export default function HomePage() {
           <div className="lg:col-span-3 h-44 bg-white/70 rounded-3xl border border-slate-100 p-6 shadow-xs" />
           <div className="h-44 bg-white/70 rounded-3xl border border-slate-100 p-6 shadow-xs" />
         </div>
+      </div>
+    );
+  }
+
+  // 2. Error State (Rule 25: Explicit error handling with Try Again button)
+  if (dashboardError) {
+    return (
+      <div className="max-w-md mx-auto my-16 p-8 bg-white rounded-3xl border border-slate-100 shadow-xl text-center space-y-4">
+        <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto border border-rose-100">
+          <AlertCircle className="w-7 h-7" />
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-base font-bold text-slate-900">Your dashboard couldn&apos;t be loaded.</h2>
+          <p className="text-xs text-slate-500">Please check your connection and try again.</p>
+        </div>
+        <button
+          onClick={() => {
+            setIsLoadingDashboard(true);
+            setDashboardError(null);
+            window.location.reload();
+          }}
+          className="py-2.5 px-6 bg-[#2F27CE] hover:bg-[#231CA8] text-white text-xs font-bold rounded-2xl shadow-sm transition-all cursor-pointer"
+        >
+          Try Again
+        </button>
       </div>
     );
   }
@@ -280,7 +308,11 @@ export default function HomePage() {
         <div className="lg:col-span-3">
           <PopularServicesRow
             onSelectService={handleOpenService}
-            onViewAllClick={() => setIsCommandPaletteOpen(true)}
+            onViewAllClick={() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("SEVA_SAARTHI_OPEN_PALETTE"));
+              }
+            }}
           />
         </div>
 
@@ -343,16 +375,6 @@ export default function HomePage() {
           setIsAIOpen(false);
           handleOpenService(srv);
         }}
-      />
-
-      {/* ========================================================
-          8. COMMAND PALETTE (Ctrl + K)
-          ======================================================== */}
-      <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-        onSelectService={handleOpenService}
-        onAskSaarthi={() => setIsAIOpen(true)}
       />
     </div>
   );

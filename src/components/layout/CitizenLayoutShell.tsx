@@ -25,6 +25,13 @@ export function CitizenLayoutShell({ children }: { children: React.ReactNode }) 
     setIsMobileNavOpen(false);
   }, [pathname]);
 
+  // Listen for global command palette trigger
+  useEffect(() => {
+    const handleOpenPalette = () => setIsCommandPaletteOpen(true);
+    window.addEventListener("SEVA_SAARTHI_OPEN_PALETTE", handleOpenPalette);
+    return () => window.removeEventListener("SEVA_SAARTHI_OPEN_PALETTE", handleOpenPalette);
+  }, []);
+
   // If on login/signup, portal simulation, full tracker, or onboarding screen, render clean layout without citizen sidebar/header
   if (isAuthPage || isPortalPage || isTrackPage || isOnboarding) {
     return <div className="min-h-screen">{children}</div>;

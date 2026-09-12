@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authenticateSession, getUserDocuments, getUserExtractedFields, deleteDocumentForUser } from "@/lib/server/db";
+import { authenticateSession, getUserDocuments, getUserExtractedFields, deleteDocumentForUser, updateDocumentForUser } from "@/lib/server/db";
 import { cookies } from "next/headers";
 
 async function getAuthenticatedUser(request: Request) {
@@ -40,6 +40,29 @@ export async function GET(
     document: doc,
     extracted_fields: fields,
   });
+}
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await getAuthenticatedUser(request);
+  if (!user) {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  try {
+    const body = await request.json();
+    const { prepared_size_bytes, status } = body;
+    await updateDocumentForUser(user.id, id, { prepared_size_bytes, status });
+    return NextResponse.json({
+      success: true,
+      message: `Document ${id} updated successfully`,
+    });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message || "Failed to update document" }, { status: 500 });
+  }
 }
 
 export async function DELETE(

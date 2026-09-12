@@ -24,7 +24,7 @@ export async function GET(request: Request) {
   }
 
   const fields = await getUserProfileFields(user.id);
-  const { isComplete, currentStep, profileMap } = checkOnboardingStatus(fields);
+  const { isComplete, currentStep, profileMap } = checkOnboardingStatus(fields, user);
   const score = computeProfileStrength(fields);
 
   return NextResponse.json({
@@ -72,7 +72,7 @@ async function handleProfileUpdate(request: Request) {
         }
       }
       const allFields = await getUserProfileFields(user.id);
-      const { isComplete, currentStep, profileMap } = checkOnboardingStatus(allFields);
+      const { isComplete, currentStep, profileMap } = checkOnboardingStatus(allFields, user);
       const score = computeProfileStrength(allFields);
 
       return NextResponse.json({
@@ -92,7 +92,7 @@ async function handleProfileUpdate(request: Request) {
 
     const updatedField = await updateUserProfileField(user.id, field_name, value ? String(value) : "");
     const allFields = await getUserProfileFields(user.id);
-    const { isComplete, currentStep, profileMap } = checkOnboardingStatus(allFields);
+    const { isComplete, currentStep, profileMap } = checkOnboardingStatus(allFields, user);
     const score = computeProfileStrength(allFields);
 
     return NextResponse.json({

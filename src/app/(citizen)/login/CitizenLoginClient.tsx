@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import Link from "next/link";
@@ -24,6 +24,17 @@ export default function CitizenLoginClient() {
     try {
       const success = await login(email, password);
       if (success) {
+        try {
+          const profileRes = await fetch("/api/profile");
+          if (profileRes.ok) {
+            const profileData = await profileRes.json();
+            if (!profileData.completed) {
+              const step = profileData.currentStep || 1;
+              window.location.href = `/onboarding/profile?step=${step}`;
+              return;
+            }
+          }
+        } catch (_) {}
         window.location.href = "/dashboard";
       }
     } catch (err: any) {

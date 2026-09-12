@@ -24,7 +24,7 @@ import { formatBytes } from "@/lib/documents/document-profiles";
 import { toast } from "sonner";
 
 export function DocumentsManager() {
-  const { documents, uploadDocument, deleteDocument, user } = useSevaSaarthi();
+  const { documents, uploadDocument, deleteDocument, prepareDocument, user } = useSevaSaarthi();
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [preparingDoc, setPreparingDoc] = useState<DocumentRow | null>(null);
@@ -386,7 +386,10 @@ export function DocumentsManager() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
+                    if (preparingDoc) {
+                      await prepareDocument(preparingDoc.id, preparedSize || 184 * 1024);
+                    }
                     setPreparingDoc(null);
                     toast.success("Prepared document saved to your profile!");
                   }}

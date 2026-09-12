@@ -30,7 +30,7 @@ export default function SignupPage() {
     try {
       const success = await signup(name, email, password, phone);
       if (success) {
-        router.push("/dashboard");
+        router.push("/onboarding/profile?step=1");
       }
     } catch (err: any) {
       setErrorMessage(err.message || "Registration failed");

@@ -86,9 +86,48 @@ export function ProfilePage() {
     };
   };
 
+  // Mask sensitive identity/financial data per Section 17
+  const formatDisplayValue = (fieldName: string, val: string): string => {
+    if (!val || !val.trim()) return "Not entered";
+    if (fieldName === "aadhaar_number") {
+      const cleaned = val.replace(/\s+/g, "");
+      if (cleaned.length >= 4) {
+        return "•••• •••• " + cleaned.slice(-4);
+      }
+      return "•••• •••• ••••";
+    }
+    if (fieldName === "bank_account_no") {
+      if (val.length >= 4) {
+        return "••••••••" + val.slice(-4);
+      }
+      return "••••••••";
+    }
+    return val;
+  };
+
+  if (!user) {
+    return (
+      <div className="max-w-md mx-auto my-16 p-8 bg-white rounded-3xl border border-slate-100 shadow-xl text-center space-y-4">
+        <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto border border-rose-100">
+          <AlertCircle className="w-7 h-7" />
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-base font-bold text-slate-900">Your profile couldn&apos;t be loaded.</h2>
+          <p className="text-xs text-slate-500">Please check your connection and try again.</p>
+        </div>
+        <button
+          onClick={() => window.location.reload()}
+          className="py-2.5 px-6 bg-[#2F27CE] hover:bg-[#231CA8] text-white text-xs font-bold rounded-2xl shadow-sm transition-all cursor-pointer"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 pb-16">
-      {/* Page Header */}
+      {/* Page Header matching Section 17 */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5 mb-1">
@@ -96,11 +135,11 @@ export function ProfilePage() {
               <User className="w-5 h-5" />
             </div>
             <h1 className="text-xl font-bold text-slate-900">
-              {user ? `${user.name}'s Profile` : "Your Verified Profile"}
+              My Profile
             </h1>
           </div>
           <p className="text-xs text-slate-500">
-            Confirmed profile fields with document provenance and 100% eligibility tracking.
+            Confirmed profile fields used by the browser agent for official application autofill.
           </p>
         </div>
 
@@ -254,7 +293,7 @@ export function ProfilePage() {
                               currentValue ? "text-slate-900" : "text-slate-400 italic"
                             )}
                           >
-                            {currentValue || "Not entered"}
+                            {formatDisplayValue(fieldDef.fieldName, currentValue)}
                           </span>
 
                           <button

@@ -23,13 +23,17 @@ export function Header({ onOpenMobileNav, onOpenCommandPalette }: HeaderProps = 
 
   // Compute initials dynamically from real user name
   const userInitials = React.useMemo(() => {
-    if (!user?.name) return "SS";
+    if (!user?.name) {
+      if (user?.email) return user.email.substring(0, 2).toUpperCase();
+      return "CU";
+    }
     const parts = user.name.trim().split(/\s+/).filter(Boolean);
-    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    if (parts.length === 0) return "CU";
+    if (parts.length === 1) return parts[0].substring(0, Math.min(2, parts[0].length)).toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  }, [user?.name]);
+  }, [user?.name, user?.email]);
 
-  const displayName = user?.name || "Sai Sankeerth";
+  const displayName = user?.name || (user?.email ? user.email.split("@")[0] : "Citizen");
 
   // Global Ctrl + K listener
   useEffect(() => {
@@ -91,7 +95,7 @@ export function Header({ onOpenMobileNav, onOpenCommandPalette }: HeaderProps = 
             onClick={() => setShowUserMenu(!showUserMenu)}
             className="w-8 h-8 rounded-full bg-[#E0E7FF] text-[#2F27CE] font-bold text-xs flex items-center justify-center ring-1 ring-indigo-200"
           >
-            {userInitials}
+            {userInitials || <User className="w-4 h-4 text-[#2F27CE]" />}
           </button>
         </div>
       </header>
@@ -186,7 +190,7 @@ export function Header({ onOpenMobileNav, onOpenCommandPalette }: HeaderProps = 
               className="flex items-center gap-2.5 p-1.5 pr-3 hover:bg-slate-50 rounded-2xl border border-slate-200 bg-white transition-all shadow-2xs cursor-pointer"
             >
               <div className="w-8 h-8 rounded-full bg-[#E0E7FF] text-[#2F27CE] font-black text-xs flex items-center justify-center">
-                {userInitials}
+                {userInitials || <User className="w-4 h-4 text-[#2F27CE]" />}
               </div>
               <span className="text-xs font-bold text-slate-800 hidden sm:inline truncate max-w-[120px]">
                 {displayName}
@@ -205,7 +209,7 @@ export function Header({ onOpenMobileNav, onOpenCommandPalette }: HeaderProps = 
                 <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2">
                   <div className="px-4 py-2 border-b border-slate-100">
                     <div className="text-xs font-bold text-slate-900">{displayName}</div>
-                    <div className="text-[11px] text-slate-500 truncate">{user?.email || "citizen@formly.local"}</div>
+                    <div className="text-[11px] text-slate-500 truncate">{user?.email || "Citizen Account"}</div>
                   </div>
                   <Link
                     href="/profile"

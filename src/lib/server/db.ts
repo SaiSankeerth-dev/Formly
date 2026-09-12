@@ -412,6 +412,20 @@ export async function deleteDocumentForUser(userId: string, docId: string): Prom
   return true;
 }
 
+export async function updateDocumentForUser(
+  userId: string,
+  docId: string,
+  updates: { prepared_size_bytes?: number; status?: string }
+): Promise<boolean> {
+  await getAuthoritativeDb();
+  const actorUuid = await resolveActorUuid("CITIZEN", userId);
+  await pgQuery(
+    `UPDATE documents SET prepared_size_bytes = COALESCE($1, prepared_size_bytes), status = COALESCE($2, status), updated_at = NOW() WHERE id = $3 AND user_id = $4`,
+    [updates.prepared_size_bytes || null, updates.status || null, docId, actorUuid]
+  );
+  return true;
+}
+
 export async function acceptExtractedFieldForUser(
   userId: string,
   docId: string,

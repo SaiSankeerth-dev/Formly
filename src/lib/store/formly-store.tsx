@@ -92,6 +92,7 @@ interface SevaSaarthiContextType {
   updateProfileField: (fieldName: string, value: string) => Promise<void>;
   batchUpdateProfileFields: (fields: Record<string, string>) => Promise<void>;
   deleteDocument: (documentId: string) => Promise<void>;
+  prepareDocument: (documentId: string, preparedSizeBytes: number) => Promise<void>;
   retryOcr: (documentId: string) => Promise<void>;
   markRequirementResolved: (requirementId: string, note?: string) => Promise<void>;
   unmarkRequirementResolved: (requirementId: string) => Promise<void>;
@@ -478,6 +479,15 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
             await loadUserData(data.user);
             setIsLoadingAuth(false);
             return;
+          } else {
+            // Server session is invalid or logged out - purge stale local state
+            setUser(null);
+            localStorage.removeItem(STORAGE_SESSION_KEY);
+            localStorage.removeItem("seva_saarthi_active_profile");
+            setDocuments([]);
+            setExtractedFields([]);
+            setProfileFields([]);
+            setRequirementStatuses([]);
           }
         }
       } catch (err) {
@@ -999,6 +1009,32 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
     setTimeout(recomputeRequirements, 50);
   };
 
+  // Prepare document (Rule 16: update prepared size and status)
+  const prepareDocument = async (documentId: string, preparedSizeBytes: number) => {
+    setDocuments((prev) =>
+      prev.map((d) =>
+        d.id === documentId
+          ? {
+              ...d,
+              prepared_size_bytes: preparedSizeBytes,
+              status: "VERIFIED",
+              updated_at: new Date().toISOString(),
+            }
+          : d
+      )
+    );
+
+    try {
+      await fetch(`/api/documents/${documentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prepared_size_bytes: preparedSizeBytes, status: "VERIFIED" }),
+      });
+    } catch (err) {
+      console.warn("Failed to persist document preparation", err);
+    }
+  };
+
   // Manual Resolution (F10)
   const markRequirementResolved = async (requirementId: string, note?: string) => {
     if (!user) return;
@@ -1134,7 +1170,7 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
     return computeProfileStrength(profileFields);
   }, [profileFields]);
 
-  // Real Citizen Applications tracked per user
+  // Real Citizen Applications tracked per user (Rule 12: No fake mock data)
   const [realUserApps, setRealUserApps] = useState<any[]>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -1144,31 +1180,31 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
           const stored = localStorage.getItem(`citizen_apps_${parsed.id}`);
           if (stored) {
             const parsedApps = JSON.parse(stored);
-            return Array.isArray(parsedApps) && parsedApps.length > 0 ? parsedApps : CITIZEN_APPLICATIONS;
+            return Array.isArray(parsedApps) ? parsedApps : [];
           }
         }
       } catch {
-        return CITIZEN_APPLICATIONS;
+        return [];
       }
     }
-    return CITIZEN_APPLICATIONS;
+    return [];
   });
 
   useEffect(() => {
     if (typeof window === "undefined" || !user?.id) {
-      setRealUserApps(CITIZEN_APPLICATIONS);
+      setRealUserApps([]);
       return;
     }
     try {
       const stored = localStorage.getItem(`citizen_apps_${user.id}`);
       if (stored) {
         const parsed = JSON.parse(stored);
-        setRealUserApps(Array.isArray(parsed) && parsed.length > 0 ? parsed : CITIZEN_APPLICATIONS);
+        setRealUserApps(Array.isArray(parsed) ? parsed : []);
       } else {
-        setRealUserApps(CITIZEN_APPLICATIONS);
+        setRealUserApps([]);
       }
     } catch {
-      setRealUserApps(CITIZEN_APPLICATIONS);
+      setRealUserApps([]);
     }
   }, [user?.id]);
 
@@ -1349,6 +1385,7 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
         updateProfileField,
         batchUpdateProfileFields,
         deleteDocument,
+        prepareDocument,
         retryOcr,
         markRequirementResolved,
         unmarkRequirementResolved,
