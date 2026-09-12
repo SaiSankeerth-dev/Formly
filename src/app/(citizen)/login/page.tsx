@@ -1,4 +1,5 @@
-﻿import { headers } from "next/headers";
+import { Suspense } from "react";
+import { headers } from "next/headers";
 import { GovernmentLoginView } from "@/components/gov/GovernmentLoginView";
 import CitizenLoginClient from "./CitizenLoginClient";
 
@@ -18,5 +19,9 @@ export default async function LoginPage() {
     return <GovernmentLoginView />;
   }
 
-  return <CitizenLoginClient />;
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#FBFBFE]" />}>
+      <CitizenLoginClient />
+    </Suspense>
+  );
 }

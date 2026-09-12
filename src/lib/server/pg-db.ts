@@ -154,8 +154,17 @@ async function initSchema(db: PGlite) {
       "passwordHash" text NOT NULL,
       salt text NOT NULL,
       role text NOT NULL,
-      "createdAt" timestamptz DEFAULT now()
+      "createdAt" timestamptz DEFAULT now(),
+      "authProvider" text DEFAULT 'local',
+      "providerAccountId" text,
+      avatar text,
+      "updatedAt" timestamptz DEFAULT now()
     );
+
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS "authProvider" text DEFAULT 'local';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS "providerAccountId" text;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar text;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS "updatedAt" timestamptz DEFAULT now();
 
     CREATE TABLE IF NOT EXISTS sessions (
       token text PRIMARY KEY,

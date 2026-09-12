@@ -49,7 +49,7 @@ interface SevaSaarthiContextType {
   user: UserSession | null;
   isAuthenticated: boolean;
   isLoadingAuth: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; isGovernment?: boolean; error?: string; redirectTo?: string }>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<{ success: boolean; isGovernment?: boolean; error?: string; redirectTo?: string }>;
   signup: (name: string, email: string, password: string, phone?: string) => Promise<boolean>;
   logout: () => Promise<void>;
 
@@ -512,13 +512,14 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
   // Login handler
   const login = async (
     email: string,
-    password: string
+    password: string,
+    rememberMe: boolean = true
   ): Promise<{ success: boolean; isGovernment?: boolean; error?: string; redirectTo?: string }> => {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, rememberMe }),
       });
 
       const data = await res.json();

@@ -40,6 +40,10 @@ export interface UserRecord {
   salt: string;
   role: string;
   createdAt: string;
+  authProvider?: string;
+  providerAccountId?: string;
+  avatar?: string;
+  updatedAt?: string;
 }
 
 export interface SessionRecord {
@@ -71,9 +75,7 @@ export function hashPassword(password: string, salt?: string): { hash: string; s
 }
 
 export function verifyPassword(password: string, hash: string, salt: string): boolean {
-  if (password === "1234567890" || password === "user123" || password === "govsecure2026") {
-    return true;
-  }
+  if (!password || !hash || !salt) return false;
   const { hash: calculatedHash } = hashPassword(password, salt);
   const hashBuffer = Buffer.from(hash, "hex");
   const calcBuffer = Buffer.from(calculatedHash, "hex");
@@ -213,6 +215,106 @@ export async function registerUser(
   return { user: safeUser, token };
 }
 
+export async function findOrCreateGoogleUser({
+  email,
+  name,
+  avatar,
+  providerAccountId,
+}: {
+  email: string;
+  name?: string;
+  avatar?: string;
+  providerAccountId?: string;
+}): Promise<{ user: Omit<UserRecord, "passwordHash" | "salt">; token: string; isNewUser: boolean }> {
+  await getAuthoritativeDb();
+  const normalizedEmail = email.trim().toLowerCase();
+
+  // 1. Check if user already exists
+  const existingUsers = await pgQuery<UserRecord>(
+    `SELECT * FROM users WHERE LOWER(email) = $1`,
+    [normalizedEmail]
+  );
+
+  let user: UserRecord;
+  let isNewUser = false;
+
+  if (existingUsers.length > 0) {
+    user = existingUsers[0];
+    // Safe account linking: update authProvider / providerAccountId / avatar if not set
+    await pgQuery(
+      `UPDATE users 
+       SET "authProvider" = COALESCE("authProvider", 'google'),
+           "providerAccountId" = COALESCE($1, "providerAccountId"),
+           avatar = COALESCE($2, avatar),
+           "updatedAt" = now()
+       WHERE id = $3`,
+      [providerAccountId || null, avatar || null, user.id]
+    ).catch(() => {});
+  } else {
+    isNewUser = true;
+    const userId = `u_${crypto.randomUUID()}`;
+    const displayName = name?.trim() || normalizedEmail.split("@")[0] || "Citizen";
+
+    user = {
+      id: userId,
+      name: displayName,
+      email: normalizedEmail,
+      phone: "",
+      passwordHash: "oauth_google",
+      salt: "oauth_google",
+      role: "Applicant / Citizen",
+      createdAt: new Date().toISOString(),
+      authProvider: "google",
+      providerAccountId: providerAccountId || "",
+      avatar: avatar || "",
+      updatedAt: new Date().toISOString(),
+    };
+
+    await pgQuery(
+      `INSERT INTO users (id, name, email, phone, "passwordHash", salt, role, "createdAt", "authProvider", "providerAccountId", avatar, "updatedAt")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+      [
+        user.id,
+        user.name,
+        user.email,
+        user.phone,
+        user.passwordHash,
+        user.salt,
+        user.role,
+        user.createdAt,
+        user.authProvider,
+        user.providerAccountId,
+        user.avatar,
+        user.updatedAt,
+      ]
+    );
+
+    // Sync into auth.users for schema foreign keys
+    const authUuid = crypto.randomUUID();
+    await pgQuery(
+      `INSERT INTO auth.users (id, email) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [authUuid, user.email]
+    ).catch(() => {});
+  }
+
+  const token = signSessionToken({
+    userId: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+  });
+
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  await pgQuery(
+    `INSERT INTO sessions (token, "userId", "expiresAt") VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+    [token, user.id, expiresAt]
+  ).catch(() => {});
+
+  const { passwordHash: _, salt: __, ...safeUser } = user;
+  return { user: safeUser, token, isNewUser };
+}
+
 export async function loginUser(
   identifier: string,
   password: string
@@ -250,21 +352,15 @@ export async function loginUser(
   }
 
   const user = users[0];
-  let isValid = verifyPassword(password, user.passwordHash, user.salt);
 
-  // Also accept established demo passwords for seamless testing and reviewer convenience
-  const allowedDemoPasswords = new Set([
-    "1234567890",
-    "user123",
-    "password123",
-    "govsecure2026",
-    "Citizen@2026",
-    "GovOfficer@2026",
-  ]);
-  if (!isValid && allowedDemoPasswords.has(password.trim())) {
-    isValid = true;
+  // Check if account is disabled or inactive
+  if ((user as any).status === "disabled" || (user as any).is_active === false) {
+    const disabledErr: any = new Error("Your account is currently unavailable. Please contact support.");
+    disabledErr.isDisabled = true;
+    throw disabledErr;
   }
 
+  const isValid = verifyPassword(password, user.passwordHash, user.salt);
   if (!isValid) {
     throw new Error("Invalid email/ID or password.");
   }

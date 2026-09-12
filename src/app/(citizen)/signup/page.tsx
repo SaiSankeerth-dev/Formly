@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, Eye, EyeOff, User, Mail, Lock, Phone, AlertCircle, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, User, Mail, Lock, Phone, AlertCircle, ShieldCheck } from "lucide-react";
+import { LotusLogo } from "@/components/ui/LotusLogo";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 
 export default function SignupPage() {
@@ -43,8 +44,11 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-indigo-50/60 via-slate-50 to-blue-50/60">
       <div className="max-w-md w-full bg-white rounded-3xl border border-slate-100 p-8 shadow-xl">
         <div className="text-center mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center mx-auto mb-3 shadow-md shadow-indigo-200">
-            <Check className="w-7 h-7 stroke-[3]" />
+          <div className="flex justify-center mb-3">
+            <LotusLogo size={44} className="w-11 h-11" />
+          </div>
+          <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+            Seva Saarthi
           </div>
           <h2 className="text-xl font-bold text-slate-900">Create Citizen Account</h2>
           <p className="text-xs text-slate-500 mt-0.5">Start building your verified government document vault</p>

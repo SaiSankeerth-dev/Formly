@@ -25,6 +25,7 @@
     "test:autofill": "npx tsx scripts/test-autofill-suite.mjs",
     "test:serverless": "npx tsx scripts/test-serverless-sim.mjs",
     "test:login": "npx tsx scripts/verify-login-flow.mjs",
+    "test:google": "npx tsx scripts/test-google-auth.mjs",
     "test:isolation": "npx tsx scripts/test-multi-user-isolation.mjs",
     "test:real": "npx tsx scripts/test-autofill-suite.mjs",
     "extension:pack": "node scripts/pack-extension.mjs",
