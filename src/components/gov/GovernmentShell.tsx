@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Layers,
+  FileText,
   CheckSquare,
   ShieldCheck,
   RotateCcw,
@@ -89,20 +90,51 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
   const getAppWorkspaceUrl = (id: string) => `${prefix}/workspace/${id}`;
 
   const navItems = [
-    { label: "Dashboard", href: `${prefix}/dashboard`, icon: LayoutDashboard },
-    { label: "Application Queue", href: `${prefix}/queue`, icon: Layers, badge: stats.newApps, badgeColor: "bg-blue-600 text-white" },
-    { label: "My Assignments", href: `${prefix}/queue?tab=my_assignments`, icon: CheckSquare, badge: stats.officerReview, badgeColor: "bg-blue-600 text-white" },
-    { label: "Review & Approve", href: `${prefix}/queue?tab=officer_review`, icon: ShieldCheck },
-    { label: "Returned Applications", href: `${prefix}/queue?tab=returned`, icon: RotateCcw, badge: stats.returned, badgeColor: "bg-slate-800 text-slate-300" },
-    { label: "Exceptions & Conflicts", href: `${prefix}/exceptions`, icon: AlertTriangle, badge: stats.exceptions, badgeColor: "bg-rose-500/20 text-rose-300 border border-rose-500/30" },
-    { label: "Interoperability Hub", href: `${prefix}/interoperability`, icon: Radio },
-    { label: "Data Mapper", href: `${prefix}/data-mapper`, icon: GitPullRequest },
-    { label: "Workflows", href: `${prefix}/workflows`, icon: Workflow },
-    { label: "Audit Logs", href: `${prefix}/audit`, icon: History },
-    { label: "Reports & Analytics", href: `${prefix}/monitoring`, icon: BarChart3 },
-    { label: "SLA Monitoring", href: `${prefix}/monitoring?tab=sla`, icon: Clock },
-    { label: "Department Resources", href: `${prefix}/resources`, icon: FolderGit2 },
-    { label: "Settings", href: `${prefix}/settings`, icon: Settings },
+    {
+      label: "Dashboard",
+      href: `${prefix}/dashboard`,
+      icon: LayoutDashboard,
+      activeMatch: (p: string) =>
+        p === `${prefix}/dashboard` || p === `${prefix}` || p === "/gov" || p === "/government",
+    },
+    {
+      label: "Applications",
+      href: `${prefix}/applications`,
+      icon: FileText,
+      activeMatch: (p: string) =>
+        p === `${prefix}/applications` || p.startsWith(`${prefix}/applications/`) || p.startsWith(`${prefix}/workspace`),
+    },
+    {
+      label: "My Queue",
+      href: `${prefix}/queue`,
+      icon: CheckSquare,
+      badge: stats.myQueue || (stats.needsReview > 0 ? stats.needsReview : undefined),
+      badgeColor: "bg-rose-600 text-white",
+      activeMatch: (p: string) => p.startsWith(`${prefix}/queue`),
+    },
+    {
+      label: "Exceptions",
+      href: `${prefix}/exceptions`,
+      icon: AlertTriangle,
+      badge: stats.exceptions > 0 ? stats.exceptions : undefined,
+      badgeColor: "bg-rose-600 text-white",
+      activeMatch: (p: string) => p.startsWith(`${prefix}/exceptions`),
+    },
+    {
+      label: "Audit",
+      href: `${prefix}/audit`,
+      icon: History,
+      activeMatch: (p: string) => p.startsWith(`${prefix}/audit`),
+    },
+  ];
+
+  const secondaryNavItems = [
+    {
+      label: "Settings",
+      href: `${prefix}/settings`,
+      icon: Settings,
+      activeMatch: (p: string) => p.startsWith(`${prefix}/settings`),
+    },
   ];
 
   // Quick search filter for matching applications
@@ -116,37 +148,41 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
       )
     : [];
 
+  const userInitials = currentUser.name
+    ? currentUser.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "SS";
+
   const SidebarContent = (
-    <div className="flex flex-col justify-between h-full p-4 select-none">
+    <div className="flex flex-col justify-between h-full p-4 select-none relative overflow-hidden">
       {/* Top Brand Header */}
-      <div className="space-y-6">
-        <div className="flex items-center gap-3 px-2 py-1">
+      <div className="space-y-6 relative z-10">
+        <Link href={`${prefix}/dashboard`} className="flex items-center gap-3 px-2 py-1 group">
           {/* Ashoka Lion / State Emblem of India */}
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 shadow-xs">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 shadow-xs group-hover:border-amber-400/50 transition-colors">
             <StateEmblem size={24} className="text-amber-400" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <span className="font-black text-lg tracking-tight text-white leading-tight">
-                Sarkaar <span className="text-blue-400">Seva</span>
+                Sarkaar <span className="text-amber-400">Seva</span>
               </span>
             </div>
             <div className="text-[11px] font-medium text-slate-400 leading-none mt-0.5">
               Government Operations Platform
             </div>
           </div>
-        </div>
+        </Link>
 
-        {/* Navigation Items */}
-        <nav className="space-y-1">
+        {/* Primary Navigation Items */}
+        <nav className="space-y-1.5 pt-2">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive =
-              item.label === "Dashboard"
-                ? pathname === "/gov/dashboard" || pathname === "/gov" || pathname === "/government" || pathname === "/government/dashboard"
-                : pathname === item.href.split("?")[0] ||
-                  pathname === item.href ||
-                  (item.label === "Application Queue" && (pathname.startsWith("/gov/workspace") || pathname.startsWith("/gov/queue") || pathname.startsWith("/government/applications")));
+            const isActive = item.activeMatch(pathname);
 
             return (
               <Link
@@ -155,7 +191,7 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all group ${
                   isActive
-                    ? "bg-blue-600 text-white font-bold shadow-sm shadow-blue-600/30"
+                    ? "bg-blue-600 text-white font-bold shadow-md shadow-blue-600/30"
                     : "text-slate-300 hover:text-white hover:bg-slate-800/80"
                 }`}
               >
@@ -172,8 +208,8 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
                   <span
                     className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ml-2 ${
                       isActive
-                        ? "bg-white/20 text-white"
-                        : item.badgeColor || "bg-slate-800 text-slate-300"
+                        ? "bg-white/25 text-white"
+                        : item.badgeColor || "bg-rose-600 text-white"
                     }`}
                   >
                     {item.badge}
@@ -182,32 +218,88 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
               </Link>
             );
           })}
+
+          {/* Divider between Primary and Secondary Nav */}
+          <div className="pt-2 pb-1">
+            <div className="border-t border-slate-800/80 my-1" />
+          </div>
+
+          {/* Settings Nav Item */}
+          {secondaryNavItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = item.activeMatch(pathname);
+
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all group ${
+                  isActive
+                    ? "bg-blue-600 text-white font-bold shadow-md shadow-blue-600/30"
+                    : "text-slate-300 hover:text-white hover:bg-slate-800/80"
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <Icon
+                    className={`w-4 h-4 shrink-0 ${
+                      isActive ? "text-white" : "text-slate-400 group-hover:text-slate-200"
+                    }`}
+                  />
+                  <span className="truncate">{item.label}</span>
+                </div>
+              </Link>
+            );
+          })}
         </nav>
       </div>
 
-      {/* Bottom Section: Support Card & Government of India Emblem Footer */}
-      <div className="pt-4 border-t border-slate-800/80 space-y-4">
-        {/* Help Card */}
-        <div className="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-3 flex items-center gap-3 text-slate-300">
-          <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0">
-            <Headphones className="w-4 h-4" />
-          </div>
-          <div className="text-left min-w-0">
-            <div className="text-xs font-bold text-white leading-tight">Need Help?</div>
-            <div className="text-[10px] text-slate-400 truncate">System support & guides</div>
-          </div>
+      {/* Bottom Section: Tricolor Wave + Parliament Architectural Silhouette & Motto */}
+      <div className="relative pt-6 pb-2 mt-auto overflow-hidden">
+        {/* Tricolor Ribbon Gradient Wave */}
+        <div className="absolute -left-4 -bottom-6 w-48 h-28 pointer-events-none opacity-85">
+          <svg viewBox="0 0 160 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+            {/* Saffron Ribbon Curve */}
+            <path
+              d="M-10 95 C 30 75, 70 50, 150 65 L 150 72 C 70 57, 30 82, -10 100 Z"
+              fill="#FF9933"
+              fillOpacity="0.85"
+            />
+            {/* White Ribbon Curve */}
+            <path
+              d="M-10 100 C 30 82, 70 57, 150 72 L 150 78 C 70 63, 30 88, -10 105 Z"
+              fill="#FFFFFF"
+              fillOpacity="0.75"
+            />
+            {/* India Green Ribbon Curve */}
+            <path
+              d="M-10 105 C 30 88, 70 63, 150 78 L 150 85 C 70 70, 30 95, -10 110 Z"
+              fill="#138808"
+              fillOpacity="0.85"
+            />
+          </svg>
         </div>
 
-        {/* Official Sovereign Emblem Footer */}
-        <div className="flex items-center gap-2.5 px-2 py-1 text-slate-400">
-          <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center text-xs shrink-0 text-amber-300">
-            <StateEmblem size={18} className="text-amber-400/90" />
-          </div>
-          <div className="text-[10px] leading-tight text-slate-400">
-            <div className="font-semibold text-slate-300">Government of India</div>
-            <div>Income Tax Department (CBDT)</div>
-            <div className="text-[9px] text-slate-500">Digital Governance for a better India</div>
-          </div>
+        {/* Parliament / Sansad Bhavan Architectural Watermark */}
+        <div className="absolute right-0 bottom-0 w-36 h-24 text-slate-700/25 pointer-events-none">
+          <svg viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+            <line x1="10" y1="110" x2="190" y2="110" stroke="currentColor" strokeWidth="2" />
+            <rect x="25" y="102" width="150" height="8" fill="currentColor" fillOpacity="0.3" />
+            {[35, 50, 65, 80, 95, 110, 125, 140, 155].map((cx, i) => (
+              <rect key={i} x={cx} y="65" width="5" height="37" fill="currentColor" fillOpacity="0.35" />
+            ))}
+            <rect x="25" y="58" width="150" height="7" fill="currentColor" fillOpacity="0.4" />
+            <path d="M75 58 C75 35, 125 35, 125 58 Z" fill="currentColor" fillOpacity="0.3" />
+            <line x1="100" y1="35" x2="100" y2="25" stroke="currentColor" strokeWidth="2" />
+            <circle cx="100" cy="23" r="2.5" fill="currentColor" />
+          </svg>
+        </div>
+
+        {/* Motivational Text Slogan */}
+        <div className="relative z-10 pl-2 space-y-0.5 text-slate-400">
+          <div className="text-[11px] font-medium leading-tight text-slate-300">Enable</div>
+          <div className="text-xs font-bold leading-tight text-white tracking-tight">Efficient Governance</div>
+          <div className="text-[11px] font-medium leading-tight text-slate-300">for a Stronger India</div>
         </div>
       </div>
     </div>
@@ -229,7 +321,17 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
           />
           <div className="relative w-72 max-w-[85vw] bg-[#0A1128] text-white h-full z-10 flex flex-col shadow-2xl">
             <div className="p-4 flex items-center justify-between border-b border-slate-800">
-              <span className="font-black text-white text-base">Seva Saarthi Gov</span>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 shadow-xs">
+                  <StateEmblem size={20} className="text-amber-400" />
+                </div>
+                <div>
+                  <span className="font-black text-white text-base tracking-tight">
+                    Sarkaar <span className="text-amber-400">Seva</span>
+                  </span>
+                  <div className="text-[10px] text-slate-400 leading-none">Gov Operations</div>
+                </div>
+              </div>
               <button
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-1.5 text-slate-400 hover:text-white rounded-lg"
@@ -267,7 +369,7 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
               >
                 <Search className="w-4 h-4 text-slate-400 shrink-0" />
                 <span className="truncate hidden sm:inline">
-                  Search applications, citizens, services, or documents...
+                  Search by Application ID, citizen name, service, or document...
                 </span>
                 <span className="truncate sm:hidden">Search cases...</span>
                 <span className="ml-auto text-[10px] font-bold text-slate-500 bg-white border border-slate-200 px-1.5 py-0.5 rounded-md shadow-2xs shrink-0">
@@ -285,9 +387,11 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
               title="Notifications"
             >
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-xs">
-                19
-              </span>
+              {(stats.exceptions > 0 || stats.needsReview > 0) && (
+                <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                  {stats.exceptions + (stats.dueToday > 0 ? 1 : 0) || 5}
+                </span>
+              )}
             </button>
 
             {/* Officer Profile Menu */}
@@ -296,8 +400,8 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
                 onClick={() => setProfileMenuOpen(!profileMenuOpen)}
                 className="flex items-center gap-2.5 p-1 sm:px-2.5 sm:py-1.5 rounded-xl hover:bg-slate-100 transition-colors text-left"
               >
-                <div className="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 text-slate-800 font-bold text-xs flex items-center justify-center shrink-0">
-                  SS
+                <div className="w-8 h-8 rounded-full bg-blue-100 border border-blue-200 text-blue-800 font-bold text-xs flex items-center justify-center shrink-0">
+                  {userInitials}
                 </div>
                 <div className="hidden sm:block">
                   <div className="text-xs font-bold text-slate-900 leading-tight">
@@ -329,7 +433,7 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
                     {/* Operational Menu Items */}
                     <div className="py-1 space-y-0.5 text-xs">
                       <Link
-                        href={`${prefix}/queue?tab=my_assignments`}
+                        href={`${prefix}/queue`}
                         onClick={() => setProfileMenuOpen(false)}
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors"
                       >
@@ -337,20 +441,20 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
                         <span>My Assigned Work</span>
                       </Link>
                       <Link
+                        href={`${prefix}/applications`}
+                        onClick={() => setProfileMenuOpen(false)}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors"
+                      >
+                        <FileText className="w-4 h-4 text-slate-400" />
+                        <span>All Applications</span>
+                      </Link>
+                      <Link
                         href={`${prefix}/settings`}
                         onClick={() => setProfileMenuOpen(false)}
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors"
                       >
                         <Shield className="w-4 h-4 text-slate-400" />
-                        <span>Security & Access Logs</span>
-                      </Link>
-                      <Link
-                        href={`${prefix}/resources`}
-                        onClick={() => setProfileMenuOpen(false)}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors"
-                      >
-                        <Building className="w-4 h-4 text-slate-400" />
-                        <span>Regional Jurisdiction RPC</span>
+                        <span>Settings & Workdesk</span>
                       </Link>
                     </div>
 

@@ -56,6 +56,12 @@ interface GovContextType {
     returned: number;
     approved: number;
     exceptions: number;
+    needsReview: number;
+    dueToday: number;
+    myQueue: number;
+    highPriority: number;
+    mediumPriority: number;
+    normalPriority: number;
   };
   isLoading: boolean;
   refreshAll: () => Promise<void>;
@@ -121,14 +127,49 @@ export function GovProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Compute live stats matching exact Image 1 baseline (1250, 83, 40, 17, 8, 1104, 10)
-  const total = 1250;
-  const newApps = 83;
-  const verificationPending = 40;
-  const officerReview = 17;
-  const returned = 8;
-  const approved = 1104;
-  const unresolvedExceptions = 10;
+  // Compute live stats dynamically from real authenticated database records
+  const total = applications.length;
+  const needsReview = applications.filter(
+    (a) =>
+      a.stage === "OFFICER_REVIEW" ||
+      a.stage === "VERIFICATION_IN_PROGRESS" ||
+      a.status === "ACTION_REQUIRED" ||
+      a.status === "VERIFICATION_CONFLICT"
+  ).length;
+  const dueToday = applications.filter(
+    (a) => a.priority === "URGENT" || a.priority === "HIGH"
+  ).length;
+  const returned = applications.filter(
+    (a) => a.status === "RETURNED_FOR_CORRECTION"
+  ).length;
+  const approved = applications.filter(
+    (a) =>
+      a.status === "APPROVED" ||
+      a.status === "COMPLETED" ||
+      a.stage === "DELIVERED"
+  ).length;
+  const unresolvedExceptions = exceptions.filter((e) => !e.isResolved).length;
+  const officerReview = applications.filter((a) => a.stage === "OFFICER_REVIEW").length;
+  const verificationPending = applications.filter(
+    (a) => a.stage === "VERIFICATION_IN_PROGRESS"
+  ).length;
+  const newApps = applications.filter(
+    (a) => a.stage === "SUBMITTED" || a.status === "SUBMITTED"
+  ).length;
+  const myQueue = applications.filter(
+    (a) =>
+      a.assignedOfficerId === currentUser.id ||
+      a.assignedOfficerId === "OFF-PAN-7042" ||
+      a.status === "ACTION_REQUIRED" ||
+      a.stage === "OFFICER_REVIEW"
+  ).length;
+  const highPriority = applications.filter(
+    (a) => a.priority === "HIGH" || a.priority === "URGENT"
+  ).length;
+  const mediumPriority = applications.filter(
+    (a) => a.priority === "NORMAL" || !a.priority
+  ).length;
+  const normalPriority = applications.filter((a) => a.priority === "LOW").length;
 
   return (
     <GovContext.Provider
@@ -145,6 +186,12 @@ export function GovProvider({ children }: { children: React.ReactNode }) {
           returned,
           approved,
           exceptions: unresolvedExceptions,
+          needsReview,
+          dueToday,
+          myQueue,
+          highPriority,
+          mediumPriority,
+          normalPriority,
         },
         isLoading,
         refreshAll,

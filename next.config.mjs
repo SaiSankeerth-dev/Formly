@@ -19,11 +19,23 @@ const nextConfig = {
       },
       {
         source: "/government/applications",
-        destination: "/gov/queue",
+        destination: "/gov/applications",
       },
       {
         source: "/government/applications/:id",
         destination: "/gov/workspace/:id",
+      },
+      {
+        source: "/gov/application-queue",
+        destination: "/gov/queue",
+      },
+      {
+        source: "/gov/review",
+        destination: "/gov/applications",
+      },
+      {
+        source: "/gov/returned",
+        destination: "/gov/applications?filter=returned",
       },
       {
         source: "/government/:path*",

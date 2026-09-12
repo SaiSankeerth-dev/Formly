@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import {
   Settings,
   Shield,
@@ -13,6 +14,12 @@ import {
   Save,
   Laptop,
   Check,
+  Radio,
+  GitPullRequest,
+  Workflow,
+  BarChart3,
+  FolderGit2,
+  ArrowRight,
 } from "lucide-react";
 import { useGov } from "@/lib/store/gov-store";
 import { toast } from "sonner";
@@ -252,6 +259,113 @@ export default function GovernmentSettingsPage() {
                   <span>Always Enforced</span>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Advanced Operations & Platform Administration (Moved from Main Nav) */}
+          <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900">Platform Administration & Technical Operations</h2>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Advanced modules accessible for system administrators and interoperability coordinators
+                </p>
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                Admin Console
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <Link
+                href="/gov/interoperability"
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 hover:bg-blue-50/60 border border-slate-100 hover:border-blue-200 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                    <Radio className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900 group-hover:text-blue-900">
+                      Interoperability Hub
+                    </div>
+                    <div className="text-[10px] text-slate-400">UIDAI, DigiLocker & Core Gateways</div>
+                  </div>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+
+              <Link
+                href="/gov/data-mapper"
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 hover:bg-indigo-50/60 border border-slate-100 hover:border-indigo-200 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                    <GitPullRequest className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900 group-hover:text-indigo-900">
+                      Data Mapper Engine
+                    </div>
+                    <div className="text-[10px] text-slate-400">Field schema normalization</div>
+                  </div>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+
+              <Link
+                href="/gov/workflows"
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 hover:bg-emerald-50/60 border border-slate-100 hover:border-emerald-200 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                    <Workflow className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900 group-hover:text-emerald-900">
+                      Workflow Orchestration
+                    </div>
+                    <div className="text-[10px] text-slate-400">Stage machine definitions</div>
+                  </div>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+
+              <Link
+                href="/gov/monitoring"
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 hover:bg-purple-50/60 border border-slate-100 hover:border-purple-200 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                    <BarChart3 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900 group-hover:text-purple-900">
+                      SLA & System Metrics
+                    </div>
+                    <div className="text-[10px] text-slate-400">Latency, throughput & health</div>
+                  </div>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-purple-600 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+
+              <Link
+                href="/gov/resources"
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 hover:bg-amber-50/60 border border-slate-100 hover:border-amber-200 transition-all group sm:col-span-2"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                    <FolderGit2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900 group-hover:text-amber-900">
+                      Department Resources & Jurisdiction
+                    </div>
+                    <div className="text-[10px] text-slate-400">Regional Processing Cell documentation & statutory circulars</div>
+                  </div>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-600 transition-transform group-hover:translate-x-0.5" />
+              </Link>
             </div>
           </div>
         </div>
