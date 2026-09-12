@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     const employee = await getEmployeeBySession(token);
     if (!employee || !employee.is_active) {
       return NextResponse.json(
-        { success: false, error: "Employee account is not authorized or is inactive" },
+        { success: false, error: "Your account is not authorized for the government portal." },
         { status: 403 }
       );
     }

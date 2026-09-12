@@ -13,9 +13,11 @@ export function GovernmentLoginView() {
   const [password, setPassword] = useState("1234567890");
   const [selectedRole, setSelectedRole] = useState<GovernmentRole>("OFFICER");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const performLogin = async (role: GovernmentRole, id: string) => {
     setIsLoggingIn(true);
+    setErrorMessage("");
     try {
       const res = await fetch("/api/gov/auth/login", {
         method: "POST",
@@ -29,12 +31,16 @@ export function GovernmentLoginView() {
           document.cookie = `formly_gov_session=${data.token}; path=/; max-age=28800; SameSite=Lax`;
         }
         toast.success(`Authenticated as ${data.user?.roleTitle || GOV_ROLES[role].roleTitle} (${data.user?.name || GOV_ROLES[role].name})`);
-        window.location.href = "/dashboard";
+        window.location.href = "/gov/dashboard";
       } else {
-        toast.error(data.error || "Authentication failed");
+        const msg = data.error || "Authentication failed";
+        setErrorMessage(msg);
+        toast.error(msg);
       }
     } catch {
-      toast.error("Network error during authentication");
+      const msg = "Network error during authentication";
+      setErrorMessage(msg);
+      toast.error(msg);
     } finally {
       setIsLoggingIn(false);
     }
@@ -68,6 +74,13 @@ export function GovernmentLoginView() {
               Operations & Orchestration Portal
             </p>
           </div>
+
+          {errorMessage && (
+            <div className="p-3 bg-rose-950/80 border border-rose-500/50 rounded-xl flex items-center gap-2.5 text-xs text-rose-200">
+              <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
 
           <form onSubmit={handleSignIn} className="space-y-4">
             <div>

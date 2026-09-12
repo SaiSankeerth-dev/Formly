@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { loginUser } from "@/lib/server/db";
+import { loginUser, getEmployeeBySession } from "@/lib/server/db";
 
 export async function POST(request: Request) {
   try {
@@ -11,6 +11,31 @@ export async function POST(request: Request) {
     }
 
     const { user, token } = await loginUser(email, password);
+
+    // Reject government officers attempting to log in on citizen portal
+    const employee = await getEmployeeBySession(token);
+    const isGovRole =
+      Boolean(employee && employee.is_active) ||
+      user.role === "DEPARTMENT_OFFICER" ||
+      user.role === "DEPARTMENT_ADMIN" ||
+      user.role === "SYSTEM_ADMIN" ||
+      user.role === "OFFICER" ||
+      (typeof user.role === "string" && (
+        user.role.toLowerCase().includes("officer") ||
+        user.role.toLowerCase().includes("department")
+      ));
+
+    if (isGovRole) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "This account belongs to the government portal.",
+          isGovernment: true,
+          redirectTo: "/gov/login",
+        },
+        { status: 403 }
+      );
+    }
 
     const response = NextResponse.json({
       success: true,

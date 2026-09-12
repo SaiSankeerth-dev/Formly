@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Shield, Zap, Folder, Check, Eye, EyeOff, Lock, Mail, AlertCircle } from "lucide-react";
+import { Shield, Zap, Folder, Check, Eye, EyeOff, Lock, Mail, AlertCircle, ArrowRight } from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 
 export default function CitizenLoginClient() {
@@ -15,27 +15,24 @@ export default function CitizenLoginClient() {
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isGovAccount, setIsGovAccount] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
+    setIsGovAccount(false);
     setIsLoading(true);
 
     try {
-      const success = await login(email, password);
-      if (success) {
-        try {
-          const profileRes = await fetch("/api/profile");
-          if (profileRes.ok) {
-            const profileData = await profileRes.json();
-            if (!profileData.completed) {
-              const step = profileData.currentStep || 1;
-              window.location.href = `/onboarding/profile?step=${step}`;
-              return;
-            }
-          }
-        } catch (_) {}
-        window.location.href = "/dashboard";
+      const res = await login(email, password);
+      if (res.success) {
+        return;
+      }
+      if (res.isGovernment) {
+        setErrorMessage(res.error || "This account belongs to the government portal.");
+        setIsGovAccount(true);
+      } else {
+        setErrorMessage(res.error || "Failed to sign in");
       }
     } catch (err: any) {
       setErrorMessage(err.message || "Failed to sign in");
@@ -110,9 +107,32 @@ export default function CitizenLoginClient() {
           </div>
 
           {errorMessage && (
-            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2 text-xs font-medium text-rose-700">
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
-              <span>{errorMessage}</span>
+            <div
+              className={`mb-5 p-4 rounded-2xl flex flex-col gap-3 text-xs ${
+                isGovAccount
+                  ? "bg-amber-50 border border-amber-200 text-amber-900"
+                  : "bg-rose-50 border border-rose-200 text-rose-700 font-medium"
+              }`}
+            >
+              <div className="flex items-start gap-2.5">
+                <AlertCircle
+                  className={`w-4 h-4 shrink-0 mt-0.5 ${
+                    isGovAccount ? "text-amber-600" : "text-rose-500"
+                  }`}
+                />
+                <span className={isGovAccount ? "font-semibold text-slate-900" : ""}>
+                  {errorMessage}
+                </span>
+              </div>
+              {isGovAccount && (
+                <Link
+                  href="/gov/login"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs transition-colors shadow-xs"
+                >
+                  <span>Go to Government Portal</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              )}
             </div>
           )}
 

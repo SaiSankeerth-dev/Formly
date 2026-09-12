@@ -49,7 +49,7 @@ interface SevaSaarthiContextType {
   user: UserSession | null;
   isAuthenticated: boolean;
   isLoadingAuth: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; isGovernment?: boolean; error?: string; redirectTo?: string }>;
   signup: (name: string, email: string, password: string, phone?: string) => Promise<boolean>;
   logout: () => Promise<void>;
 
@@ -510,7 +510,10 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
   }, [loadUserData]);
 
   // Login handler
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (
+    email: string,
+    password: string
+  ): Promise<{ success: boolean; isGovernment?: boolean; error?: string; redirectTo?: string }> => {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -520,8 +523,15 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        toast.error(data.error || "Login failed. Please check your credentials.");
-        return false;
+        if (!data.isGovernment) {
+          toast.error(data.error || "Login failed. Please check your credentials.");
+        }
+        return {
+          success: false,
+          isGovernment: Boolean(data.isGovernment),
+          error: data.error || "Login failed. Please check your credentials.",
+          redirectTo: data.redirectTo,
+        };
       }
 
       setUser(data.user);
@@ -536,16 +546,17 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
           const profData = await profRes.json();
           if (!profData.completed) {
             window.location.href = `/onboarding/profile?step=${profData.currentStep || 1}`;
-            return true;
+            return { success: true };
           }
         }
       } catch {}
 
       window.location.href = "/dashboard";
-      return true;
+      return { success: true };
     } catch (err: any) {
-      toast.error(err.message || "Network error while signing in.");
-      return false;
+      const msg = err.message || "Network error while signing in.";
+      toast.error(msg);
+      return { success: false, error: msg };
     }
   };
 
