@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateGovSession, unauthorizedResponse } from "@/lib/server/auth";
-import { cookies } from "next/headers";
+import { getAuthoritativeDb } from "@/lib/server/pg-db";
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,6 +12,28 @@ export async function GET(request: NextRequest) {
     }
 
     const employee = auth.employee;
+
+    let departmentName = "Income Tax Department (CBDT) - PAN Division";
+    let officeName = "Regional Processing Cell, Hyderabad";
+
+    try {
+      const db = await getAuthoritativeDb();
+      if (employee.department_id) {
+        const dRes = await db.query<{ name: string }>(`SELECT name FROM departments WHERE id = $1`, [employee.department_id]);
+        if (dRes.rows && dRes.rows.length > 0 && dRes.rows[0]?.name) {
+          departmentName = dRes.rows[0].name;
+        }
+      }
+      if (employee.office_id) {
+        const oRes = await db.query<{ name: string; city: string | null }>(`SELECT name, city FROM offices WHERE id = $1`, [employee.office_id]);
+        if (oRes.rows && oRes.rows.length > 0 && oRes.rows[0]?.name) {
+          const row = oRes.rows[0];
+          officeName = row.city ? `${row.name}, ${row.city}` : row.name;
+        }
+      }
+    } catch (dbErr) {
+      console.warn("[API gov/me] Database query for department/office metadata failed, falling back to profile", dbErr);
+    }
 
     return NextResponse.json({
       success: true,
@@ -26,8 +48,8 @@ export async function GET(request: NextRequest) {
             : employee.role === "DEPARTMENT_ADMIN"
             ? "Department Administrator"
             : "System Administrator",
-        department: "Income Tax Department (CBDT) - PAN Division", // In a real system, fetch from db.departments
-        office: "Regional Processing Cell, Hyderabad", // In a real system, fetch from db.offices
+        department: departmentName,
+        office: officeName,
       }
     });
   } catch (error: any) {

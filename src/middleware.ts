@@ -25,6 +25,9 @@ export function middleware(request: NextRequest) {
     request.cookies.get("seva_saarthi_session")?.value;
 
   // 3. Normalize Government Clean URLs & Aliases
+  if (pathname === "/vault" || pathname.startsWith("/vault/")) {
+    return NextResponse.redirect(new URL("/documents", request.url));
+  }
   if (pathname === "/my-queue") {
     return NextResponse.rewrite(new URL("/gov/queue?tab=my_assignments", request.url));
   }

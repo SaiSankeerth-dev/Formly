@@ -1,7 +1,5 @@
-"use client";
-
-import { DocumentVaultPage } from "@/components/vault/DocumentVaultPage";
+import { redirect } from "next/navigation";
 
 export default function VaultPage() {
-  return <DocumentVaultPage />;
+  redirect("/documents");
 }

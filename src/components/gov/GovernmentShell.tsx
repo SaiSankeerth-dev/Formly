@@ -150,12 +150,13 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
 
   const userInitials = currentUser.name
     ? currentUser.name
-        .split(" ")
+        .trim()
+        .split(/\s+/)
         .map((n) => n[0])
         .join("")
         .slice(0, 2)
         .toUpperCase()
-    : "SS";
+    : "GO";
 
   const SidebarContent = (
     <div className="flex flex-col justify-between h-full p-4 select-none relative overflow-hidden">

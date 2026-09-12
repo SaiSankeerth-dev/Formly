@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   User,
   ShieldCheck,
@@ -15,14 +17,31 @@ import {
   X,
   FileCheck2,
   AlertCircle,
+  ArrowRight,
+  RefreshCw,
 } from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { cn, getConfidenceBadgeClass } from "@/lib/utils";
 import { toast } from "sonner";
 import { CANONICAL_PROFILE_FIELDS, PROFILE_CATEGORIES, getProfileCompleteness } from "@/lib/constants/profile";
 
+type ProfilePageState = "LOADING" | "READY" | "INCOMPLETE" | "EMPTY" | "ERROR";
+
 export function ProfilePage() {
-  const { profileFields, documents, updateProfileField, batchUpdateProfileFields, profileStrength, user } = useSevaSaarthi();
+  const router = useRouter();
+  const {
+    profileFields,
+    documents,
+    updateProfileField,
+    batchUpdateProfileFields,
+    profileStrength,
+    user,
+    isLoadingAuth,
+    logout,
+  } = useSevaSaarthi();
+
+  const [pageState, setPageState] = useState<ProfilePageState>("LOADING");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [tempValues, setTempValues] = useState<Record<string, string>>({});
   const [isFullEditModalOpen, setIsFullEditModalOpen] = useState(false);
@@ -30,6 +49,52 @@ export function ProfilePage() {
 
   const fieldDefinitions = CANONICAL_PROFILE_FIELDS;
   const categories = PROFILE_CATEGORIES;
+
+  // Real backend profile fetch
+  const fetchProfile = useCallback(async () => {
+    setPageState("LOADING");
+    setErrorMessage(null);
+    try {
+      const res = await fetch("/api/profile");
+      if (res.status === 401) {
+        router.push("/login");
+        return;
+      }
+      if (!res.ok) {
+        setPageState("ERROR");
+        setErrorMessage("Your profile couldn't be loaded right now.");
+        return;
+      }
+      const data = await res.json();
+      if (data.success) {
+        const fields = Array.isArray(data.data) ? data.data : [];
+        if (fields.length === 0) {
+          setPageState("EMPTY");
+        } else if (!data.completed) {
+          setPageState("INCOMPLETE");
+        } else {
+          setPageState("READY");
+        }
+      } else {
+        setPageState("ERROR");
+        setErrorMessage(data.error || "Your profile couldn't be loaded right now.");
+      }
+    } catch (err: any) {
+      console.warn("[ProfilePage] Failed to fetch /api/profile", err);
+      setPageState("ERROR");
+      setErrorMessage("Your profile couldn't be loaded right now.");
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (!isLoadingAuth) {
+      if (!user) {
+        router.push("/login");
+      } else {
+        fetchProfile();
+      }
+    }
+  }, [user, isLoadingAuth, router, fetchProfile]);
 
   const completeness = getProfileCompleteness(profileFields);
   const emptyFieldsCount = completeness.emptyCount;
@@ -43,6 +108,7 @@ export function ProfilePage() {
     const val = tempValues[fieldName] !== undefined ? tempValues[fieldName] : "";
     await updateProfileField(fieldName, val);
     setEditingField(null);
+    fetchProfile();
   };
 
   const handleOpenFullModal = () => {
@@ -69,6 +135,7 @@ export function ProfilePage() {
     e.preventDefault();
     await batchUpdateProfileFields(fullFormData);
     setIsFullEditModalOpen(false);
+    fetchProfile();
   };
 
   const getSourceBadge = (sourceDocId: string | null, confidence: number | null) => {
@@ -105,22 +172,82 @@ export function ProfilePage() {
     return val;
   };
 
-  if (!user) {
+  // 1. LOADING State: Clean skeleton
+  if (isLoadingAuth || pageState === "LOADING") {
+    return (
+      <div className="space-y-6 pb-16 animate-pulse">
+        <div className="h-16 bg-white rounded-3xl border border-slate-100 p-6 flex items-center justify-between">
+          <div className="w-48 h-6 bg-slate-200 rounded-lg" />
+          <div className="w-32 h-8 bg-slate-100 rounded-xl" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-64 bg-white rounded-3xl border border-slate-100 p-6 space-y-4">
+              <div className="w-36 h-5 bg-slate-200 rounded-md" />
+              <div className="space-y-3 pt-2">
+                <div className="h-10 bg-slate-50 rounded-xl" />
+                <div className="h-10 bg-slate-50 rounded-xl" />
+                <div className="h-10 bg-slate-50 rounded-xl" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // 2. ERROR State: Honest server error with real retry
+  if (pageState === "ERROR") {
     return (
       <div className="max-w-md mx-auto my-16 p-8 bg-white rounded-3xl border border-slate-100 shadow-xl text-center space-y-4">
         <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto border border-rose-100">
           <AlertCircle className="w-7 h-7" />
         </div>
         <div className="space-y-1">
-          <h2 className="text-base font-bold text-slate-900">Your profile couldn&apos;t be loaded.</h2>
+          <h2 className="text-base font-bold text-slate-900">Your profile couldn&apos;t be loaded right now.</h2>
           <p className="text-xs text-slate-500">Please check your connection and try again.</p>
         </div>
-        <button
-          onClick={() => window.location.reload()}
-          className="py-2.5 px-6 bg-[#2F27CE] hover:bg-[#231CA8] text-white text-xs font-bold rounded-2xl shadow-sm transition-all cursor-pointer"
-        >
-          Try Again
-        </button>
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <button
+            onClick={() => fetchProfile()}
+            className="py-2.5 px-6 bg-[#2F27CE] hover:bg-[#231CA8] text-white text-xs font-bold rounded-2xl shadow-sm transition-all cursor-pointer flex items-center gap-2"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Try Again</span>
+          </button>
+          <button
+            onClick={() => logout()}
+            className="py-2.5 px-5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl transition-all cursor-pointer border border-slate-200"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. EMPTY State: Missing profile -> "Let's complete your profile"
+  if (pageState === "EMPTY") {
+    return (
+      <div className="max-w-lg mx-auto my-12 p-8 bg-white rounded-3xl border border-slate-100 shadow-xl text-center space-y-5">
+        <div className="w-16 h-16 rounded-3xl bg-indigo-50 text-[#2F27CE] flex items-center justify-center mx-auto border border-indigo-100 shadow-xs">
+          <Sparkles className="w-8 h-8" />
+        </div>
+        <div className="space-y-1.5">
+          <h2 className="text-xl font-black text-slate-900 tracking-tight">Let&apos;s complete your profile</h2>
+          <p className="text-xs text-slate-500 leading-relaxed max-w-sm mx-auto">
+            Your profile information is used by Seva Saarthi to automatically fill and verify government applications.
+          </p>
+        </div>
+        <div className="pt-2">
+          <Link
+            href="/onboarding/profile?step=1"
+            className="inline-flex items-center justify-center gap-2 py-3 px-6 bg-[#2F27CE] hover:bg-[#231CA8] text-white text-xs font-bold rounded-2xl shadow-md shadow-indigo-200 transition-all cursor-pointer"
+          >
+            <span>Complete Profile</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
       </div>
     );
   }
@@ -185,12 +312,20 @@ export function ProfilePage() {
               </div>
             </div>
           </div>
-          <button
-            onClick={handleOpenFullModal}
-            className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shrink-0 transition-colors"
-          >
-            Fill Now
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/onboarding/profile"
+              className="px-3.5 py-1.5 bg-[#2F27CE] hover:bg-[#231CA8] text-white text-xs font-bold rounded-xl shrink-0 transition-colors shadow-2xs"
+            >
+              Complete Profile
+            </Link>
+            <button
+              onClick={handleOpenFullModal}
+              className="px-3 py-1.5 bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-xl shrink-0 transition-colors"
+            >
+              Edit All
+            </button>
+          </div>
         </div>
       )}
 

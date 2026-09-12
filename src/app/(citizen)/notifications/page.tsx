@@ -72,7 +72,7 @@ export default function NotificationsPage() {
             </div>
             <h3 className="text-sm font-bold text-slate-900">No notifications yet</h3>
             <p className="text-xs text-slate-500 max-w-xs mx-auto">
-              We'll notify you here as soon as there's an update on your application progress.
+              We&apos;ll notify you here as soon as there&apos;s an update on your application progress.
             </p>
           </div>
         ) : (

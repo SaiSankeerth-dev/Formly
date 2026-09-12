@@ -14,7 +14,7 @@ interface HeaderProps {
 
 export function Header({ onOpenMobileNav, onOpenCommandPalette }: HeaderProps = {}) {
   const router = useRouter();
-  const { user, logout } = useSevaSaarthi();
+  const { user, logout, unreadNotificationsCount } = useSevaSaarthi();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [currentLang, setCurrentLang] = useState("EN");
@@ -85,12 +85,18 @@ export function Header({ onOpenMobileNav, onOpenCommandPalette }: HeaderProps = 
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <div className="relative p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer">
+          <Link
+            href="/notifications"
+            className="relative p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+            aria-label="View notifications"
+          >
             <Bell className="w-4 h-4" />
-            <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-white">
-              3
-            </span>
-          </div>
+            {unreadNotificationsCount > 0 && (
+              <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-white">
+                {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
+              </span>
+            )}
+          </Link>
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
             className="w-8 h-8 rounded-full bg-[#E0E7FF] text-[#2F27CE] font-bold text-xs flex items-center justify-center ring-1 ring-indigo-200"
@@ -172,16 +178,20 @@ export function Header({ onOpenMobileNav, onOpenCommandPalette }: HeaderProps = 
             )}
           </div>
 
-          {/* Notification Bell with Badge (3) matching Reference Image */}
-          <button
+          {/* Notification Bell with Dynamic Unread Badge */}
+          <Link
+            href="/notifications"
             className="relative p-2.5 text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl transition-colors shadow-2xs cursor-pointer"
-            title="3 new notifications"
+            title={unreadNotificationsCount > 0 ? `${unreadNotificationsCount} new notification${unreadNotificationsCount > 1 ? "s" : ""}` : "Notifications"}
+            aria-label="View notifications"
           >
             <Bell className="w-4 h-4" />
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-xs">
-              3
-            </span>
-          </button>
+            {unreadNotificationsCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
+              </span>
+            )}
+          </Link>
 
           {/* User Profile Pill matching Reference Image */}
           <div className="relative">

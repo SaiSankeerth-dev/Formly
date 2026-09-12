@@ -70,8 +70,19 @@ interface GovContextType {
 
 const GovContext = createContext<GovContextType | null>(null);
 
+const DEFAULT_EMPTY_OFFICER: GovernmentUser = {
+  id: "",
+  name: "",
+  email: "",
+  role: "OFFICER",
+  roleTitle: "Department Officer",
+  department: "",
+  office: "",
+  avatar: "",
+};
+
 export function GovProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<GovernmentUser>(GOV_ROLES.OFFICER);
+  const [currentUser, setCurrentUser] = useState<GovernmentUser>(DEFAULT_EMPTY_OFFICER);
   const [applications, setApplications] = useState<PanApplicationRecord[]>([]);
   const [exceptions, setExceptions] = useState<ExceptionRecord[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([]);

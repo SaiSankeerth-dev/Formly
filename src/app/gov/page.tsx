@@ -151,6 +151,26 @@ export default function GovernmentDashboardPage() {
     );
   };
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6 select-none animate-pulse">
+        <div className="h-44 bg-white/80 rounded-3xl border border-slate-200/80 p-6 flex flex-col justify-between">
+          <div className="space-y-2.5">
+            <div className="w-32 h-4 bg-slate-200 rounded-full" />
+            <div className="w-64 h-8 bg-slate-200 rounded-xl" />
+            <div className="w-48 h-4 bg-slate-200 rounded-lg" />
+          </div>
+          <div className="w-40 h-4 bg-slate-100 rounded-full" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-28 bg-white/80 rounded-3xl border border-slate-200/80 p-5" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 select-none">
       {/* 1. HERO BANNER */}
@@ -161,11 +181,13 @@ export default function GovernmentDashboardPage() {
             {greeting}
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2 mt-0.5">
-            <span>{currentUser.name}</span>
+            <span>{currentUser.name || "Authorized Officer"}</span>
             <span className="text-2xl">👋</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 font-medium mt-1">
-            {currentUser.department || "Income Tax Department (CBDT)"} • {currentUser.office || "Hyderabad (RPC)"}
+            {currentUser.department && currentUser.office
+              ? `${currentUser.department} • ${currentUser.office}`
+              : currentUser.department || currentUser.office || "Operations Directorate"}
           </p>
           <p className="text-xs text-slate-500 font-normal mt-1">
             Here&apos;s what needs your attention today.

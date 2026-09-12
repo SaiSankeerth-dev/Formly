@@ -48,6 +48,10 @@ export async function POST(request: Request) {
   return handleProfileUpdate(request);
 }
 
+export async function PUT(request: Request) {
+  return handleProfileUpdate(request);
+}
+
 export async function PATCH(request: Request) {
   return handleProfileUpdate(request);
 }
