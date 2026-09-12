@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { headers } from "next/headers";
 import { GovernmentLoginView } from "@/components/gov/GovernmentLoginView";
 import CitizenLoginClient from "./CitizenLoginClient";
+
+export const metadata: Metadata = {
+  title: "Citizen Login — Seva Saarthi",
+  description: "Sign in to your Seva Saarthi citizen account. One Form. A Smarter India.",
+};
 
 export default async function LoginPage() {
   const headersList = await headers();
