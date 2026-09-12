@@ -1,15 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { Sidebar, MobileNavDrawer } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 
 export function CitizenLayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const { isAuthenticated, isLoadingAuth } = useSevaSaarthi();
+  const { isLoadingAuth } = useSevaSaarthi();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   const isAuthPage = pathname === "/login" || pathname === "/signup";
@@ -20,13 +19,6 @@ export function CitizenLayoutShell({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     setIsMobileNavOpen(false);
   }, [pathname]);
-
-  // Route protection: Redirect unauthenticated users to /login
-  useEffect(() => {
-    if (!isLoadingAuth && !isAuthenticated && !isAuthPage && !isPortalPage && !isTrackPage && pathname !== "/") {
-      router.push("/login");
-    }
-  }, [isAuthenticated, isLoadingAuth, isAuthPage, isPortalPage, isTrackPage, pathname, router]);
 
   // If on login/signup, portal simulation, or full tracker screen, render clean layout without citizen sidebar/header
   if (isAuthPage || isPortalPage || isTrackPage) {
@@ -43,11 +35,6 @@ export function CitizenLayoutShell({ children }: { children: React.ReactNode }) 
         </div>
       </div>
     );
-  }
-
-  // If not authenticated and not on public home, render minimal placeholder
-  if (!isAuthenticated && pathname !== "/") {
-    return null;
   }
 
   // Authenticated full citizen dashboard shell

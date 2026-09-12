@@ -113,7 +113,7 @@ export default function GovernmentDashboardPage() {
       due: "Due in 2 hrs",
       dotColor: "bg-rose-500",
       badgeColor: "bg-rose-50 text-rose-700 border-rose-200",
-      href: "/applications/PAN-2026-0003",
+      href: "/gov/workspace/PAN-2026-0003",
       category: "HIGH",
     },
     {
@@ -125,7 +125,7 @@ export default function GovernmentDashboardPage() {
       due: "Due today",
       dotColor: "bg-amber-500",
       badgeColor: "bg-amber-50 text-amber-700 border-amber-200",
-      href: "/applications/PAN-2026-0002",
+      href: "/gov/workspace/PAN-2026-0002",
       category: "TODAY",
     },
     {
@@ -137,7 +137,7 @@ export default function GovernmentDashboardPage() {
       due: "Due today",
       dotColor: "bg-amber-500",
       badgeColor: "bg-amber-50 text-amber-700 border-amber-200",
-      href: "/applications/PAN-2026-0004",
+      href: "/gov/workspace/PAN-2026-0004",
       category: "TODAY",
     },
     {
@@ -149,7 +149,7 @@ export default function GovernmentDashboardPage() {
       due: "Standard SLA",
       dotColor: "bg-emerald-500",
       badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
-      href: "/applications?tab=officer_review",
+      href: "/gov/queue?tab=officer_review",
       category: "ALL",
     },
     {
@@ -161,7 +161,7 @@ export default function GovernmentDashboardPage() {
       due: "Due in 4 hrs",
       dotColor: "bg-rose-500",
       badgeColor: "bg-rose-50 text-rose-700 border-rose-200",
-      href: "/applications/PAN-2026-0078",
+      href: "/gov/workspace/PAN-2026-0078",
       category: "HIGH",
     },
   ];
@@ -359,7 +359,7 @@ export default function GovernmentDashboardPage() {
               <div className="text-xs text-slate-400 font-medium">Tuesday, 10 Sept 2026</div>
             </div>
 
-            <Link href="/applications" className="text-xs font-bold text-blue-600 hover:underline">
+            <Link href="/gov/queue" className="text-xs font-bold text-blue-600 hover:underline">
               View All →
             </Link>
           </div>
@@ -476,7 +476,7 @@ export default function GovernmentDashboardPage() {
         <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-slate-900 tracking-tight">Application Pipeline</h2>
-            <Link href="/workflows" className="text-xs font-bold text-blue-600 hover:underline">
+            <Link href="/gov/workflows" className="text-xs font-bold text-blue-600 hover:underline">
               View Workflow →
             </Link>
           </div>
@@ -643,7 +643,7 @@ export default function GovernmentDashboardPage() {
         <div className="lg:col-span-7 bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-slate-900 tracking-tight">Quick Actions</h2>
-            <Link href="/applications" className="text-xs font-bold text-blue-600 hover:underline">
+            <Link href="/gov/queue" className="text-xs font-bold text-blue-600 hover:underline">
               View All
             </Link>
           </div>
@@ -651,7 +651,7 @@ export default function GovernmentDashboardPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {/* Tile 1: Application Queue */}
             <Link
-              href="/applications"
+              href="/gov/queue"
               className="p-3.5 bg-slate-50/80 hover:bg-blue-50/60 border border-slate-200/80 hover:border-blue-200 rounded-2xl transition-all group"
             >
               <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
@@ -663,7 +663,7 @@ export default function GovernmentDashboardPage() {
 
             {/* Tile 2: Advanced Search */}
             <Link
-              href="/applications"
+              href="/gov/queue"
               className="p-3.5 bg-slate-50/80 hover:bg-sky-50/60 border border-slate-200/80 hover:border-sky-200 rounded-2xl transition-all group"
             >
               <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
@@ -675,7 +675,7 @@ export default function GovernmentDashboardPage() {
 
             {/* Tile 3: Exception Center */}
             <Link
-              href="/exceptions"
+              href="/gov/exceptions"
               className="p-3.5 bg-slate-50/80 hover:bg-rose-50/60 border border-slate-200/80 hover:border-rose-200 rounded-2xl transition-all group"
             >
               <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
@@ -687,7 +687,7 @@ export default function GovernmentDashboardPage() {
 
             {/* Tile 4: Interoperability Hub */}
             <Link
-              href="/interoperability"
+              href="/gov/interoperability"
               className="p-3.5 bg-slate-50/80 hover:bg-purple-50/60 border border-slate-200/80 hover:border-purple-200 rounded-2xl transition-all group"
             >
               <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
@@ -699,7 +699,7 @@ export default function GovernmentDashboardPage() {
 
             {/* Tile 5: Data Mapper */}
             <Link
-              href="/data-mapper"
+              href="/gov/data-mapper"
               className="p-3.5 bg-slate-50/80 hover:bg-amber-50/60 border border-slate-200/80 hover:border-amber-200 rounded-2xl transition-all group"
             >
               <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
@@ -711,7 +711,7 @@ export default function GovernmentDashboardPage() {
 
             {/* Tile 6: Generate Reports */}
             <Link
-              href="/monitoring"
+              href="/gov/monitoring"
               className="p-3.5 bg-slate-50/80 hover:bg-emerald-50/60 border border-slate-200/80 hover:border-emerald-200 rounded-2xl transition-all group"
             >
               <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform">
@@ -801,7 +801,7 @@ export default function GovernmentDashboardPage() {
                 <span>7 days</span>
               </div>
               <Link
-                href="/applications/PAN-2026-0074"
+                href="/gov/workspace/PAN-2026-0074"
                 className="text-[10px] font-bold text-blue-600 hover:underline flex items-center gap-0.5 mt-0.5"
               >
                 <span>PAN-2026-0074</span>
@@ -857,7 +857,7 @@ export default function GovernmentDashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-2">
             {/* Case 1: PAN-2026-0001 */}
             <Link
-              href="/applications/PAN-2026-0001"
+              href="/gov/workspace/PAN-2026-0001"
               className="bg-slate-900/90 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 rounded-2xl p-4 transition-all flex flex-col justify-between group"
             >
               <div>
@@ -880,7 +880,7 @@ export default function GovernmentDashboardPage() {
 
             {/* Case 2: PAN-2026-0002 */}
             <Link
-              href="/applications/PAN-2026-0002"
+              href="/gov/workspace/PAN-2026-0002"
               className="bg-slate-900/90 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 rounded-2xl p-4 transition-all flex flex-col justify-between group"
             >
               <div>
@@ -903,7 +903,7 @@ export default function GovernmentDashboardPage() {
 
             {/* Case 3: PAN-2026-0003 */}
             <Link
-              href="/applications/PAN-2026-0003"
+              href="/gov/workspace/PAN-2026-0003"
               className="bg-slate-900/90 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 rounded-2xl p-4 transition-all flex flex-col justify-between group"
             >
               <div>
@@ -926,7 +926,7 @@ export default function GovernmentDashboardPage() {
 
             {/* Case 4: PAN-2026-0004 */}
             <Link
-              href="/applications/PAN-2026-0004"
+              href="/gov/workspace/PAN-2026-0004"
               className="bg-slate-900/90 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 rounded-2xl p-4 transition-all flex flex-col justify-between group"
             >
               <div>
@@ -961,7 +961,7 @@ export default function GovernmentDashboardPage() {
           </div>
 
           <Link
-            href="/applications"
+            href="/gov/queue"
             className="self-start sm:self-auto px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-colors flex items-center gap-1.5"
           >
             <span>Manage Queue</span>
@@ -1104,7 +1104,7 @@ export default function GovernmentDashboardPage() {
                       />
                     </td>
                     <td className="py-3 font-mono font-bold text-blue-700 hover:underline">
-                      <Link href={`/applications/${app.id}`}>{app.id}</Link>
+                      <Link href={`/gov/workspace/${app.id}`}>{app.id}</Link>
                     </td>
                     <td className="py-3 font-bold text-slate-900">{app.applicantName}</td>
                     <td className="py-3 text-slate-600">{app.serviceName}</td>
@@ -1155,7 +1155,7 @@ export default function GovernmentDashboardPage() {
                     <td className="py-3 text-right">
                       <div className="inline-flex items-center gap-1.5">
                         <Link
-                          href={`/applications/${app.id}`}
+                          href={`/gov/workspace/${app.id}`}
                           className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors inline-flex items-center gap-1"
                         >
                           <span>Open</span>

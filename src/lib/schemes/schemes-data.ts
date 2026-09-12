@@ -321,6 +321,39 @@ export const REAL_GOVERNMENT_SCHEMES: GovernmentScheme[] = [
       { step: 4, title: "Direct Transfer", description: "Annual allowance of ₹12,000 credited to student's bank account via PFMS." },
     ],
   },
+  {
+    id: "service-telangana-income",
+    title: "Income Certificate (Revenue Department - MeeSeva)",
+    shortCode: "TS-INCOME",
+    category: "Identity & Tax",
+    ministry: "Revenue Department, Government of Telangana",
+    benefitAmount: "Statutory Certificate required for fee reimbursement, scholarships, and welfare quotas",
+    applicationDeadline: "Always Active (Rolling Issuance via Tahsildar)",
+    status: "ALWAYS_ACTIVE",
+    description: "Official statutory Income Certificate issued by Mandal Revenue Officers (Tahsildars) under the Government of Telangana, certifying annual household income across all sources for academic, scholarship, and welfare program eligibility.",
+    officialPortal: "Telangana MeeSeva 2.0 Portal",
+    portalDomain: "meeseva.telangana.gov.in",
+    officialUrl: "https://ts.meeseva.telangana.gov.in",
+    iconType: "WALLET",
+    requiredDocuments: [
+      "Application Form with Court Fee Stamp",
+      "Aadhaar Card of Applicant and Family Head",
+      "Ration Card / Food Security Card / Domicile Proof",
+      "Salary Certificate / IT Returns / Mandal Revenue VRO Assessment Report",
+      "Passport Size Photograph",
+    ],
+    docRequirementSummary: "Aadhaar Card, Ration Card, Salary Slip / Affidavit, Photo",
+    eligibilityRules: {
+      allowedCategories: ["ALL"],
+      allowedGenders: ["ANY"],
+    },
+    processSteps: [
+      { step: 1, title: "Submit MeeSeva Application", description: "Submit digital application form with Aadhaar authentication and supporting identity proofs on MeeSeva." },
+      { step: 2, title: "Village Revenue Officer (VRO) Inquiry", description: "VRO conducts local field inquiry to verify agricultural, business, and employment household earnings." },
+      { step: 3, title: "Revenue Inspector (RI) Verification", description: "RI scrutinizes field report and forwards verification endorsement to Mandal Tahsildar." },
+      { step: 4, title: "Tahsildar Digital Signature & Issuance", description: "Mandal Revenue Officer signs with cryptographic digital certificate; downloadable from MeeSeva." },
+    ],
+  },
 ];
 
 // ----------------------------------------------------------------------

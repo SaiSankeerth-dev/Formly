@@ -246,7 +246,7 @@ function QueueContent() {
                 filteredApplications.map((app) => (
                   <tr key={app.id} className="hover:bg-slate-50/90 transition-colors">
                     <td className="py-3.5 px-4 sm:px-6 font-mono font-bold text-blue-700">
-                      <Link href={`/applications/${app.id}`}>{app.id}</Link>
+                      <Link href={`/gov/workspace/${app.id}`}>{app.id}</Link>
                     </td>
                     <td className="py-3.5 px-4 font-bold text-slate-900">
                       {app.applicantName}
@@ -307,7 +307,7 @@ function QueueContent() {
                     <td className="py-3.5 px-4 sm:px-6 text-right">
                       <div className="inline-flex items-center gap-1.5">
                         <Link
-                          href={`/applications/${app.id}`}
+                          href={`/gov/workspace/${app.id}`}
                           className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors inline-flex items-center gap-1.5"
                         >
                           <span>Open</span>

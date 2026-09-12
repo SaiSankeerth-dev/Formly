@@ -2,11 +2,15 @@
 const nextConfig = {
   reactStrictMode: true,
   serverExternalPackages: ["@electric-sql/pglite"],
-  agentRules: false,
   allowedDevOrigins: [
     "average-lexmark-beverages-sees.trycloudflare.com",
     "*.trycloudflare.com",
+    "seva-saarthi-eight.vercel.app",
+    "*.vercel.app",
   ],
+  outputFileTracingIncludes: {
+    "/api/**/*": ["./supabase/**/*", "./data/**/*"],
+  },
   async rewrites() {
     return [
       {

@@ -1,73 +1,106 @@
 {
   "manifest_version": 3,
-  "name": "Seva Saarthi — Government Application Assistant",
-  "version": "1.0.2",
-  "description": "A citizen-controlled browser assistant for discovering and completing official government applications.",
-  "permissions": [
-    "activeTab",
-    "scripting",
-    "storage"
-  ],
+  "name": "Seva Saarthi",
+  "version": "2.2.0",
+  "description": "Citizen-controlled assistance on verified official government portals.",
+  "permissions": ["activeTab", "storage", "sidePanel", "scripting"],
   "host_permissions": [
-    "http://localhost:3000/*",
-    "http://127.0.0.1:3000/*",
-    "https://onlineservices.nsdl.com/*",
-    "https://*.incometax.gov.in/*",
-    "https://*.tg.meeseva.gov.in/*",
-    "https://*.sarathi.parivahan.gov.in/*",
-    "https://pmkisan.gov.in/*",
+    "https://*.gov.in/*",
+    "https://*.nic.in/*",
+    "https://*.cgg.gov.in/*",
     "https://scholarships.gov.in/*",
+    "https://onlineservices.proteantech.in/*",
+    "https://www.pan.utiitsl.com/*",
+    "https://pan.utiitsl.com/*",
+    "https://www.incometax.gov.in/*",
+    "https://incometax.gov.in/*",
     "https://myaadhaar.uidai.gov.in/*",
-    "https://*.digilocker.gov.in/*",
-    "https://beneficiary.nha.gov.in/*",
-    "https://*.epds.telangana.gov.in/*",
-    "https://*.dharani.telangana.gov.in/*",
-    "https://*.ghmc.gov.in/*",
-    "https://udyamregistration.gov.in/*",
-    "https://*.employment.telangana.gov.in/*"
+    "https://uidai.gov.in/*",
+    "https://www.uidai.gov.in/*",
+    "https://voters.eci.gov.in/*",
+    "https://eci.gov.in/*",
+    "https://www.passportindia.gov.in/*",
+    "https://services1.passportindia.gov.in/*",
+    "https://passportindia.gov.in/*",
+    "https://sarathi.parivahan.gov.in/*",
+    "https://parivahan.gov.in/*",
+    "https://serviceonline.gov.in/*",
+    "https://www.digilocker.gov.in/*",
+    "https://digilocker.gov.in/*",
+    "https://www.telangana.gov.in/*",
+    "https://telangana.gov.in/*",
+    "https://ts.meeseva.telangana.gov.in/*",
+    "https://telanganaepass.cgg.gov.in/*",
+    "https://cgg.gov.in/*",
+    "https://*.vercel.app/*",
+    "https://seva-saarthi.vercel.app/*",
+    "https://sevasaarthi.vercel.app/*",
+    "http://localhost:3000/*",
+    "http://127.0.0.1:3000/*"
   ],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "side_panel": { "default_path": "sidepanel.html" },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "action": {
-    "default_popup": "popup.html",
-    "default_title": "Seva Saarthi Assistant"
+    "default_title": "Seva Saarthi",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   "content_scripts": [
     {
       "matches": [
-        "http://localhost:3000/*",
-        "http://127.0.0.1:3000/*",
-        "https://onlineservices.nsdl.com/*",
-        "https://*.incometax.gov.in/*",
-        "https://*.tg.meeseva.gov.in/*",
-        "https://*.sarathi.parivahan.gov.in/*",
-        "https://pmkisan.gov.in/*",
+        "https://*.gov.in/*",
+        "https://*.nic.in/*",
+        "https://*.cgg.gov.in/*",
         "https://scholarships.gov.in/*",
+        "https://onlineservices.proteantech.in/*",
+        "https://www.pan.utiitsl.com/*",
+        "https://pan.utiitsl.com/*",
+        "https://www.incometax.gov.in/*",
+        "https://incometax.gov.in/*",
         "https://myaadhaar.uidai.gov.in/*",
-        "https://*.digilocker.gov.in/*",
-        "https://beneficiary.nha.gov.in/*",
-        "https://*.epds.telangana.gov.in/*",
-        "https://*.dharani.telangana.gov.in/*",
-        "https://*.ghmc.gov.in/*",
-        "https://udyamregistration.gov.in/*",
-        "https://*.employment.telangana.gov.in/*"
+        "https://uidai.gov.in/*",
+        "https://www.uidai.gov.in/*",
+        "https://voters.eci.gov.in/*",
+        "https://eci.gov.in/*",
+        "https://www.passportindia.gov.in/*",
+        "https://services1.passportindia.gov.in/*",
+        "https://passportindia.gov.in/*",
+        "https://sarathi.parivahan.gov.in/*",
+        "https://parivahan.gov.in/*",
+        "https://serviceonline.gov.in/*",
+        "https://www.digilocker.gov.in/*",
+        "https://digilocker.gov.in/*",
+        "https://www.telangana.gov.in/*",
+        "https://telangana.gov.in/*",
+        "https://ts.meeseva.telangana.gov.in/*",
+        "https://telanganaepass.cgg.gov.in/*",
+        "https://cgg.gov.in/*",
+        "http://localhost:3000/*",
+        "http://127.0.0.1:3000/*"
       ],
-      "exclude_matches": [
-        "*://*.google.com/recaptcha/*",
-        "*://*.recaptcha.net/*",
-        "*://*.hcaptcha.com/*",
-        "*://challenges.cloudflare.com/*"
+      "js": ["page-analyzer.js", "policy-engine.js", "content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "https://*.vercel.app/*",
+        "https://seva-saarthi.vercel.app/*",
+        "https://sevasaarthi.vercel.app/*",
+        "http://localhost:3000/*",
+        "http://127.0.0.1:3000/*"
       ],
-      "js": ["content.js"],
-      "run_at": "document_end",
+      "js": ["webapp-bridge.js"],
+      "run_at": "document_idle",
       "all_frames": false
     }
-  ],
-  "commands": {
-    "autofill_page": {
-      "suggested_key": {
-        "default": "Alt+Shift+F",
-        "mac": "Alt+Shift+F"
-      },
-      "description": "Assist with the current official government page using Seva Saarthi"
-    }
-  }
+  ]
 }

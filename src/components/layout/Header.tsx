@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Search, Bell, ChevronDown, User, LogOut, CheckCircle, Menu } from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { LotusLogo } from "@/components/ui/LotusLogo";
@@ -11,6 +12,7 @@ interface HeaderProps {
 }
 
 export function Header({ onOpenMobileNav }: HeaderProps = {}) {
+  const router = useRouter();
   const { user, logout, unreadNotificationsCount } = useSevaSaarthi();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -74,7 +76,15 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
       {/* 2. DESKTOP HEADER (>= 768px) matching Image 2 */}
       <header className="hidden md:flex items-center justify-between px-6 py-3.5 border-b border-slate-100 bg-white/95 backdrop-blur-md sticky top-0 z-20 gap-4">
         {/* Search Bar matching Image 2 */}
-        <div className="relative flex-1 max-w-xl">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (searchQuery.trim()) {
+              router.push(`/discover?q=${encodeURIComponent(searchQuery.trim())}`);
+            }
+          }}
+          className="relative flex-1 max-w-xl"
+        >
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             ref={searchInputRef}
@@ -89,7 +99,7 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
               Ctrl + K
             </kbd>
           </div>
-        </div>
+        </form>
 
         {/* Right Controls */}
         <div className="flex items-center gap-3 shrink-0">

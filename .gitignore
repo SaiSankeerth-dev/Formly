@@ -15,8 +15,13 @@
 .env.local
 .env.development.local
 .env.test.local
+.env.production
 .env.production.local
 *.env.local
+
+# Vercel
+.vercel
+.vercel/
 
 # Third party external repositories
 /third_party/
@@ -55,3 +60,7 @@ next-env.d.ts.bak
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Agent local artifacts
+.agents/
+skills-lock.json

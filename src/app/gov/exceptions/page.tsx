@@ -177,7 +177,7 @@ export default function ExceptionCenterPage() {
                     <div>
                       <span className="text-slate-400 block font-semibold">Which application?</span>
                       <Link
-                        href={`/applications/${exc.applicationId}`}
+                        href={`/gov/workspace/${exc.applicationId}`}
                         className="font-mono font-bold text-indigo-600 hover:underline"
                       >
                         {exc.applicationId} ↗
@@ -217,7 +217,7 @@ export default function ExceptionCenterPage() {
               <div className="pt-4 border-t border-slate-100 mt-4 flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2">
                   <Link
-                    href={`/applications/${exc.applicationId}`}
+                    href={`/gov/workspace/${exc.applicationId}`}
                     className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-colors inline-flex items-center gap-1.5"
                   >
                     <span>Open Case Workspace</span>

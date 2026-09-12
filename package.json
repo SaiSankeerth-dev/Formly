@@ -16,16 +16,21 @@
     "start:government": "next start -p 3001",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "prebuild": "node scripts/generate-embedded-migrations.mjs",
     "test": "npx tsx scripts/test-gov-pipeline.mjs",
     "test:schema": "node scripts/test-v2-schema.mjs",
     "test:verification": "npx tsx scripts/test-repair-verification.mjs",
     "test:separation": "npx tsx scripts/test-platform-separation.mjs",
     "test:optimization": "npx tsx scripts/test-document-optimization.mjs",
-    "test:meeseva": "npx tsx scripts/test-meeseva-assistant.mjs",
+    "test:autofill": "npx tsx scripts/test-autofill-suite.mjs",
+    "test:serverless": "npx tsx scripts/test-serverless-sim.mjs",
+    "test:login": "npx tsx scripts/verify-login-flow.mjs",
+    "test:real": "npx tsx scripts/test-autofill-suite.mjs",
+    "extension:pack": "node scripts/pack-extension.mjs",
     "agent": "node scripts/run-live-agent.mjs"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.5.1",
+    "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.116.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.453.0",
@@ -37,10 +42,10 @@
     "react-dom": "^18.3.1",
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.5.4",
-    "tesseract.js": "^7.0.0"
+    "tesseract.js": "^7.0.0",
+    "@electric-sql/pglite": "^0.5.8"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.8",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

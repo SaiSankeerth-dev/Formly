@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Seva Saarthi Assistant</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f8fafc;
+      color: #0f172a;
+      font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .wrap { padding: 14px; }
+    .brand {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: #4f46e5;
+      color: white;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      font-size: 16px;
+    }
+    .eyebrow {
+      font-size: 10px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #64748b;
+      font-weight: 700;
+    }
+    .title { font-size: 16px; font-weight: 800; color: #0f172a; }
+    .card {
+      margin-top: 12px;
+      padding: 14px;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background: #fff;
+    }
+    .status {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .04em;
+    }
+    .good { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+    .warning { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
+    .meta { font-size: 11px; color: #64748b; margin: 4px 0 0; }
+    
+    .profile-banner {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .profile-info strong { display: block; font-size: 12px; color: #166534; }
+    .profile-info span { font-size: 11px; color: #15803d; }
+    
+    .btn-sync {
+      padding: 5px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #16a34a;
+      color: #fff;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+      shrink: 0;
+    }
+    .btn-sync:hover { background: #15803d; }
+
+    .btn-autofill {
+      width: 100%;
+      margin-top: 12px;
+      padding: 12px;
+      border: 0;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #4f46e5, #4338ca);
+      color: #fff;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+      transition: all .15s ease;
+    }
+    .btn-autofill:hover {
+      background: linear-gradient(135deg, #4338ca, #3730a3);
+      transform: translateY(-1px);
+    }
+    .btn-autofill:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn-secondary {
+      width: 100%;
+      margin-top: 8px;
+      padding: 9px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      background: #fff;
+      color: #334155;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-secondary:hover { background: #f8fafc; }
+
+    .result-box {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      color: #065f46;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .fields-list {
+      margin: 10px 0 0;
+      padding: 0;
+      list-style: none;
+      max-height: 220px;
+      overflow-y: auto;
+      border: 1px solid #f1f5f9;
+      border-radius: 10px;
+    }
+    .fields-list li {
+      padding: 8px 10px;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      font-size: 11px;
+    }
+    .fields-list li:last-child { border-bottom: 0; }
+    .field-label { font-weight: 700; color: #334155; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .field-tag {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+    .tag-ready { background: #dbeafe; color: #1e40af; }
+    .tag-filled { background: #dcfce7; color: #166534; }
+    .tag-sensitive { background: #fef3c7; color: #92400e; }
+    .tag-unmapped { background: #f1f5f9; color: #64748b; }
+
+    .items { margin: 8px 0 0; padding: 0; list-style: none; }
+    .items li { padding: 5px 0; border-top: 1px solid #f8fafc; font-size: 11px; color: #475569; }
+    .dot { color: #16a34a; margin-right: 6px; }
+
+    .notice {
+      margin-top: 12px;
+      font-size: 11px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 9px 11px;
+      color: #1e3a8a;
+      line-height: 1.4;
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="brand">
+      <div class="mark">S</div>
+      <div>
+        <div class="title">Seva Saarthi</div>
+        <div class="eyebrow">Official Portal Assistant</div>
+      </div>
+    </header>
+
+    <!-- UNVERIFIED DOMAIN ALERT -->
+    <section id="unverified" class="card">
+      <strong style="color: #b91c1c;">Assistance Paused</strong>
+      <p class="meta">
+        The current tab is not recognized as a verified Indian government HTTPS portal (.gov.in / .nic.in / .cgg.gov.in).
+      </p>
+      <p class="meta" style="margin-top: 6px;">
+        For citizen safety, the extension only operates on authentic official government portals.
+      </p>
+      <button id="check-domain-btn" class="btn-secondary">Check Current Page Again</button>
+    </section>
+
+    <!-- ACTIVE VERIFIED PORTAL VIEW -->
+    <section id="active" class="hidden">
+      <!-- Portal Info Card -->
+      <div class="card">
+        <div class="eyebrow">Current Official Portal</div>
+        <strong id="portal" style="font-size: 14px;">Checking portal…</strong>
+        <div>
+          <span id="page-state" class="status good">OFFICIAL VERIFIED</span>
+        </div>
+        <p id="guidance" class="meta">Connected to live portal DOM.</p>
+
+        <!-- Profile Sync Banner -->
+        <div id="profile-card" class="profile-banner">
+          <div class="profile-info">
+            <strong id="profile-name">Sai Sankeerth</strong>
+            <span id="profile-status">15 verified records ready</span>
+          </div>
+          <button id="sync-profile-btn" class="btn-sync">Sync</button>
+        </div>
+
+        <!-- Autofill Action Button -->
+        <button id="autofill-btn" class="btn-autofill">
+          <span>⚡ Autofill Safe Fields</span>
+        </button>
+
+        <button id="refresh" class="btn-secondary">Re-Analyze Page</button>
+      </div>
+
+      <!-- Execution Results Box -->
+      <div id="result-box" class="result-box hidden">
+        <span id="result-text">8 safe fields autofilled successfully!</span>
+      </div>
+
+      <!-- Detected Form Fields Preview -->
+      <section class="card">
+        <div class="eyebrow">Identified Portal Fields</div>
+        <strong id="page-title" style="font-size: 13px;">Analyzing inputs…</strong>
+
+        <ul class="items">
+          <li><span class="dot">✓</span><span id="fields">0 form controls found</span></li>
+          <li><span class="dot">✓</span><span id="documents">0 document uploads</span></li>
+          <li><span class="dot">✓</span><span id="errors">No validation errors</span></li>
+        </ul>
+
+        <div style="margin-top: 10px;">
+          <div class="eyebrow">Field Mapping Preview</div>
+          <ul id="fields-preview-list" class="fields-list">
+            <li><span>Detecting inputs...</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Sensitive Step Prompt -->
+      <section id="sensitive" class="card hidden">
+        <strong style="color: #b45309;">Citizen Direct Action Required</strong>
+        <p id="sensitive-text" class="meta" style="margin-top: 4px;"></p>
+        <button id="continue" class="btn-secondary">I Completed This on Official Portal</button>
+      </section>
+
+      <!-- Security Notice -->
+      <section class="notice">
+        <strong>Citizen Safety Guarantee:</strong> Seva Saarthi never handles passwords, never enters OTPs, never solves CAPTCHAs, never makes payments, and never clicks final Submit. You retain full control.
+      </section>
+    </section>
+  </main>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>

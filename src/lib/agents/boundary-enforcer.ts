@@ -11,12 +11,12 @@
  *    - Controls sensitive information entry (Aadhaar OTP, passwords, bank credentials),
  *      consents, statutory legal declarations, payment authorization, and final click to submit.
  * 
- * 3. GOVERNMENT_AUTHORITY_TIER (Official Department / MeeSeva / Officers):
+ * 3. GOVERNMENT_AUTHORITY_TIER (Official Department / Statutory Authority / Officers):
  *    - Statutory inquiry, demographic cross-matching, document inspection,
  *      issuance of official digital certificate / sanction / rejection.
  */
 
-import { BoundaryTier } from "@/types/meeseva";
+import { BoundaryTier } from "@/types/service-assistant";
 
 export interface BoundaryCheckAction {
   actionType:

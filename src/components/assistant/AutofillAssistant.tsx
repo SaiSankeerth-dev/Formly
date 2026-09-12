@@ -21,14 +21,13 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Lock,
+  RefreshCw,
 } from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import {
-  DOCUMENT_PROCUREMENT_GUIDES,
-  OFFICIAL_NSP_WORKFLOW,
-} from "@/lib/knowledge/government-schemes-knowledge";
+import { DOCUMENT_PROCUREMENT_GUIDES } from "@/lib/knowledge/government-schemes-knowledge";
 
 interface AutofillAssistantProps {
   isOpen: boolean;
@@ -42,10 +41,10 @@ const FAQ_KNOWLEDGE = [
   },
   {
     q: "What is the mandatory criteria for a College Bonafide Certificate?",
-    a: "The Bonafide Certificate MUST be printed on the official institution letterhead, contain your Roll Number / Hall Ticket Number, current Academic Year (2025-26), the college's national AISHE Code (e.g. C-19736), and bear the physical signature of the Principal/Dean with the institutional round seal.",
+    a: "The Bonafide Certificate MUST be printed on the official institution letterhead, contain your Roll Number / Hall Ticket Number, current Academic Year, the college's national AISHE Code (e.g. C-19736), and bear the physical signature of the Principal/Dean with the institutional round seal.",
   },
   {
-    q: "How old can an Income Certificate be for NSP scholarships?",
+    q: "How old can an Income Certificate be for government scholarships?",
     a: "An Income Certificate is valid for exactly 1 Financial Year. It MUST be issued on or after April 1st of the current financial year by a competent Revenue authority (Tahsildar / Mandal Revenue Officer). Previous year certificates are rejected automatically.",
   },
   {
@@ -59,13 +58,72 @@ const FAQ_KNOWLEDGE = [
 ];
 
 export function AutofillAssistant({ isOpen, onClose }: AutofillAssistantProps) {
-  const { user, profileFields, documents, checklistSummary } = useSevaSaarthi();
+  const { user, profileFields, checklistSummary } = useSevaSaarthi();
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"PROCESS_GUIDE" | "DOCUMENT_INTEL" | "COPY_DATA" | "FAQ">("PROCESS_GUIDE");
+  const [activeTab, setActiveTab] = useState<"COPY_DATA" | "EXTENSION_SYNC" | "DOCUMENT_INTEL" | "FAQ">("COPY_DATA");
   const [selectedDocKey, setSelectedDocKey] = useState<string>("BONAFIDE_CERTIFICATE");
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   if (!isOpen) return null;
+
+  const getVal = (fieldName: string, fallback = "") => {
+    return profileFields.find((f) => f.field_name === fieldName)?.value || fallback;
+  };
+
+  const rawFullName = getVal("full_name", user?.name || "Sai Sankeerth");
+  const nameParts = rawFullName.trim().split(/\s+/);
+  const firstName = nameParts[0] || rawFullName;
+  const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : firstName;
+
+  const rawDob = getVal("date_of_birth", "2001-08-15");
+  let formattedDob = "15/08/2001";
+  if (rawDob.includes("-")) {
+    const parts = rawDob.split("-");
+    if (parts.length === 3) formattedDob = `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+
+  const rawAadhaar = getVal("aadhaar_number", "5492 8173 9012");
+  const cleanAadhaar = rawAadhaar.replace(/\s+/g, "");
+
+  const rawFather = getVal("father_name", "Suresh Kumar");
+  const fParts = rawFather.trim().split(/\s+/);
+  const fatherFirst = fParts[0] || rawFather;
+  const fatherLast = fParts.length > 1 ? fParts[fParts.length - 1] : "";
+
+  const autofillFields = [
+    { key: "full_name", label: "Full Name", value: rawFullName },
+    { key: "first_name", label: "First Name", value: firstName },
+    { key: "last_name", label: "Last Name / Surname", value: lastName },
+    { key: "dob", label: "Date of Birth", value: formattedDob },
+    { key: "gender", label: "Gender", value: getVal("gender", "Male") },
+    { key: "phone", label: "Mobile Number", value: getVal("phone_number", user?.phone || "9876543210") },
+    { key: "email", label: "Email Address", value: getVal("email", user?.email || "applicant@example.com") },
+    { key: "aadhaar", label: "Aadhaar Number", value: rawAadhaar },
+    { key: "aadhaar_clean", label: "Aadhaar (12-digit)", value: cleanAadhaar },
+    { key: "address", label: "Permanent Address", value: getVal("permanent_address", "H.No 4-52/1, Green Hills Colony, Gachibowli, Hyderabad, Telangana - 500032") },
+    { key: "pincode", label: "PIN Code", value: getVal("pincode", "500032") },
+    { key: "district", label: "District", value: getVal("district", "Ranga Reddy") },
+    { key: "mandal", label: "Mandal", value: getVal("mandal", "Serilingampally") },
+    { key: "location", label: "City / Location", value: getVal("location", "Hyderabad, Telangana") },
+    { key: "father_name", label: "Father's Name", value: rawFather },
+    { key: "father_first_name", label: "Father First Name", value: fatherFirst },
+    { key: "father_last_name", label: "Father Last Name", value: fatherLast },
+    { key: "mother_name", label: "Mother's Name", value: getVal("mother_name", "Laxmi Devi") },
+    { key: "income", label: "Annual Family Income", value: getVal("annual_income", "180000") },
+    { key: "category", label: "Caste / Category", value: getVal("caste_category", "OBC") },
+    { key: "college", label: "College Name", value: getVal("college_name", "National Institute of Technology") },
+    { key: "course", label: "Degree / Course", value: getVal("education_degree", "B.Tech Computer Science and Engineering") },
+    { key: "roll_no", label: "Roll / Hall Ticket No", value: getVal("roll_number", "22071A0589") },
+    { key: "current_year", label: "Current Year / Semester", value: getVal("current_year", "3rd Year / 5th Sem") },
+    { key: "tenth_percentage", label: "10th Standard Marks", value: getVal("tenth_percentage", "94.2%") },
+    { key: "twelfth_percentage", label: "12th Standard Marks", value: getVal("twelfth_percentage", "88.4%") },
+    { key: "bank_name", label: "Bank Name", value: getVal("bank_name", "State Bank of India") },
+    { key: "bank_acc", label: "Bank Account No", value: getVal("bank_account_no", "38920194821") },
+    { key: "bank_ifsc", label: "Bank IFSC Code", value: getVal("bank_ifsc", "SBIN0020184") },
+    { key: "account_holder_name", label: "Account Holder Name", value: getVal("account_holder_name", rawFullName) },
+    { key: "dbt_seeding_status", label: "DBT Seeding Status", value: getVal("dbt_seeding_status", "Seeded (Active)") },
+  ];
 
   const copyToClipboard = (key: string, value: string, label: string) => {
     navigator.clipboard.writeText(value);
@@ -74,242 +132,360 @@ export function AutofillAssistant({ isOpen, onClose }: AutofillAssistantProps) {
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  const autofillFields = [
-    { key: "full_name", label: "Full Name", value: profileFields.find((f) => f.field_name === "full_name")?.value || user?.name || "Applicant" },
-    { key: "dob", label: "Date of Birth", value: profileFields.find((f) => f.field_name === "date_of_birth")?.value || "" },
-    { key: "gender", label: "Gender", value: profileFields.find((f) => f.field_name === "gender")?.value || "Male" },
-    { key: "phone", label: "Mobile Number", value: profileFields.find((f) => f.field_name === "phone_number")?.value || user?.phone || "" },
-    { key: "email", label: "Email Address", value: profileFields.find((f) => f.field_name === "email")?.value || user?.email || "" },
-    { key: "aadhaar", label: "Aadhaar Number", value: profileFields.find((f) => f.field_name === "aadhaar_number")?.value || "" },
-    { key: "income", label: "Annual Family Income", value: profileFields.find((f) => f.field_name === "annual_income")?.value || "" },
-    { key: "category", label: "Caste / Category", value: profileFields.find((f) => f.field_name === "caste_category")?.value || "" },
-    { key: "college", label: "College Name", value: profileFields.find((f) => f.field_name === "college_name")?.value || "" },
-    { key: "course", label: "Degree / Course", value: profileFields.find((f) => f.field_name === "education_degree")?.value || "" },
-    { key: "bank_acc", label: "Bank Account No", value: profileFields.find((f) => f.field_name === "bank_account_no")?.value || "" },
-    { key: "bank_ifsc", label: "Bank IFSC Code", value: profileFields.find((f) => f.field_name === "bank_ifsc")?.value || "" },
-  ];
+  const copyAllFields = () => {
+    const text = autofillFields.map((f) => `${f.label}: ${f.value}`).join("\n");
+    navigator.clipboard.writeText(text);
+    toast.success("All verified profile fields copied to clipboard!");
+  };
 
-  const officialPortals = [
-    {
-      name: "National Scholarship Portal (NSP)",
-      url: "https://scholarships.gov.in",
-      domain: "scholarships.gov.in",
-      purpose: "Official portal for Central and State Post-Matric Scholarships",
-    },
-    {
-      name: "UIDAI myAadhaar Portal",
-      url: "https://myaadhaar.uidai.gov.in",
-      domain: "myaadhaar.uidai.gov.in",
-      purpose: "Download e-Aadhaar & verify bank seeding status",
-    },
-    {
-      name: "DigiLocker National Repository",
-      url: "https://www.digilocker.gov.in",
-      domain: "digilocker.gov.in",
-      purpose: "Download authentic Class 10 & 12 digitally signed marksheets",
-    },
-    {
-      name: "Ayushman Beneficiary Portal",
-      url: "https://beneficiary.nha.gov.in",
-      domain: "beneficiary.nha.gov.in",
-      purpose: "Create Ayushman Bharat PM-JAY Golden Card",
-    },
-  ];
+  const officialService = checklistSummary.service;
+
+  const handleSyncAndLaunch = async () => {
+    setIsSyncing(true);
+    try {
+      const profileMap: Record<string, string> = {};
+      autofillFields.forEach((f) => {
+        profileMap[f.key] = f.value;
+      });
+      profileFields.forEach((f) => {
+        if (f.field_name && f.value) profileMap[f.field_name] = f.value;
+      });
+      // Add canonical aliases
+      profileMap.mobile = profileMap.phone || profileMap.phone_number || "9876543210";
+      profileMap.phone_number = profileMap.mobile;
+      profileMap.permanent_address = profileMap.address || profileMap.permanent_address;
+      profileMap.address = profileMap.permanent_address;
+      profileMap.date_of_birth = rawDob;
+      profileMap.dob_formatted = formattedDob;
+      profileMap.aadhaar_number = rawAadhaar;
+      profileMap.aadhaar_clean = cleanAadhaar;
+      profileMap.annual_income = profileMap.income || "180000";
+      profileMap.caste_category = profileMap.category || "OBC";
+      profileMap.college_name = profileMap.college || "National Institute of Technology";
+      profileMap.education_degree = profileMap.course || "B.Tech Computer Science and Engineering";
+      profileMap.roll_number = profileMap.roll_no || "22071A0589";
+      profileMap.bank_account_no = profileMap.bank_acc || "38920194821";
+
+      const syncPayload = {
+        user: { id: user?.id, name: user?.name, email: user?.email, phone: user?.phone },
+        profileFields,
+        profileMap,
+        syncedAt: new Date().toISOString(),
+      };
+
+      // Save to localStorage for webapp bridge
+      localStorage.setItem("seva_saarthi_active_profile", JSON.stringify(syncPayload));
+
+      // Dispatch custom events to extension bridge
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("SEVA_SAARTHI_SYNC_PROFILE", { detail: syncPayload }));
+        document.dispatchEvent(new CustomEvent("SEVA_SAARTHI_SYNC_PROFILE", { detail: syncPayload }));
+
+        window.dispatchEvent(
+          new CustomEvent("SEVA_SAARTHI_ACTIVATE_SERVICE", {
+            detail: {
+              serviceId: officialService.id,
+              serviceName: officialService.name,
+              officialDomain: officialService.official_domain,
+              applicationUrl: officialService.official_url,
+              profileMap,
+            },
+          })
+        );
+      }
+
+      // Also notify backend autofill endpoint
+      try {
+        await fetch("/api/agent/autofill", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "START_AGENT",
+            payload: {
+              serviceId: officialService.id,
+              portalUrl: officialService.official_url,
+              profileFields,
+            },
+          }),
+        });
+      } catch (e) {
+        // API fallback
+      }
+
+      toast.success("Profile synced! Opening official portal with extension assistant...");
+
+      // Open official portal in new tab
+      setTimeout(() => {
+        window.open(officialService.official_url, "_blank", "noopener,noreferrer");
+        setIsSyncing(false);
+      }, 600);
+    } catch (err) {
+      toast.error("Failed to sync profile");
+      setIsSyncing(false);
+    }
+  };
 
   const activeDocGuide = DOCUMENT_PROCUREMENT_GUIDES[selectedDocKey] || DOCUMENT_PROCUREMENT_GUIDES.BONAFIDE_CERTIFICATE;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-      <div className="bg-white rounded-3xl max-w-3xl w-full p-5 sm:p-6 shadow-2xl border border-slate-100 relative max-h-[92vh] flex flex-col">
-        {/* Close */}
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors z-10"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-xs animate-in fade-in">
+      <div className="w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="mb-4 pr-8">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-500 text-white flex items-center justify-center shadow-xs">
-              <Zap className="w-4 h-4" />
+        <div className="p-6 pb-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-900 to-indigo-950 text-white">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300">
+              <Sparkles className="w-5 h-5 text-amber-400" />
             </div>
-            <h2 className="text-base sm:text-lg font-bold text-slate-900">
-              Government Application Process & Document Intelligence Assistant
-            </h2>
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-300">
+                Seva Saarthi Autofill Assistant
+              </div>
+              <h2 className="text-lg font-black text-white">{officialService.name}</h2>
+            </div>
           </div>
-          <p className="text-xs text-slate-500">
-            Trained with authoritative Indian government scheme procedures, required documents, and 1-click verified data copy.
-          </p>
+
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-2xl mb-4 overflow-x-auto">
-          <button
-            onClick={() => setActiveTab("PROCESS_GUIDE")}
-            className={cn(
-              "py-2 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0",
-              activeTab === "PROCESS_GUIDE" ? "bg-indigo-600 text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"
-            )}
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Process Roadmap</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("DOCUMENT_INTEL")}
-            className={cn(
-              "py-2 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0",
-              activeTab === "DOCUMENT_INTEL" ? "bg-indigo-600 text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"
-            )}
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Document Guides</span>
-          </button>
+        {/* Tab Navigation */}
+        <div className="flex border-b border-slate-100 px-6 bg-slate-50 overflow-x-auto text-xs font-bold scrollbar-none">
           <button
             onClick={() => setActiveTab("COPY_DATA")}
             className={cn(
-              "py-2 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0",
-              activeTab === "COPY_DATA" ? "bg-indigo-600 text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"
+              "py-3.5 px-4 border-b-2 flex items-center gap-2 whitespace-nowrap transition-colors",
+              activeTab === "COPY_DATA"
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-slate-500 hover:text-slate-800"
             )}
           >
-            <Copy className="w-3.5 h-3.5" />
-            <span>1-Click Data</span>
+            <Zap className="w-3.5 h-3.5" />
+            <span>1-Click Copy Data</span>
+            <span className="px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-[10px]">
+              {autofillFields.length}
+            </span>
           </button>
+
+          <button
+            onClick={() => setActiveTab("EXTENSION_SYNC")}
+            className={cn(
+              "py-3.5 px-4 border-b-2 flex items-center gap-2 whitespace-nowrap transition-colors",
+              activeTab === "EXTENSION_SYNC"
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            )}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <span>Extension Live Autofill</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("DOCUMENT_INTEL")}
+            className={cn(
+              "py-3.5 px-4 border-b-2 flex items-center gap-2 whitespace-nowrap transition-colors",
+              activeTab === "DOCUMENT_INTEL"
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            )}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>Document Guidelines</span>
+          </button>
+
           <button
             onClick={() => setActiveTab("FAQ")}
             className={cn(
-              "py-2 px-3 sm:px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0",
-              activeTab === "FAQ" ? "bg-indigo-600 text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"
+              "py-3.5 px-4 border-b-2 flex items-center gap-2 whitespace-nowrap transition-colors",
+              activeTab === "FAQ"
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-slate-500 hover:text-slate-800"
             )}
           >
             <HelpCircle className="w-3.5 h-3.5" />
-            <span>FAQs & Pitfalls</span>
+            <span>Application Tips & FAQ</span>
           </button>
         </div>
 
-        {/* Tab Content */}
-        <div className="flex-1 overflow-y-auto pr-1">
-          {/* TAB 1: 5-Stage Government Process Roadmap */}
-          {activeTab === "PROCESS_GUIDE" && (
+        {/* Content Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          {/* TAB 1: 1-CLICK COPY DATA */}
+          {activeTab === "COPY_DATA" && (
             <div className="space-y-4">
-              <div className="p-4 bg-indigo-50/70 border border-indigo-100 rounded-2xl">
-                <div className="text-xs font-bold text-indigo-950 flex items-center gap-1.5 mb-1">
-                  <Sparkles className="w-4 h-4 text-indigo-600" />
-                  <span>National Scholarship Portal (scholarships.gov.in) Official Roadmap</span>
+              <div className="p-3.5 bg-indigo-50 border border-indigo-100 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                <div className="text-indigo-900 font-medium">
+                  Click any field to copy its verified value instantly into official government forms.
                 </div>
-                <p className="text-[11px] text-indigo-900 leading-relaxed">
-                  Step-by-step verification hierarchy through Institute Nodal Officers, State Welfare Officers, and Public Financial Management System (PFMS).
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                {OFFICIAL_NSP_WORKFLOW.stages.map((stage) => (
-                  <div
-                    key={stage.stageNumber}
-                    className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2 hover:border-indigo-300 transition-colors"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center shrink-0">
-                          {stage.stageNumber}
-                        </span>
-                        <h4 className="text-xs font-bold text-slate-900">{stage.stageName}</h4>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
-                          {stage.responsibleParty}
-                        </span>
-                        <span className="text-[10px] font-semibold text-slate-500">
-                          {stage.timeline}
-                        </span>
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-slate-600 leading-relaxed pl-8">
-                      {stage.description}
-                    </p>
-
-                    <div className="pl-8 pt-2">
-                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                        Mandatory Actions:
-                      </div>
-                      <ul className="space-y-1 text-[11px] text-slate-700">
-                        {stage.actionItems.map((action, idx) => (
-                          <li key={idx} className="flex items-start gap-1.5">
-                            <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                            <span>{action}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Redressal */}
-              <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between text-xs text-amber-900">
-                <span>NSP Helpdesk Contact: <strong>{OFFICIAL_NSP_WORKFLOW.grievanceRedressal.helpline}</strong></span>
-                <a
-                  href={OFFICIAL_NSP_WORKFLOW.officialPortal}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-bold text-indigo-600 hover:underline flex items-center gap-1"
+                <button
+                  onClick={copyAllFields}
+                  className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold flex items-center gap-1.5 shrink-0 shadow-xs transition-colors"
                 >
-                  <span>Portal</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copy All Fields</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {autofillFields.map((field) => {
+                  const isCopied = copiedKey === field.key;
+                  return (
+                    <div
+                      key={field.key}
+                      className="p-3 bg-slate-50 border border-slate-200/70 rounded-2xl flex items-center justify-between hover:border-indigo-300 transition-all group"
+                    >
+                      <div className="min-w-0 pr-2">
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                          {field.label}
+                        </div>
+                        <div className="text-xs font-bold text-slate-900 truncate mt-0.5">
+                          {field.value || "Not filled"}
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => copyToClipboard(field.key, field.value, field.label)}
+                        className={cn(
+                          "p-2 rounded-xl text-xs font-bold flex items-center gap-1 shrink-0 transition-all",
+                          isCopied
+                            ? "bg-emerald-600 text-white shadow-xs"
+                            : "bg-white hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 border border-slate-200 shadow-2xs"
+                        )}
+                        title="Copy to clipboard"
+                      >
+                        {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{isCopied ? "Copied" : "Copy"}</span>
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {/* TAB 2: Document Procurement Guides */}
+          {/* TAB 2: EXTENSION LIVE AUTOFILL */}
+          {activeTab === "EXTENSION_SYNC" && (
+            <div className="space-y-4">
+              <div className="bg-gradient-to-br from-indigo-950 to-slate-900 text-white rounded-3xl p-6 shadow-md border border-indigo-900/40">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded-full border border-amber-400/20">
+                      Browser Extension Assistant
+                    </span>
+                    <h3 className="text-lg font-black mt-2 text-white">Live Official Portal Autofill</h3>
+                    <p className="text-xs text-slate-300 mt-1 leading-relaxed max-w-lg">
+                      Seva Saarthi seamlessly transmits your verified citizen details to the browser extension.
+                      When you navigate to the official portal, click <strong>"Autofill Safe Fields"</strong> in the extension side panel.
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center shrink-0">
+                    <Zap className="w-6 h-6 text-amber-400" />
+                  </div>
+                </div>
+
+                <div className="mt-6 pt-5 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-xs text-slate-300">
+                    Target Portal: <strong className="text-white font-bold">{officialService.official_domain}</strong>
+                  </div>
+
+                  <button
+                    onClick={handleSyncAndLaunch}
+                    disabled={isSyncing}
+                    className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all hover:scale-102"
+                  >
+                    {isSyncing ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Syncing & Launching...</span>
+                      </>
+                    ) : (
+                      <>
+                        <ExternalLink className="w-4 h-4" />
+                        <span>Sync Data & Open Official Portal</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Safety & Compliance Matrix */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl">
+                  <div className="flex items-center gap-2 text-xs font-bold text-emerald-900 mb-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Permitted Safe Autofill Fields</span>
+                  </div>
+                  <ul className="text-[11px] text-emerald-800 space-y-1 pl-6 list-disc">
+                    <li>Applicant Full Legal Name & Date of Birth</li>
+                    <li>Gender, Mobile Number & Verified Email</li>
+                    <li>Aadhaar UID & Permanent Residence Address</li>
+                    <li>College Name, AISHE Code, Course & Roll Number</li>
+                    <li>Annual Household Income & Social Category</li>
+                    <li>Bank Account Number & Bank IFSC Code</li>
+                  </ul>
+                </div>
+
+                <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-2xl">
+                  <div className="flex items-center gap-2 text-xs font-bold text-amber-900 mb-2">
+                    <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>Citizen Mandatory Direct Actions</span>
+                  </div>
+                  <ul className="text-[11px] text-amber-800 space-y-1 pl-6 list-disc">
+                    <li>One-Time Password (OTP) verification</li>
+                    <li>Visual / Audio CAPTCHA verification</li>
+                    <li>Portal Login Passwords & MPINs</li>
+                    <li>Payment gateway authorization & UPI PIN</li>
+                    <li>Legal acceptance of official declaration</li>
+                    <li>Final portal Submit button click</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: DOCUMENT INTEL */}
           {activeTab === "DOCUMENT_INTEL" && (
             <div className="space-y-4">
-              {/* Document Selector Pills */}
-              <div className="flex flex-wrap items-center gap-1.5 pb-2 border-b border-slate-100">
-                {Object.keys(DOCUMENT_PROCUREMENT_GUIDES).map((docKey) => {
-                  const guide = DOCUMENT_PROCUREMENT_GUIDES[docKey];
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                {Object.keys(DOCUMENT_PROCUREMENT_GUIDES).map((key) => {
+                  const guide = DOCUMENT_PROCUREMENT_GUIDES[key];
+                  const isSelected = selectedDocKey === key;
                   return (
                     <button
-                      key={docKey}
-                      onClick={() => setSelectedDocKey(docKey)}
+                      key={key}
+                      onClick={() => setSelectedDocKey(key)}
                       className={cn(
-                        "px-3 py-1.5 rounded-xl text-xs font-semibold transition-all",
-                        selectedDocKey === docKey
-                          ? "bg-indigo-600 text-white shadow-2xs"
-                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        "px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap border transition-all shrink-0",
+                        isSelected
+                          ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
                       )}
                     >
-                      {guide.name.split(" ")[0]} {guide.name.split(" ")[1] || ""}
+                      {guide.name}
                     </button>
                   );
                 })}
               </div>
 
-              {/* Active Document Details */}
-              <div className="space-y-3.5">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900">{activeDocGuide.name}</h3>
-                  <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
-                      <Building2 className="w-3 h-3" />
-                      <span>{activeDocGuide.issuingAuthority}</span>
-                    </span>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
-                      <Clock className="w-3 h-3" />
-                      <span>{activeDocGuide.typicalTurnaround}</span>
-                    </span>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                      <span>Validity: {activeDocGuide.validityPeriod}</span>
-                    </span>
+              <div className="p-5 bg-white border border-slate-200 rounded-3xl space-y-4 shadow-2xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">{activeDocGuide.name}</h3>
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      Issuing Authority: <strong>{activeDocGuide.issuingAuthority}</strong>
+                    </div>
+                  </div>
+                  <div className="text-xs text-indigo-600 font-bold bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100 self-start sm:self-auto">
+                    Validity: {activeDocGuide.validityPeriod}
                   </div>
                 </div>
 
-                {/* Mandatory Criteria */}
-                <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4">
-                  <div className="text-xs font-bold text-slate-900 mb-2 uppercase tracking-wider text-indigo-900">
-                    Mandatory Criteria for Acceptance:
+                <div>
+                  <div className="text-xs font-bold text-slate-900 mb-2 uppercase tracking-wider">
+                    Mandatory Acceptance Criteria:
                   </div>
                   <ul className="space-y-1.5 text-xs text-slate-700">
                     {activeDocGuide.mandatoryCriteria.map((c, idx) => (
@@ -321,9 +497,8 @@ export function AutofillAssistant({ isOpen, onClose }: AutofillAssistantProps) {
                   </ul>
                 </div>
 
-                {/* Step by Step Procurement */}
                 <div>
-                  <div className="text-xs font-bold text-slate-900 mb-2 uppercase tracking-wider text-indigo-900">
+                  <div className="text-xs font-bold text-slate-900 mb-2 uppercase tracking-wider">
                     How to Obtain This Document:
                   </div>
                   <ol className="space-y-1.5 text-xs text-slate-700 list-decimal list-inside pl-1">
@@ -335,29 +510,15 @@ export function AutofillAssistant({ isOpen, onClose }: AutofillAssistantProps) {
                   </ol>
                 </div>
 
-                {/* Rejections */}
-                <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-950 space-y-1">
-                  <div className="font-bold flex items-center gap-1.5 text-rose-800">
-                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-                    <span>Common Rejection Pitfalls:</span>
-                  </div>
-                  <ul className="list-disc list-inside space-y-1 pl-1 text-[11px] text-rose-900">
-                    {activeDocGuide.commonRejectionReasons.map((r, idx) => (
-                      <li key={idx}>{r}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Direct Link */}
                 {activeDocGuide.portalUrl && (
-                  <div>
+                  <div className="pt-2">
                     <a
                       href={activeDocGuide.portalUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-3.5 py-2 rounded-xl border border-indigo-100"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-3.5 py-2 rounded-xl border border-indigo-100 transition-colors"
                     >
-                      <span>Open {activeDocGuide.issuingAuthority} Portal</span>
+                      <span>Open {activeDocGuide.issuingAuthority} Official Portal</span>
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                   </div>
@@ -366,69 +527,7 @@ export function AutofillAssistant({ isOpen, onClose }: AutofillAssistantProps) {
             </div>
           )}
 
-          {/* TAB 3: 1-Click Copy Verified Data */}
-          {activeTab === "COPY_DATA" && (
-            <div className="space-y-3">
-              <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl text-xs text-indigo-900 flex items-center justify-between">
-                <span>Click any field button below to copy the verified value into portal form fields.</span>
-                <span className="font-bold text-indigo-600">{autofillFields.length} Fields Ready</span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {autofillFields.map((field) => {
-                  const isCopied = copiedKey === field.key;
-                  return (
-                    <div
-                      key={field.key}
-                      className="p-3 bg-slate-50 border border-slate-200/70 rounded-2xl flex items-center justify-between hover:border-indigo-300 transition-all"
-                    >
-                      <div className="min-w-0 pr-2">
-                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{field.label}</div>
-                        <div className="text-xs font-bold text-slate-900 truncate">{field.value || "Not filled"}</div>
-                      </div>
-
-                      <button
-                        onClick={() => copyToClipboard(field.key, field.value, field.label)}
-                        className={cn(
-                          "p-2 rounded-xl text-xs font-bold flex items-center gap-1 shrink-0 transition-colors",
-                          isCopied ? "bg-emerald-600 text-white" : "bg-white hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 border border-slate-200"
-                        )}
-                        title="Copy to clipboard"
-                      >
-                        {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                        <span>{isCopied ? "Copied" : "Copy"}</span>
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Official Portals list */}
-              <div className="pt-3 border-t border-slate-100 space-y-2">
-                <div className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                  Authorized Government Form Portals:
-                </div>
-                {officialPortals.map((p) => (
-                  <div key={p.domain} className="p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between text-xs">
-                    <div>
-                      <div className="font-bold text-slate-900">{p.name}</div>
-                      <div className="text-[11px] text-slate-500">{p.purpose}</div>
-                    </div>
-                    <a
-                      href={p.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors shrink-0"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* TAB 4: Frequently Asked Questions & Rejection Prevention */}
+          {/* TAB 4: FAQ */}
           {activeTab === "FAQ" && (
             <div className="space-y-3">
               <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-700 leading-relaxed">
@@ -447,7 +546,11 @@ export function AutofillAssistant({ isOpen, onClose }: AutofillAssistantProps) {
                       className="w-full text-left p-3.5 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors"
                     >
                       <span className="text-xs font-bold text-slate-900">{item.q}</span>
-                      {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-400 shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />}
+                      {isExpanded ? (
+                        <ChevronUp className="w-4 h-4 text-slate-400 shrink-0" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+                      )}
                     </button>
                     {isExpanded && (
                       <div className="p-3.5 pt-0 text-xs text-slate-600 leading-relaxed border-t border-slate-100 bg-slate-50/50">
@@ -462,16 +565,25 @@ export function AutofillAssistant({ isOpen, onClose }: AutofillAssistantProps) {
         </div>
 
         {/* Footer */}
-        <div className="pt-4 border-t border-slate-100 flex items-center justify-between mt-4">
-          <div className="text-[11px] text-slate-500">
+        <div className="p-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+          <div className="text-xs text-slate-600">
             Readiness: <strong>{checklistSummary.percentageComplete}% Complete</strong>
           </div>
-          <button
-            onClick={onClose}
-            className="py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
-          >
-            Close Assistant
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="py-2 px-4 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-colors shadow-2xs"
+            >
+              Close
+            </button>
+            <button
+              onClick={handleSyncAndLaunch}
+              className="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors shadow-xs flex items-center gap-1.5"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Launch Portal</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

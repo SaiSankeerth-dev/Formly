@@ -118,6 +118,11 @@ export interface PanApplicationRecord {
   officerRemarks?: string;
   correctionReason?: string;
   rejectionReason?: string;
+  returnDetails?: {
+    field?: string;
+    reason?: string;
+    returnedAt?: string;
+  };
   aiSummary: {
     status: 'OPTIMAL' | 'ATTENTION_NEEDED' | 'CRITICAL_MISMATCH';
     summary: string;

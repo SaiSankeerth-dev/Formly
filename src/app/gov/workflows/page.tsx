@@ -158,7 +158,7 @@ export default function WorkflowsPage() {
             <div className="text-lg font-black text-blue-600">{stats.total} Total Cases</div>
           </div>
           <Link
-            href="/applications"
+            href="/gov/queue"
             className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5"
           >
             <span>Open Application Queue</span>
@@ -319,7 +319,7 @@ export default function WorkflowsPage() {
                 {matchingApps.slice(0, 5).map((app) => (
                   <Link
                     key={app.id}
-                    href={`/applications/${app.id}`}
+                    href={`/gov/workspace/${app.id}`}
                     className="p-3 bg-slate-50 hover:bg-blue-50/60 border border-slate-200 hover:border-blue-200 rounded-xl transition-all flex items-center justify-between group"
                   >
                     <div>

@@ -382,11 +382,11 @@ export const SERVICE_DOCUMENT_PROFILES: Record<string, Record<string, DocumentPr
     },
   },
 
-  // Annual Household Income Certificate (Service ID: income-certificate-meeseva)
-  "income-certificate-meeseva": {
+  // Annual Household Income Certificate (Service ID: income-certificate-telangana)
+  "income-certificate-telangana": {
     AADHAAR: {
-      serviceId: "income-certificate-meeseva",
-      serviceName: "Income Certificate (MeeSeva)",
+      serviceId: "income-certificate-telangana",
+      serviceName: "Income Certificate",
       documentType: "AADHAAR",
       documentLabel: "Aadhaar Card",
       rules: {
@@ -402,8 +402,8 @@ export const SERVICE_DOCUMENT_PROFILES: Record<string, Record<string, DocumentPr
       optimizerStrategy: "image-progressive",
     },
     RATION_CARD: {
-      serviceId: "income-certificate-meeseva",
-      serviceName: "Income Certificate (MeeSeva)",
+      serviceId: "income-certificate-telangana",
+      serviceName: "Income Certificate",
       documentType: "RATION_CARD",
       documentLabel: "Food Security Card / Ration Card",
       rules: {
@@ -418,8 +418,8 @@ export const SERVICE_DOCUMENT_PROFILES: Record<string, Record<string, DocumentPr
       optimizerStrategy: "image-progressive",
     },
     INCOME_PROOF: {
-      serviceId: "income-certificate-meeseva",
-      serviceName: "Income Certificate (MeeSeva)",
+      serviceId: "income-certificate-telangana",
+      serviceName: "Income Certificate",
       documentType: "INCOME_PROOF",
       documentLabel: "Income Proof / Salary Slip / Affidavit",
       rules: {
@@ -435,8 +435,8 @@ export const SERVICE_DOCUMENT_PROFILES: Record<string, Record<string, DocumentPr
       optimizerStrategy: "image-progressive",
     },
     INCOME_CERTIFICATE: {
-      serviceId: "income-certificate-meeseva",
-      serviceName: "Income Certificate (MeeSeva)",
+      serviceId: "income-certificate-telangana",
+      serviceName: "Income Certificate",
       documentType: "INCOME_CERTIFICATE",
       documentLabel: "Income Certificate",
       rules: {

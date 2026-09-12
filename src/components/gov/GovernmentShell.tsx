@@ -84,21 +84,27 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
     }
   };
 
+  const isGovPath = pathname.startsWith("/gov");
+  const isGovernmentPath = pathname.startsWith("/government");
+  const prefix = isGovPath ? "/gov" : isGovernmentPath ? "/government" : "";
+  const getAppWorkspaceUrl = (id: string) =>
+    isGovPath ? `/gov/workspace/${id}` : isGovernmentPath ? `/government/applications/${id}` : `/applications/${id}`;
+
   const navItems = [
-    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { label: "Application Queue", href: "/applications", icon: Layers, badge: stats.newApps, badgeColor: "bg-blue-600 text-white" },
-    { label: "My Assignments", href: "/my-queue", icon: CheckSquare, badge: stats.officerReview, badgeColor: "bg-blue-600 text-white" },
-    { label: "Review & Approve", href: "/applications?tab=officer_review", icon: ShieldCheck },
-    { label: "Returned Applications", href: "/applications?tab=returned", icon: RotateCcw, badge: stats.returned, badgeColor: "bg-slate-800 text-slate-300" },
-    { label: "Exceptions & Conflicts", href: "/exceptions", icon: AlertTriangle, badge: stats.exceptions, badgeColor: "bg-rose-500/20 text-rose-300 border border-rose-500/30" },
-    { label: "Interoperability Hub", href: "/interoperability", icon: Radio },
-    { label: "Data Mapper", href: "/data-mapper", icon: GitPullRequest },
-    { label: "Workflows", href: "/workflows", icon: Workflow },
-    { label: "Audit Logs", href: "/audit", icon: History },
-    { label: "Reports & Analytics", href: "/monitoring", icon: BarChart3 },
-    { label: "SLA Monitoring", href: "/monitoring?tab=sla", icon: Clock },
-    { label: "Department Resources", href: "/settings?tab=resources", icon: FolderGit2 },
-    { label: "Settings", href: "/settings", icon: Settings },
+    { label: "Dashboard", href: isGovPath ? "/gov" : isGovernmentPath ? "/government/dashboard" : "/dashboard", icon: LayoutDashboard },
+    { label: "Application Queue", href: isGovPath ? "/gov/queue" : isGovernmentPath ? "/government/applications" : "/applications", icon: Layers, badge: stats.newApps, badgeColor: "bg-blue-600 text-white" },
+    { label: "My Assignments", href: isGovPath ? "/gov/queue?tab=my_assignments" : isGovernmentPath ? "/government/my-queue" : "/my-queue", icon: CheckSquare, badge: stats.officerReview, badgeColor: "bg-blue-600 text-white" },
+    { label: "Review & Approve", href: isGovPath ? "/gov/queue?tab=officer_review" : isGovernmentPath ? "/government/applications?tab=officer_review" : "/applications?tab=officer_review", icon: ShieldCheck },
+    { label: "Returned Applications", href: isGovPath ? "/gov/queue?tab=returned" : isGovernmentPath ? "/government/applications?tab=returned" : "/applications?tab=returned", icon: RotateCcw, badge: stats.returned, badgeColor: "bg-slate-800 text-slate-300" },
+    { label: "Exceptions & Conflicts", href: prefix ? `${prefix}/exceptions` : "/exceptions", icon: AlertTriangle, badge: stats.exceptions, badgeColor: "bg-rose-500/20 text-rose-300 border border-rose-500/30" },
+    { label: "Interoperability Hub", href: prefix ? `${prefix}/interoperability` : "/interoperability", icon: Radio },
+    { label: "Data Mapper", href: prefix ? `${prefix}/data-mapper` : "/data-mapper", icon: GitPullRequest },
+    { label: "Workflows", href: prefix ? `${prefix}/workflows` : "/workflows", icon: Workflow },
+    { label: "Audit Logs", href: prefix ? `${prefix}/audit` : "/audit", icon: History },
+    { label: "Reports & Analytics", href: prefix ? `${prefix}/monitoring` : "/monitoring", icon: BarChart3 },
+    { label: "SLA Monitoring", href: prefix ? `${prefix}/monitoring?tab=sla` : "/monitoring?tab=sla", icon: Clock },
+    { label: "Department Resources", href: isGovPath ? "/gov/resources" : isGovernmentPath ? "/government/resources" : "/settings?tab=resources", icon: FolderGit2 },
+    { label: "Settings", href: prefix ? `${prefix}/settings` : "/settings", icon: Settings },
   ];
 
   // Quick search filter for matching applications
@@ -138,11 +144,11 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive =
-              item.href === "/dashboard"
-                ? pathname === "/dashboard" || pathname === "/" || pathname === "/gov" || pathname === "/government"
+              item.label === "Dashboard"
+                ? pathname === "/dashboard" || pathname === "/" || pathname === "/gov" || pathname === "/government" || pathname === "/government/dashboard"
                 : pathname === item.href.split("?")[0] ||
                   pathname === item.href ||
-                  (item.href === "/applications" && (pathname.startsWith("/applications") || pathname.startsWith("/gov/workspace") || pathname.startsWith("/government/applications")));
+                  (item.label === "Application Queue" && (pathname.startsWith("/applications") || pathname.startsWith("/gov/workspace") || pathname.startsWith("/gov/queue") || pathname.startsWith("/government/applications")));
 
             return (
               <Link
@@ -325,7 +331,7 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
                     {/* Operational Menu Items */}
                     <div className="py-1 space-y-0.5 text-xs">
                       <Link
-                        href="/my-queue"
+                        href={isGovPath ? "/gov/queue?tab=my_assignments" : isGovernmentPath ? "/government/my-queue" : "/my-queue"}
                         onClick={() => setProfileMenuOpen(false)}
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors"
                       >
@@ -333,7 +339,7 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
                         <span>My Assigned Work</span>
                       </Link>
                       <Link
-                        href="/settings"
+                        href={prefix ? `${prefix}/settings` : "/settings"}
                         onClick={() => setProfileMenuOpen(false)}
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors"
                       >
@@ -341,7 +347,7 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
                         <span>Security & Access Logs</span>
                       </Link>
                       <Link
-                        href="/settings?tab=resources"
+                        href={isGovPath ? "/gov/resources" : prefix ? `${prefix}/settings?tab=resources` : "/settings?tab=resources"}
                         onClick={() => setProfileMenuOpen(false)}
                         className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors"
                       >
@@ -403,7 +409,7 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
                     {searchResults.map((app) => (
                       <Link
                         key={app.id}
-                        href={`/applications/${app.id}`}
+                        href={getAppWorkspaceUrl(app.id)}
                         onClick={() => setSearchOpen(false)}
                         className="flex items-center justify-between p-3 rounded-xl hover:bg-blue-50/60 border border-transparent hover:border-blue-100 transition-all group"
                       >
@@ -433,28 +439,28 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
                     <div className="font-bold text-slate-600">Quick Navigation Suggestions:</div>
                     <div className="grid grid-cols-2 gap-2">
                       <Link
-                        href="/applications/PAN-2026-0001"
+                        href={getAppWorkspaceUrl("PAN-2026-0001")}
                         onClick={() => setSearchOpen(false)}
                         className="p-2.5 bg-slate-50 hover:bg-blue-50 rounded-xl font-mono text-blue-700 font-bold"
                       >
                         PAN-2026-0001 (Sai Sankeerth)
                       </Link>
                       <Link
-                        href="/applications/PAN-2026-0002"
+                        href={getAppWorkspaceUrl("PAN-2026-0002")}
                         onClick={() => setSearchOpen(false)}
                         className="p-2.5 bg-slate-50 hover:bg-blue-50 rounded-xl font-mono text-blue-700 font-bold"
                       >
                         PAN-2026-0002 (Anjali Sharma)
                       </Link>
                       <Link
-                        href="/applications/PAN-2026-0003"
+                        href={getAppWorkspaceUrl("PAN-2026-0003")}
                         onClick={() => setSearchOpen(false)}
                         className="p-2.5 bg-slate-50 hover:bg-blue-50 rounded-xl font-mono text-blue-700 font-bold"
                       >
                         PAN-2026-0003 (Rahul Verma)
                       </Link>
                       <Link
-                        href="/applications/PAN-2026-0004"
+                        href={getAppWorkspaceUrl("PAN-2026-0004")}
                         onClick={() => setSearchOpen(false)}
                         className="p-2.5 bg-slate-50 hover:bg-blue-50 rounded-xl font-mono text-blue-700 font-bold"
                       >

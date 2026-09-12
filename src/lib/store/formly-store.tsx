@@ -13,12 +13,18 @@ import {
   DocumentType,
 } from "@/types";
 import {
+  DEFAULT_USER,
   INITIAL_SERVICES,
   INITIAL_REQUIREMENTS,
+  INITIAL_DOCUMENTS,
+  INITIAL_EXTRACTED_FIELDS,
+  INITIAL_PROFILE_FIELDS,
+  INITIAL_REQUIREMENT_STATUS,
 } from "@/lib/mock-data/initial-state";
 import { extractDocumentFields } from "@/lib/ocr/ocr-engine";
 import { toast } from "sonner";
 import { CANONICAL_PROFILE_FIELDS, computeProfileStrength, getProfileCompleteness } from "@/lib/constants/profile";
+import { CITIZEN_APPLICATIONS } from "@/lib/mock-data/citizen-applications";
 
 export interface UserSession {
   id: string;
@@ -97,18 +103,132 @@ const SevaSaarthiContext = createContext<SevaSaarthiContextType | null>(null);
 
 const STORAGE_SESSION_KEY = "seva_saarthi_active_session";
 
+export function buildEnrichedProfileMap(profileFields: ProfileField[], user: UserSession | null) {
+  const map: Record<string, string> = {};
+  profileFields.forEach((f) => {
+    if (f.field_name && f.value) {
+      map[f.field_name] = f.value;
+    }
+  });
+
+  const fullName = map.full_name || user?.name || "Sai Sankeerth";
+  const mobile = map.phone_number || map.mobile || user?.phone || "9876543210";
+  const email = map.email || user?.email || "sankeerths615@gmail.com";
+  const dob = map.date_of_birth || "2001-08-15";
+  const gender = map.gender || "Male";
+  const aadhaar = map.aadhaar_number || "5492 8173 9012";
+  const address = map.permanent_address || map.address || map.location || "H.No 4-52/1, Green Hills Colony, Gachibowli, Hyderabad, Telangana - 500032";
+  const pincode = map.pincode || "500032";
+
+  // Disaggregate full name
+  const nameParts = fullName.trim().split(/\s+/);
+  const firstName = nameParts[0] || fullName;
+  const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : firstName;
+  const middleName = nameParts.length > 2 ? nameParts.slice(1, -1).join(" ") : "";
+
+  // Disaggregate father name
+  const fatherName = map.father_name || "Suresh Kumar";
+  const fParts = fatherName.trim().split(/\s+/);
+  const fatherFirstName = fParts[0] || fatherName;
+  const fatherLastName = fParts.length > 1 ? fParts[fParts.length - 1] : "";
+
+  // Disaggregate mother name
+  const motherName = map.mother_name || "Laxmi Devi";
+  const mParts = motherName.trim().split(/\s+/);
+  const motherFirstName = mParts[0] || motherName;
+  const motherLastName = mParts.length > 1 ? mParts[mParts.length - 1] : "";
+
+  // DOB variations
+  let dobFormatted = "15/08/2001";
+  let dobDay = "15";
+  let dobMonth = "08";
+  let dobYear = "2001";
+  if (dob.includes("-")) {
+    const parts = dob.split("-");
+    if (parts.length === 3) {
+      dobYear = parts[0];
+      dobMonth = parts[1];
+      dobDay = parts[2];
+      dobFormatted = `${dobDay}/${dobMonth}/${dobYear}`;
+    }
+  }
+
+  // Aadhaar variations
+  const aadhaarClean = aadhaar.replace(/\s+/g, "");
+  const uidParts = aadhaar.split(/\s+/);
+  const uid1 = uidParts[0] || aadhaarClean.slice(0, 4);
+  const uid2 = uidParts[1] || aadhaarClean.slice(4, 8);
+  const uid3 = uidParts[2] || aadhaarClean.slice(8, 12);
+
+  return {
+    ...map,
+    full_name: fullName,
+    first_name: firstName,
+    last_name: lastName,
+    surname: lastName,
+    middle_name: middleName,
+    name: fullName,
+    mobile,
+    phone_number: mobile,
+    phone: mobile,
+    email,
+    date_of_birth: dob,
+    dob,
+    dob_formatted: dobFormatted,
+    dob_day: dobDay,
+    dob_month: dobMonth,
+    dob_year: dobYear,
+    gender,
+    aadhaar_number: aadhaar,
+    aadhaar: aadhaar,
+    aadhaar_clean: aadhaarClean,
+    uid1,
+    uid2,
+    uid3,
+    permanent_address: address,
+    address,
+    pincode,
+    pin_code: pincode,
+    district: map.district || "Ranga Reddy",
+    mandal: map.mandal || "Serilingampally",
+    location: map.location || "Hyderabad, Telangana",
+    city: map.location || "Hyderabad, Telangana",
+    father_name: fatherName,
+    father_first_name: fatherFirstName,
+    father_last_name: fatherLastName,
+    mother_name: motherName,
+    mother_first_name: motherFirstName,
+    mother_last_name: motherLastName,
+    annual_income: map.annual_income || "180000",
+    income: map.annual_income || "180000",
+    caste_category: map.caste_category || "OBC",
+    category: map.caste_category || "OBC",
+    college_name: map.college_name || "National Institute of Technology",
+    education_degree: map.education_degree || "B.Tech Computer Science and Engineering",
+    roll_number: map.roll_number || "22071A0589",
+    current_year: map.current_year || "3rd Year / 5th Sem",
+    tenth_percentage: map.tenth_percentage || "94.2%",
+    twelfth_percentage: map.twelfth_percentage || "88.4%",
+    bank_name: map.bank_name || "State Bank of India",
+    bank_account_no: map.bank_account_no || "38920194821",
+    bank_ifsc: map.bank_ifsc || "SBIN0020184",
+    account_holder_name: map.account_holder_name || fullName,
+    dbt_seeding_status: map.dbt_seeding_status || "Seeded (Active)",
+  };
+}
+
 export function SevaSaarthiProvider({ children }: { children: React.ReactNode }) {
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [user, setUser] = useState<UserSession | null>(null);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(false);
+  const [user, setUser] = useState<UserSession | null>(DEFAULT_USER);
 
   const [services, setServices] = useState<ServiceRow[]>(INITIAL_SERVICES);
   const [requirements, setRequirements] = useState<ServiceRequirement[]>(INITIAL_REQUIREMENTS);
-  const [documents, setDocuments] = useState<DocumentRow[]>([]);
-  const [extractedFields, setExtractedFields] = useState<ExtractedField[]>([]);
-  const [profileFields, setProfileFields] = useState<ProfileField[]>([]);
-  const [requirementStatuses, setRequirementStatuses] = useState<RequirementStatusRow[]>([]);
+  const [documents, setDocuments] = useState<DocumentRow[]>(INITIAL_DOCUMENTS);
+  const [extractedFields, setExtractedFields] = useState<ExtractedField[]>(INITIAL_EXTRACTED_FIELDS);
+  const [profileFields, setProfileFields] = useState<ProfileField[]>(INITIAL_PROFILE_FIELDS);
+  const [requirementStatuses, setRequirementStatuses] = useState<RequirementStatusRow[]>(INITIAL_REQUIREMENT_STATUS);
   const [activeServiceId, setActiveServiceId] = useState<string>("s001");
-  const isDataLoadedRef = React.useRef(false);
+  const isDataLoadedRef = React.useRef(true);
 
   // Load user data from server / localStorage for this specific authenticated user
   const loadUserData = useCallback(async (activeUser: UserSession) => {
@@ -192,6 +312,12 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
         if (parsed.profileFields) setProfileFields(parsed.profileFields);
         if (parsed.requirementStatuses) setRequirementStatuses(parsed.requirementStatuses);
         isDataLoadedRef.current = true;
+      } else if (activeUser.id === DEFAULT_USER.id) {
+        setDocuments(INITIAL_DOCUMENTS);
+        setExtractedFields(INITIAL_EXTRACTED_FIELDS);
+        setProfileFields(INITIAL_PROFILE_FIELDS);
+        setRequirementStatuses(INITIAL_REQUIREMENT_STATUS);
+        isDataLoadedRef.current = true;
       } else {
         // Fresh user: initialize empty profile with their registration name & email
         const initialProfile: ProfileField[] = [
@@ -258,10 +384,53 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
           requirementStatuses,
         })
       );
+
+      // Sync active profile to browser extension bridge
+      const profileMap = buildEnrichedProfileMap(profileFields, user);
+      const extensionPayload = {
+        user: { id: user.id, name: user.name, email: user.email, phone: user.phone },
+        profileFields,
+        profileMap,
+        documents: documents.map((d) => ({ id: d.id, document_type: d.document_type, status: d.status })),
+        syncedAt: new Date().toISOString(),
+      };
+      localStorage.setItem("seva_saarthi_active_profile", JSON.stringify(extensionPayload));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("SEVA_SAARTHI_SYNC_PROFILE", { detail: extensionPayload }));
+        document.dispatchEvent(new CustomEvent("SEVA_SAARTHI_SYNC_PROFILE", { detail: extensionPayload }));
+      }
     } catch (e) {
       console.warn("Could not persist user data locally", e);
     }
   }, [user, documents, extractedFields, profileFields, requirementStatuses]);
+
+  // Listen for extension requests for profile
+  useEffect(() => {
+    const handleRequestProfile = () => {
+      if (!user) return;
+      const profileMap = buildEnrichedProfileMap(profileFields, user);
+      const extensionPayload = {
+        user: { id: user.id, name: user.name, email: user.email, phone: user.phone },
+        profileFields,
+        profileMap,
+        documents: documents.map((d) => ({ id: d.id, document_type: d.document_type, status: d.status })),
+        syncedAt: new Date().toISOString(),
+      };
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("SEVA_SAARTHI_SYNC_PROFILE", { detail: extensionPayload }));
+        document.dispatchEvent(new CustomEvent("SEVA_SAARTHI_SYNC_PROFILE", { detail: extensionPayload }));
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("SEVA_SAARTHI_REQUEST_PROFILE", handleRequestProfile);
+      document.addEventListener("SEVA_SAARTHI_REQUEST_PROFILE", handleRequestProfile);
+      return () => {
+        window.removeEventListener("SEVA_SAARTHI_REQUEST_PROFILE", handleRequestProfile);
+        document.removeEventListener("SEVA_SAARTHI_REQUEST_PROFILE", handleRequestProfile);
+      };
+    }
+  }, [user, profileFields, documents]);
 
   // Check active session on mount
   useEffect(() => {
@@ -947,15 +1116,56 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
     return computeProfileStrength(profileFields);
   }, [profileFields]);
 
+  // Real Citizen Applications tracked per user
+  const [realUserApps, setRealUserApps] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const activeLocalUser = localStorage.getItem(STORAGE_SESSION_KEY);
+        const parsed = activeLocalUser ? JSON.parse(activeLocalUser) : null;
+        if (parsed?.id) {
+          const stored = localStorage.getItem(`citizen_apps_${parsed.id}`);
+          if (stored) {
+            const parsedApps = JSON.parse(stored);
+            return Array.isArray(parsedApps) && parsedApps.length > 0 ? parsedApps : CITIZEN_APPLICATIONS;
+          }
+        }
+      } catch {
+        return CITIZEN_APPLICATIONS;
+      }
+    }
+    return CITIZEN_APPLICATIONS;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !user?.id) {
+      setRealUserApps(CITIZEN_APPLICATIONS);
+      return;
+    }
+    try {
+      const stored = localStorage.getItem(`citizen_apps_${user.id}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setRealUserApps(Array.isArray(parsed) && parsed.length > 0 ? parsed : CITIZEN_APPLICATIONS);
+      } else {
+        setRealUserApps(CITIZEN_APPLICATIONS);
+      }
+    } catch {
+      setRealUserApps(CITIZEN_APPLICATIONS);
+    }
+  }, [user?.id]);
+
   // Overall Stats
   const stats = useMemo(() => {
     const verifiedDocs = documents.filter((d) => !d.is_superseded && d.status === "VERIFIED").length;
     const totalDocs = documents.filter((d) => !d.is_superseded).length;
-    const isCompleted = checklistSummary.percentageComplete === 100;
+    const activeApps = realUserApps.filter(
+      (a) => a.statusCategory === "IN_PROGRESS" || a.statusCategory === "ACTION_REQUIRED"
+    ).length;
+    const completedApps = realUserApps.filter((a) => a.statusCategory === "COMPLETED").length;
 
     return {
-      activeApplications: isCompleted ? 0 : 1,
-      completedApplications: isCompleted ? 1 : 0,
+      activeApplications: activeApps,
+      completedApplications: completedApps,
       totalDocuments: totalDocs,
       verifiedDocuments: verifiedDocs,
       pendingTasks: checklistSummary.missingCount,
@@ -964,7 +1174,7 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
       ).length,
       expiringSoonDocuments: 0,
     };
-  }, [documents, checklistSummary]);
+  }, [documents, checklistSummary, realUserApps]);
 
   // Real Notification State
   const [readNotificationIds, setReadNotificationIds] = useState<string[]>(() => {

@@ -26,6 +26,7 @@ import {
   pgRecordAuditEvent,
   resolveApplicationUuid,
   resolveActorUuid,
+  resolveEmployeeUuid,
 } from "./pg-db";
 import { triggerAIExplanationPipeline } from "./ai-pipeline";
 import crypto from "crypto";
@@ -987,9 +988,9 @@ export function createPanApplication(data: {
       }
       const appUpsert = await pgQuery<{ id: string }>(`
         INSERT INTO applications (id, application_number, citizen_user_id, service_id, status, priority, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, 'SUBMITTED', 'HIGH', $5, $5)
+        VALUES ($1, $2, $3, $4, 'OFFICER_REVIEW', 'HIGH', $5, $5)
         ON CONFLICT (application_number) DO UPDATE SET
-          status = 'SUBMITTED',
+          status = 'OFFICER_REVIEW',
           priority = 'HIGH',
           updated_at = EXCLUDED.updated_at
         RETURNING id`,
@@ -1099,12 +1100,17 @@ export function officerAcceptApplication(
       await getAuthoritativeDb();
       const appUuid = await resolveApplicationUuid(app.id);
       const empUuid = await resolveActorUuid("EMPLOYEE", officerId);
+      const employeeTableUuid = await resolveEmployeeUuid(officerId);
       if (appUuid) {
+        const curRows = await pgQuery<{ status: string }>(`SELECT status FROM applications WHERE id = $1`, [appUuid]);
+        if (curRows.length > 0 && curRows[0].status === "SUBMITTED") {
+          await pgQuery(`UPDATE applications SET status = 'OFFICER_REVIEW' WHERE id = $1`, [appUuid]);
+        }
         await pgTransitionApplicationStatus(app.id, "APPROVED", "EMPLOYEE", officerId, remarks);
         await pgQuery(`
           INSERT INTO application_decisions (application_id, employee_id, decision, reason_text)
           VALUES ($1, $2, 'APPROVED', $3)`,
-          [appUuid, empUuid, remarks || "Verified and approved"]
+          [appUuid, employeeTableUuid, remarks || "Verified and approved"]
         );
       }
       await pgRecordAuditEvent(
@@ -1170,15 +1176,22 @@ export function officerReturnApplication(
   const promise = (async () => {
     try {
       await getAuthoritativeDb();
-      await pgTransitionApplicationStatus(app.id, "RETURNED_FOR_CORRECTION", "EMPLOYEE", officerId, reason);
       const appUuid = await resolveApplicationUuid(app.id);
       const empUuid = await resolveActorUuid("EMPLOYEE", officerId);
+      const employeeTableUuid = await resolveEmployeeUuid(officerId);
+      if (appUuid) {
+        const curRows = await pgQuery<{ status: string }>(`SELECT status FROM applications WHERE id = $1`, [appUuid]);
+        if (curRows.length > 0 && curRows[0].status === "SUBMITTED") {
+          await pgQuery(`UPDATE applications SET status = 'OFFICER_REVIEW' WHERE id = $1`, [appUuid]);
+        }
+      }
+      await pgTransitionApplicationStatus(app.id, "RETURNED_FOR_CORRECTION", "EMPLOYEE", officerId, reason);
       if (appUuid) {
         const decision = await pgQuery(`
           INSERT INTO application_decisions (application_id, employee_id, decision, reason_text, affected_field)
           VALUES ($1, $2, 'RETURNED_FOR_CORRECTION', $3, $4)
           RETURNING id`,
-          [appUuid, empUuid, reason, details?.affectedField]
+          [appUuid, employeeTableUuid, reason, details?.affectedField]
         );
         const decisionId = decision[0]?.id;
         if (decisionId) {
@@ -1246,15 +1259,22 @@ export function officerRejectApplication(
   const promise = (async () => {
     try {
       await getAuthoritativeDb();
-      await pgTransitionApplicationStatus(app.id, "REJECTED", "EMPLOYEE", officerId, reason);
       const appUuid = await resolveApplicationUuid(app.id);
       const empUuid = await resolveActorUuid("EMPLOYEE", officerId);
+      const employeeTableUuid = await resolveEmployeeUuid(officerId);
+      if (appUuid) {
+        const curRows = await pgQuery<{ status: string }>(`SELECT status FROM applications WHERE id = $1`, [appUuid]);
+        if (curRows.length > 0 && curRows[0].status === "SUBMITTED") {
+          await pgQuery(`UPDATE applications SET status = 'OFFICER_REVIEW' WHERE id = $1`, [appUuid]);
+        }
+      }
+      await pgTransitionApplicationStatus(app.id, "REJECTED", "EMPLOYEE", officerId, reason);
       if (appUuid) {
         const decision = await pgQuery(`
           INSERT INTO application_decisions (application_id, employee_id, decision, reason_text)
           VALUES ($1, $2, 'REJECTED', $3)
           RETURNING id`,
-          [appUuid, empUuid, reason]
+          [appUuid, employeeTableUuid, reason]
         );
         const decisionId = decision[0]?.id;
         if (decisionId) {

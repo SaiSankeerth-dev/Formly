@@ -1268,6 +1268,7 @@ create table if not exists exceptions (
   resolved              boolean not null default false,
   resolved_by           uuid references employees(id),
   resolved_at           timestamptz,
+  resolution_note       text,
   created_at            timestamptz not null default now()
 );
 

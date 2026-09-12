@@ -42,7 +42,7 @@ values
     null,
     'Income Certificate (Current Financial Year)',
     true,
-    'Obtain this from your local Tahsildar / Revenue Mandal Officer or state citizen service portal (MeeSeva / e-District / Nadakacheri). It must certify your annual family income is below ₹2,50,000 and have a valid digital signature or official seal.',
+    'Obtain this from your local Tahsildar / Revenue Mandal Officer or state citizen service portal (State Revenue Portal / e-District / Nadakacheri). It must certify your annual family income is below ₹2,50,000 and have a valid digital signature or official seal.',
     'INCOME_CERTIFICATE',
     2
   ),

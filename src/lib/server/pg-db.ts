@@ -2,6 +2,11 @@ import fs from "fs";
 import path from "path";
 import { PGlite } from "@electric-sql/pglite";
 import crypto from "crypto";
+import {
+  EMBEDDED_MIGRATION_001,
+  EMBEDDED_SEED_SQL,
+  EMBEDDED_MIGRATION_002,
+} from "./embedded-migrations";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -31,37 +36,43 @@ export async function getAuthoritativeDb(): Promise<PGlite> {
   }
 
   globalThis.__formly_pg_init_promise = (async () => {
-    // We use a dedicated directory in data/formly_pg
-    const dataDir = path.resolve(process.cwd(), "data", "formly_pg");
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-
-    // Clean any stale postmaster.pid from aborted runs
-    const pidFile = path.join(dataDir, "postmaster.pid");
-    if (fs.existsSync(pidFile)) {
-      try {
-        fs.unlinkSync(pidFile);
-      } catch {
-        // ignore
-      }
-    }
+    // Detect serverless environment (Vercel / AWS Lambda / Edge / Production container)
+    const isServerless = Boolean(
+      process.env.VERCEL ||
+      process.env.VERCEL_ENV ||
+      process.env.NOW_REGION ||
+      process.env.AWS_LAMBDA_FUNCTION_NAME ||
+      process.env.LAMBDA_TASK_ROOT ||
+      process.env.AWS_REGION ||
+      process.env.NEXT_RUNTIME === "edge" ||
+      process.env.NODE_ENV === "production"
+    );
+    // On Vercel, AWS Lambda, or Windows, PGlite must use in-memory mode.
+    // In Vercel serverless functions, the file system is read-only at /var/task.
+    // Attempting to mkdir or mount /var/task/data/formly_pg results in ENOENT.
+    const preferMemory = isServerless || process.env.FORMLY_PG_MEMORY === "true" || process.platform === "win32";
 
     let db: PGlite;
-    // On Windows, PGlite's WASM Emscripten VFS has known concurrency/locking limitations with NTFS paths.
-    // Defaulting to in-memory PGlite on Windows guarantees instant (<50ms) startup, zero lock contention,
-    // and complete immunity from "unexpected data beyond EOF" block corruption.
-    const preferMemory = process.env.FORMLY_PG_MEMORY === "true" || process.platform === "win32";
     if (preferMemory) {
       db = new PGlite();
       await db.waitReady;
     } else {
       try {
+        const dataDir = path.resolve(process.cwd(), "data", "formly_pg");
+        if (!fs.existsSync(dataDir)) {
+          fs.mkdirSync(dataDir, { recursive: true });
+        }
+
+        const pidFile = path.join(dataDir, "postmaster.pid");
+        if (fs.existsSync(pidFile)) {
+          try { fs.unlinkSync(pidFile); } catch {}
+        }
+
         db = new PGlite(dataDir);
         await db.waitReady;
         await db.query(`SELECT 1`);
       } catch (e) {
-        console.warn("[PGlite] Directory storage error, falling back to in-memory database:", e);
+        console.warn("[PGlite] Directory storage unavailable/read-only, falling back to in-memory database:", e);
         db = new PGlite();
         await db.waitReady;
       }
@@ -70,7 +81,12 @@ export async function getAuthoritativeDb(): Promise<PGlite> {
     await initSchema(db);
     globalThis.__formly_pglite = db;
     return db;
-  })();
+  })().catch((err) => {
+    // Reset global init promise and instance on failure to prevent poisoning future calls
+    globalThis.__formly_pg_init_promise = undefined;
+    globalThis.__formly_pglite = undefined;
+    throw err;
+  });
 
   return globalThis.__formly_pg_init_promise;
 }
@@ -84,11 +100,23 @@ export async function resetAuthoritativeDb(): Promise<void> {
   }
   globalThis.__formly_pg_init_promise = undefined;
 
-  const dataDir = path.resolve(process.cwd(), "data", "formly_pg");
-  try {
-    fs.rmSync(dataDir, { recursive: true, force: true });
-    fs.mkdirSync(dataDir, { recursive: true });
-  } catch {}
+  const isServerless = Boolean(
+    process.env.VERCEL ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME ||
+    process.env.NEXT_RUNTIME === "edge" ||
+    process.env.NODE_ENV === "production"
+  );
+  const preferMemory = isServerless || process.env.FORMLY_PG_MEMORY === "true" || process.platform === "win32";
+
+  if (!preferMemory) {
+    try {
+      const dataDir = path.resolve(process.cwd(), "data", "formly_pg");
+      if (fs.existsSync(dataDir)) {
+        fs.rmSync(dataDir, { recursive: true, force: true });
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
+    } catch {}
+  }
 }
 
 async function initSchema(db: PGlite) {
@@ -136,24 +164,56 @@ async function initSchema(db: PGlite) {
     );
   `);
 
-  // 2. Migration 001
-  const sql001Path = path.resolve(process.cwd(), "supabase/migrations/001_formly_schema.sql");
-  if (fs.existsSync(sql001Path)) {
-    const sql001 = fs.readFileSync(sql001Path, "utf8");
+  const isServerless = Boolean(
+    process.env.VERCEL ||
+    process.env.VERCEL_ENV ||
+    process.env.NOW_REGION ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME ||
+    process.env.LAMBDA_TASK_ROOT ||
+    process.env.AWS_REGION ||
+    process.env.NEXT_RUNTIME === "edge" ||
+    process.env.NODE_ENV === "production"
+  );
+
+  // 2. Migration 001 (embedded with local filesystem override)
+  let sql001 = EMBEDDED_MIGRATION_001;
+  if (!isServerless) {
+    try {
+      const sql001Path = path.resolve(process.cwd(), "supabase/migrations/001_formly_schema.sql");
+      if (fs.existsSync(sql001Path)) {
+        sql001 = fs.readFileSync(sql001Path, "utf8");
+      }
+    } catch {}
+  }
+  if (sql001) {
     await db.exec(cleanSqlForPglite(sql001));
   }
 
-  // 3. Seed V1
-  const seedPath = path.resolve(process.cwd(), "supabase/seed.sql");
-  if (fs.existsSync(seedPath)) {
-    const sqlSeed = fs.readFileSync(seedPath, "utf8");
+  // 3. Seed V1 (embedded with local filesystem override)
+  let sqlSeed = EMBEDDED_SEED_SQL;
+  if (!isServerless) {
+    try {
+      const seedPath = path.resolve(process.cwd(), "supabase/seed.sql");
+      if (fs.existsSync(seedPath)) {
+        sqlSeed = fs.readFileSync(seedPath, "utf8");
+      }
+    } catch {}
+  }
+  if (sqlSeed) {
     await db.exec(cleanSqlForPglite(sqlSeed));
   }
 
-  // 4. Migration 002 (Unified 42 tables + State Machine)
-  const sql002Path = path.resolve(process.cwd(), "supabase/migrations/002_formly_v2_unified_schema.sql");
-  if (fs.existsSync(sql002Path)) {
-    const sql002 = fs.readFileSync(sql002Path, "utf8");
+  // 4. Migration 002 (Unified 42 tables + State Machine, embedded with local filesystem override)
+  let sql002 = EMBEDDED_MIGRATION_002;
+  if (!isServerless) {
+    try {
+      const sql002Path = path.resolve(process.cwd(), "supabase/migrations/002_formly_v2_unified_schema.sql");
+      if (fs.existsSync(sql002Path)) {
+        sql002 = fs.readFileSync(sql002Path, "utf8");
+      }
+    } catch {}
+  }
+  if (sql002) {
     await db.exec(cleanSqlForPglite(sql002));
   }
 
@@ -504,6 +564,9 @@ async function seedInitialData(db: PGlite) {
       IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'documents' AND column_name = 'optimization_metadata') THEN
         ALTER TABLE documents ADD COLUMN optimization_metadata jsonb;
       END IF;
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'exceptions' AND column_name = 'resolution_note') THEN
+        ALTER TABLE exceptions ADD COLUMN resolution_note text;
+      END IF;
     END $$;
   `).catch(() => {});
 }
@@ -519,8 +582,8 @@ export async function pgQuery<T = any>(sql: string, params: any[] = []): Promise
       msg.includes("unexpected data beyond EOF") ||
       msg.includes("Aborted()") ||
       msg.includes("could not read block") ||
-      msg.includes("relation") ||
-      msg.includes("corrupt")
+      msg.includes("corrupt") ||
+      (msg.includes("relation") && msg.includes("does not exist"))
     ) {
       console.error("[PGlite] Database corruption detected during pgQuery, automatically self-healing:", err);
       await resetAuthoritativeDb();
@@ -542,8 +605,8 @@ export async function pgExec(sql: string): Promise<void> {
       msg.includes("unexpected data beyond EOF") ||
       msg.includes("Aborted()") ||
       msg.includes("could not read block") ||
-      msg.includes("relation") ||
-      msg.includes("corrupt")
+      msg.includes("corrupt") ||
+      (msg.includes("relation") && msg.includes("does not exist"))
     ) {
       console.error("[PGlite] Database corruption detected during pgExec, automatically self-healing:", err);
       await resetAuthoritativeDb();
@@ -633,6 +696,21 @@ export async function resolveActorUuid(actorType: string, actorId?: string | nul
     }
   } catch {}
   return "00000000-0000-0000-0000-000000000001";
+}
+
+export async function resolveEmployeeUuid(officerId?: string | null): Promise<string> {
+  if (!officerId) return "e0000000-0000-0000-0000-000000007042";
+  try {
+    const db = await getAuthoritativeDb();
+    const emp = await db.query(
+      `SELECT id FROM employees WHERE employee_code = $1 OR email = $1 OR id::text = $1 OR auth_user_id::text = $1 LIMIT 1`,
+      [officerId]
+    );
+    if (emp.rows.length > 0 && (emp.rows[0] as any).id) {
+      return (emp.rows[0] as any).id;
+    }
+  } catch {}
+  return "e0000000-0000-0000-0000-000000007042";
 }
 
 export async function pgRecordAuditEvent(

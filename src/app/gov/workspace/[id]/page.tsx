@@ -143,7 +143,7 @@ export default function PanApplicationWorkspacePage() {
       <div className="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Link
-            href="/applications"
+            href="/gov/queue"
             className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors"
             title="Back to queue"
           >

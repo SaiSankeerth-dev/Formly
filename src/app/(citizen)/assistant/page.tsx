@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import { MeeSevaAssistantPage } from "@/components/assistant/MeeSevaAssistantPage";
+import { SevaSaarthiAssistantPage } from "@/components/assistant/SevaSaarthiAssistantPage";
 
 export default function AssistantRoute() {
   return (
@@ -10,7 +10,7 @@ export default function AssistantRoute() {
         </div>
       }
     >
-      <MeeSevaAssistantPage />
+      <SevaSaarthiAssistantPage />
     </Suspense>
   );
 }

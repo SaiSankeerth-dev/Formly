@@ -78,7 +78,7 @@ export const DOCUMENT_PROCUREMENT_GUIDES: Record<string, DocumentProcurementGuid
     documentType: "INCOME_CERTIFICATE",
     name: "Annual Family Income Certificate",
     issuingAuthority: "Revenue Department (Tahsildar / Mandal Revenue Officer - MRO / Sub-Divisional Magistrate)",
-    issuingPortal: "State e-District / MeeSeva Portal",
+    issuingPortal: "State e-District / Revenue Citizen Services Portal",
     typicalTurnaround: "3 - 7 Working Days",
     validityPeriod: "1 Financial Year (Must be issued on or after April 1st of current financial year)",
     maxFileSize: "200 KB",
@@ -90,11 +90,11 @@ export const DOCUMENT_PROCUREMENT_GUIDES: Record<string, DocumentProcurementGuid
       "Must be issued by the revenue jurisdiction where the family permanently resides",
     ],
     procurementSteps: [
-      "Open your State Citizen Services portal (e.g. MeeSeva in Telangana/AP, e-District in Delhi/UP, Nadakacheri in Karnataka, Seva Sindhu in Karnataka) or visit the nearest Common Service Center (CSC).",
+      "Open your State Citizen Services portal (e.g. State Revenue Portal in Telangana/AP, e-District in Delhi/UP, Nadakacheri in Karnataka, Seva Sindhu in Karnataka) or visit the nearest Common Service Center (CSC).",
       "Submit applicant identity proof (Aadhaar), parent's proof of income (Salary Slip / Form 16 / IT Return / Notarized Income Affidavit), and proof of residence (Ration Card / Voter ID).",
       "The Village Revenue Officer (VRO) and Revenue Inspector (RI) conduct inquiry and submit field inspection report.",
       "The Tahsildar approves and signs the certificate digitally with an official QR code.",
-      "Download the digitally signed PDF from the portal or collect the digitally stamped hard copy from the MeeSeva center.",
+      "Download the digitally signed PDF from the portal or collect the digitally stamped hard copy from the Citizen Service Center (CSC).",
     ],
     commonRejectionReasons: [
       "Certificate issued in the previous financial year (Income certificates expire annually on March 31st)",
@@ -102,7 +102,7 @@ export const DOCUMENT_PROCUREMENT_GUIDES: Record<string, DocumentProcurementGuid
       "Name spelling on income certificate differs from student's 10th marksheet or Aadhaar card",
       "Unregistered notary affidavit uploaded instead of government Tahsildar-issued certificate",
     ],
-    helpline: "Toll-Free MeeSeva: 1800-425-4440 | CSC Helpline: 14599",
+    helpline: "Toll-Free Citizen Services: 1800-425-4440 | CSC Helpline: 14599",
   },
 
   AADHAAR: {
@@ -197,7 +197,7 @@ export const DOCUMENT_PROCUREMENT_GUIDES: Record<string, DocumentProcurementGuid
     documentType: "DOMICILE_CERTIFICATE",
     name: "Domicile / Nativity / Residence Certificate",
     issuingAuthority: "Revenue Department (Tahsildar / Sub-Divisional Magistrate)",
-    issuingPortal: "State e-District / MeeSeva Portal",
+    issuingPortal: "State e-District / Revenue Citizen Services Portal",
     typicalTurnaround: "5 - 10 Working Days",
     validityPeriod: "Permanent (Valid until residence changes)",
     maxFileSize: "200 KB",
@@ -208,7 +208,7 @@ export const DOCUMENT_PROCUREMENT_GUIDES: Record<string, DocumentProcurementGuid
       "Candidate Name must match Aadhaar card",
     ],
     procurementSteps: [
-      "Apply through your state's online portal (MeeSeva / e-District) or visit a local Citizen Service Center.",
+      "Apply through your state's online portal (e-District / State Citizen Portal) or visit a local Citizen Service Center.",
       "Attach residential proofs: continuous Study Certificates from Class 1 to 10, Ration Card, Electricity Bills, or Parent's Property Tax Receipt.",
       "Revenue Inspector verifies resident records in the local municipal or panchayat register.",
       "Tahsildar approves and signs the digital Domicile / Nativity Certificate.",

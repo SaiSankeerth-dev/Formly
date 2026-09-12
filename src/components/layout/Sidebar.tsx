@@ -36,13 +36,31 @@ export function Sidebar() {
   const navItems: NavItem[] = [
     { label: "Home", href: "/dashboard", icon: LayoutDashboard },
     { label: "Seva Saarthi Agent", href: "/assistant", icon: Bot, badge: "AI", badgeColor: "bg-indigo-100 text-indigo-700" },
-    { label: "My Applications", href: "/applications", icon: FileCheck2, badge: 3, badgeColor: "bg-blue-100 text-blue-700" },
+    {
+      label: "My Applications",
+      href: "/applications",
+      icon: FileCheck2,
+      badge: stats.activeApplications > 0 ? stats.activeApplications : undefined,
+      badgeColor: "bg-blue-100 text-blue-700",
+    },
     { label: "Apply for a Service", href: "/checklist", icon: FilePlus2 },
     { label: "Discover Services", href: "/discover", icon: Compass },
     { label: "Documents", href: "/vault", icon: FolderOpen },
     { label: "My Profile", href: "/profile", icon: User },
-    { label: "Tasks & Reminders", href: "/tasks", icon: ListTodo, badge: 5, badgeColor: "bg-rose-100 text-rose-700" },
-    { label: "Notifications", href: "/notifications", icon: Bell, badge: 4, badgeColor: "bg-rose-100 text-rose-700" },
+    {
+      label: "Tasks & Reminders",
+      href: "/tasks",
+      icon: ListTodo,
+      badge: stats.pendingTasks > 0 ? stats.pendingTasks : undefined,
+      badgeColor: "bg-rose-100 text-rose-700",
+    },
+    {
+      label: "Notifications",
+      href: "/notifications",
+      icon: Bell,
+      badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : undefined,
+      badgeColor: "bg-rose-100 text-rose-700",
+    },
     { label: "Help & Support", href: "/help", icon: HelpCircle },
   ];
 
@@ -121,7 +139,7 @@ export function Sidebar() {
             Get instant guidance on forms, documents and application status.
           </p>
           <Link
-            href="/help"
+            href="/assistant"
             className="w-full py-1.5 px-3 bg-white hover:bg-slate-50 text-blue-700 font-bold text-[11px] rounded-xl border border-blue-200/80 transition-all flex items-center justify-center gap-1.5 shadow-2xs"
           >
             <span>Start Chatting</span>
@@ -153,17 +171,36 @@ export function MobileNavDrawer({
   onClose: () => void;
 }) {
   const pathname = usePathname();
+  const { stats, unreadNotificationsCount } = useSevaSaarthi();
 
   const navItems: NavItem[] = [
     { label: "Home", href: "/dashboard", icon: LayoutDashboard },
     { label: "Seva Saarthi Agent", href: "/assistant", icon: Bot, badge: "AI", badgeColor: "bg-indigo-100 text-indigo-700" },
-    { label: "My Applications", href: "/applications", icon: FileCheck2, badge: 3, badgeColor: "bg-blue-100 text-blue-700" },
+    {
+      label: "My Applications",
+      href: "/applications",
+      icon: FileCheck2,
+      badge: stats.activeApplications > 0 ? stats.activeApplications : undefined,
+      badgeColor: "bg-blue-100 text-blue-700",
+    },
     { label: "Apply for a Service", href: "/checklist", icon: FilePlus2 },
     { label: "Discover Services", href: "/discover", icon: Compass },
     { label: "Documents", href: "/vault", icon: FolderOpen },
     { label: "My Profile", href: "/profile", icon: User },
-    { label: "Tasks & Reminders", href: "/tasks", icon: ListTodo, badge: 5, badgeColor: "bg-rose-100 text-rose-700" },
-    { label: "Notifications", href: "/notifications", icon: Bell, badge: 4, badgeColor: "bg-rose-100 text-rose-700" },
+    {
+      label: "Tasks & Reminders",
+      href: "/tasks",
+      icon: ListTodo,
+      badge: stats.pendingTasks > 0 ? stats.pendingTasks : undefined,
+      badgeColor: "bg-rose-100 text-rose-700",
+    },
+    {
+      label: "Notifications",
+      href: "/notifications",
+      icon: Bell,
+      badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : undefined,
+      badgeColor: "bg-rose-100 text-rose-700",
+    },
     { label: "Help & Support", href: "/help", icon: HelpCircle },
   ];
 
