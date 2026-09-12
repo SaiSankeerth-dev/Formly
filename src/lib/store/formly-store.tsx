@@ -489,9 +489,18 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
             setProfileFields([]);
             setRequirementStatuses([]);
           }
+        } else {
+          // Server returned 401 or non-OK: invalid session -> purge stale state
+          setUser(null);
+          localStorage.removeItem(STORAGE_SESSION_KEY);
+          localStorage.removeItem("seva_saarthi_active_profile");
+          setDocuments([]);
+          setExtractedFields([]);
+          setProfileFields([]);
+          setRequirementStatuses([]);
         }
       } catch (err) {
-        console.warn("Server auth check failed, using local session", err);
+        console.warn("Server auth check failed", err);
       }
 
       setIsLoadingAuth(false);

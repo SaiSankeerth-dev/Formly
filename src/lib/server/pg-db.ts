@@ -162,6 +162,11 @@ async function initSchema(db: PGlite) {
       "userId" text REFERENCES users(id) ON DELETE CASCADE,
       "expiresAt" timestamptz NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS revoked_tokens (
+      token text PRIMARY KEY,
+      revoked_at timestamptz DEFAULT now()
+    );
   `);
 
   const isServerless = Boolean(

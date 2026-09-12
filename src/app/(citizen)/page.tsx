@@ -22,7 +22,7 @@ import { CitizenSessionRecord } from "@/lib/server/db";
 
 export default function HomePage() {
   const router = useRouter();
-  const { user, isLoadingAuth } = useSevaSaarthi();
+  const { user, isLoadingAuth, logout } = useSevaSaarthi();
 
   // Dynamic greeting based on time of day
   const hour = new Date().getHours();
@@ -54,56 +54,62 @@ export default function HomePage() {
   ];
 
   // Fetch verified dashboard data for the authenticated user
-  useEffect(() => {
-    let isMounted = true;
-
-    async function fetchDashboard() {
-      setDashboardError(null);
-      try {
-        const res = await fetch("/api/dashboard");
-        if (res.ok) {
-          const data = await res.json();
-          if (isMounted && data.success) {
-            // First-login onboarding detection: If citizen profile is not yet complete, route to wizard
-            if (data.profile && !data.profile.completed) {
-              const step = data.profile.currentStep || 1;
-              router.push(`/onboarding/profile?step=${step}`);
-              return;
-            }
-
-            setDashboardData(data);
-            if (Array.isArray(data.recentSessions)) {
-              setSessions(data.recentSessions);
-            }
-          } else {
-            if (isMounted) setDashboardError("Your dashboard couldn't be loaded.");
-          }
-        } else {
-          if (isMounted) setDashboardError("Your dashboard couldn't be loaded.");
+  const fetchDashboardData = React.useCallback(async () => {
+    setDashboardError(null);
+    setIsLoadingDashboard(true);
+    try {
+      const res = await fetch("/api/dashboard");
+      if (res.status === 401) {
+        // Session missing or expired -> purge stale state and redirect directly to login
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("seva_saarthi_active_session");
+          localStorage.removeItem("seva_saarthi_active_profile");
         }
-      } catch (err) {
-        console.warn("[HomePage] Failed to fetch /api/dashboard", err);
-        if (isMounted) setDashboardError("Your dashboard couldn't be loaded.");
-      } finally {
-        if (isMounted) {
-          setIsLoadingDashboard(false);
-        }
+        router.push("/login");
+        return;
       }
-    }
 
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          // First-login onboarding detection: If citizen profile is not yet complete, route to wizard
+          if (data.profile && !data.profile.completed) {
+            const step = data.profile.currentStep || 1;
+            router.push(`/onboarding/profile?step=${step}`);
+            return;
+          }
+
+          setDashboardData(data);
+          const recents = Array.isArray(data.recentServices)
+            ? data.recentServices
+            : Array.isArray(data.recentSessions)
+            ? data.recentSessions
+            : [];
+          setSessions(recents);
+        } else {
+          setDashboardError(data.error || "Your dashboard couldn't be loaded.");
+        }
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setDashboardError(errData.error || "Your dashboard couldn't be loaded.");
+      }
+    } catch (err: any) {
+      console.warn("[HomePage] Failed to fetch /api/dashboard", err);
+      setDashboardError("Your dashboard couldn't be loaded.");
+    } finally {
+      setIsLoadingDashboard(false);
+    }
+  }, [router]);
+
+  useEffect(() => {
     if (!isLoadingAuth) {
       if (!user) {
-        // Unauthenticated -> redirect to login
         router.push("/login");
       } else {
-        fetchDashboard();
+        fetchDashboardData();
       }
     }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user, isLoadingAuth, router]);
+  }, [user, isLoadingAuth, router, fetchDashboardData]);
 
   const handleOpenService = (service: ServiceDetail) => {
     setSelectedService(service);
@@ -189,7 +195,7 @@ export default function HomePage() {
     );
   }
 
-  // 2. Error State (Rule 25: Explicit error handling with Try Again button)
+  // 2. Error State (Explicit error handling with Try Again refetch and Sign Out escape)
   if (dashboardError) {
     return (
       <div className="max-w-md mx-auto my-16 p-8 bg-white rounded-3xl border border-slate-100 shadow-xl text-center space-y-4">
@@ -200,16 +206,24 @@ export default function HomePage() {
           <h2 className="text-base font-bold text-slate-900">Your dashboard couldn&apos;t be loaded.</h2>
           <p className="text-xs text-slate-500">Please check your connection and try again.</p>
         </div>
-        <button
-          onClick={() => {
-            setIsLoadingDashboard(true);
-            setDashboardError(null);
-            window.location.reload();
-          }}
-          className="py-2.5 px-6 bg-[#2F27CE] hover:bg-[#231CA8] text-white text-xs font-bold rounded-2xl shadow-sm transition-all cursor-pointer"
-        >
-          Try Again
-        </button>
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <button
+            onClick={() => {
+              fetchDashboardData();
+            }}
+            className="py-2.5 px-6 bg-[#2F27CE] hover:bg-[#231CA8] text-white text-xs font-bold rounded-2xl shadow-sm transition-all cursor-pointer"
+          >
+            Try Again
+          </button>
+          <button
+            onClick={() => {
+              logout();
+            }}
+            className="py-2.5 px-5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl transition-all cursor-pointer border border-slate-200"
+          >
+            Sign Out
+          </button>
+        </div>
       </div>
     );
   }

@@ -3,16 +3,48 @@ import { authenticateSession, getUserProfileFields, getUserDocuments, getPanAppl
 import { getProfileCompleteness, checkOnboardingStatus } from "@/lib/constants/profile";
 import { cookies } from "next/headers";
 
-async function getAuthenticatedUser(request: Request) {
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get("FORMLY_CITIZEN_SESSION")?.value ||
-    cookieStore.get("formly_citizen_session")?.value ||
-    cookieStore.get("seva_saarthi_session")?.value ||
-    (request.headers.get("Authorization")?.startsWith("Bearer ")
-      ? request.headers.get("Authorization")?.substring(7)
-      : null);
+function extractTokenFromRequest(request: Request, cookieStore?: any): string | null {
+  // 1. Check Bearer Authorization Header
+  const authHeader = request.headers.get("Authorization") || request.headers.get("authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    return authHeader.substring(7).trim();
+  }
 
+  // 2. Check Next.js cookieStore if available
+  if (cookieStore) {
+    const token =
+      cookieStore.get("FORMLY_CITIZEN_SESSION")?.value ||
+      cookieStore.get("formly_citizen_session")?.value ||
+      cookieStore.get("seva_saarthi_session")?.value;
+    if (token) return token;
+  }
+
+  // 3. Robust fallback: Parse standard request Cookie header directly
+  const cookieHeader = request.headers.get("cookie") || "";
+  if (cookieHeader) {
+    const pairs = cookieHeader.split(";");
+    for (const pair of pairs) {
+      const [k, v] = pair.trim().split("=");
+      if (
+        k === "FORMLY_CITIZEN_SESSION" ||
+        k === "formly_citizen_session" ||
+        k === "seva_saarthi_session"
+      ) {
+        return decodeURIComponent(v || "");
+      }
+    }
+  }
+
+  return null;
+}
+
+async function getAuthenticatedUser(request: Request) {
+  let cookieStore: any = null;
+  try {
+    cookieStore = await cookies();
+  } catch {}
+
+  const token = extractTokenFromRequest(request, cookieStore);
   if (!token) return null;
   return await authenticateSession(token);
 }
@@ -56,9 +88,10 @@ export async function GET(request: Request) {
         emptyCount: completeness.emptyCount,
         fields: onboardingStatus.profileMap,
       },
-      documents: docs,
-      applications: apps,
-      recentSessions: sessions,
+      documents: Array.isArray(docs) ? docs : [],
+      applications: Array.isArray(apps) ? apps : [],
+      recentServices: Array.isArray(sessions) ? sessions : [],
+      recentSessions: Array.isArray(sessions) ? sessions : [],
     });
   } catch (err: any) {
     console.error("[API dashboard GET] Error:", err);

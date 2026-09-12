@@ -29,6 +29,10 @@ export default function MyApplicationsPage() {
     async function loadSessions() {
       try {
         const res = await fetch("/api/sessions");
+        if (res.status === 401) {
+          router.push("/login");
+          return;
+        }
         if (res.ok) {
           const data = await res.json();
           if (data.success && Array.isArray(data.sessions)) {

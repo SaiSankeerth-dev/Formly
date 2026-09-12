@@ -82,6 +82,77 @@ export function verifyPassword(password: string, hash: string, salt: string): bo
 }
 
 // ----------------------------------------------------------------------
+// Stateless HMAC Session Tokens for Serverless & Container Isolation
+// ----------------------------------------------------------------------
+
+const SESSION_SECRET =
+  process.env.SESSION_SECRET ||
+  process.env.SUPABASE_JWT_SECRET ||
+  "formly_secure_session_secret_key_2026_sih_prod_auth";
+
+export interface SessionTokenPayload {
+  userId: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: string;
+  exp: number;
+  iat: number;
+}
+
+export function signSessionToken(payload: {
+  userId: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: string;
+}): string {
+  const iat = Math.floor(Date.now() / 1000);
+  const exp = iat + 30 * 24 * 60 * 60; // 30 days expiration
+  const fullPayload: SessionTokenPayload = { ...payload, exp, iat };
+  const json = JSON.stringify(fullPayload);
+  const base64Payload = Buffer.from(json, "utf8").toString("base64url");
+  const signature = crypto
+    .createHmac("sha256", SESSION_SECRET)
+    .update(base64Payload)
+    .digest("base64url");
+  return `formly_${base64Payload}.${signature}`;
+}
+
+export function verifySessionToken(token: string): SessionTokenPayload | null {
+  if (!token || typeof token !== "string" || !token.startsWith("formly_")) {
+    return null;
+  }
+  const raw = token.substring(7);
+  const dotIndex = raw.lastIndexOf(".");
+  if (dotIndex === -1) return null;
+
+  const base64Payload = raw.substring(0, dotIndex);
+  const signature = raw.substring(dotIndex + 1);
+
+  const expectedSignature = crypto
+    .createHmac("sha256", SESSION_SECRET)
+    .update(base64Payload)
+    .digest("base64url");
+
+  try {
+    const sigBuffer = Buffer.from(signature, "utf8");
+    const expBuffer = Buffer.from(expectedSignature, "utf8");
+    if (sigBuffer.length !== expBuffer.length) return null;
+    if (!crypto.timingSafeEqual(sigBuffer, expBuffer)) return null;
+
+    const json = Buffer.from(base64Payload, "base64url").toString("utf8");
+    const payload: SessionTokenPayload = JSON.parse(json);
+    if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000)) {
+      return null;
+    }
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+// ----------------------------------------------------------------------
 // User Management
 // ----------------------------------------------------------------------
 
@@ -125,12 +196,18 @@ export async function registerUser(
     [authUuid, newUser.email]
   );
 
-  const token = crypto.randomBytes(32).toString("hex");
+  const token = signSessionToken({
+    userId: newUser.id,
+    name: newUser.name,
+    email: newUser.email,
+    phone: newUser.phone,
+    role: newUser.role,
+  });
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
   await pgQuery(
-    `INSERT INTO sessions (token, "userId", "expiresAt") VALUES ($1, $2, $3)`,
+    `INSERT INTO sessions (token, "userId", "expiresAt") VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
     [token, userId, expiresAt]
-  );
+  ).catch(() => {});
 
   const { passwordHash: _, salt: __, ...safeUser } = newUser;
   return { user: safeUser, token };
@@ -192,12 +269,18 @@ export async function loginUser(
     throw new Error("Invalid email/ID or password.");
   }
 
-  const token = crypto.randomBytes(32).toString("hex");
+  const token = signSessionToken({
+    userId: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+  });
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
   await pgQuery(
-    `INSERT INTO sessions (token, "userId", "expiresAt") VALUES ($1, $2, $3)`,
+    `INSERT INTO sessions (token, "userId", "expiresAt") VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
     [token, user.id, expiresAt]
-  );
+  ).catch(() => {});
 
   const { passwordHash: _, salt: __, ...safeUser } = user;
   return { user: safeUser, token };
@@ -209,6 +292,68 @@ export async function authenticateSession(
   if (!token) return null;
   await getAuthoritativeDb();
 
+  // Check if token was revoked via logout
+  try {
+    const revoked = await pgQuery(
+      `SELECT 1 FROM revoked_tokens WHERE token = $1`,
+      [token]
+    );
+    if (revoked.length > 0) {
+      return null;
+    }
+  } catch {}
+
+  // 1. Stateless HMAC verification (works across all serverless lambda containers)
+  const hmacPayload = verifySessionToken(token);
+  if (hmacPayload) {
+    const users = await pgQuery<UserRecord>(
+      `SELECT * FROM users WHERE id = $1 OR LOWER(email) = LOWER($2)`,
+      [hmacPayload.userId, hmacPayload.email]
+    );
+
+    if (users.length > 0) {
+      const { passwordHash: _, salt: __, ...safeUser } = users[0];
+      return safeUser;
+    }
+
+    // In serverless environments, if a user was created on another container, ensure their row exists
+    const recoveredUser: UserRecord = {
+      id: hmacPayload.userId,
+      name: hmacPayload.name || "Citizen",
+      email: hmacPayload.email.trim().toLowerCase(),
+      phone: hmacPayload.phone || "",
+      passwordHash: "hmac_session_auth",
+      salt: "hmac_session_auth",
+      role: hmacPayload.role || "Applicant / Citizen",
+      createdAt: new Date(hmacPayload.iat * 1000).toISOString(),
+    };
+
+    await pgQuery(
+      `INSERT INTO users (id, name, email, phone, "passwordHash", salt, role, "createdAt")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       ON CONFLICT (id) DO NOTHING`,
+      [
+        recoveredUser.id,
+        recoveredUser.name,
+        recoveredUser.email,
+        recoveredUser.phone,
+        recoveredUser.passwordHash,
+        recoveredUser.salt,
+        recoveredUser.role,
+        recoveredUser.createdAt,
+      ]
+    ).catch(() => {});
+
+    await pgQuery(
+      `INSERT INTO auth.users (id, email) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [crypto.randomUUID(), recoveredUser.email]
+    ).catch(() => {});
+
+    const { passwordHash: _, salt: __, ...safeUser } = recoveredUser;
+    return safeUser;
+  }
+
+  // 2. Database session token fallback (for legacy hex tokens)
   const sessions = await pgQuery<SessionRecord>(
     `SELECT * FROM sessions WHERE token = $1`,
     [token]
@@ -220,7 +365,7 @@ export async function authenticateSession(
   const expiresAt = session.expiresAt || (session as any).expiresat;
 
   if (expiresAt && new Date(expiresAt) < new Date()) {
-    await pgQuery(`DELETE FROM sessions WHERE token = $1`, [token]);
+    await pgQuery(`DELETE FROM sessions WHERE token = $1`, [token]).catch(() => {});
     return null;
   }
 
@@ -236,7 +381,17 @@ export async function authenticateSession(
 
 export async function logoutSession(token: string): Promise<boolean> {
   await getAuthoritativeDb();
-  await pgQuery(`DELETE FROM sessions WHERE token = $1`, [token]);
+  await pgQuery(
+    `CREATE TABLE IF NOT EXISTS revoked_tokens (
+       token text PRIMARY KEY,
+       revoked_at timestamptz DEFAULT now()
+     )`
+  ).catch(() => {});
+  await pgQuery(
+    `INSERT INTO revoked_tokens (token) VALUES ($1) ON CONFLICT DO NOTHING`,
+    [token]
+  ).catch(() => {});
+  await pgQuery(`DELETE FROM sessions WHERE token = $1`, [token]).catch(() => {});
   return true;
 }
 
