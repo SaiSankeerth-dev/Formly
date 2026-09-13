@@ -1,32 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAIExplanation } from "@/lib/server/db";
-import { authenticateSession } from "@/lib/server/db";
-import { cookies } from "next/headers";
-
-async function getAuthenticatedUser(request: Request) {
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get("seva_saarthi_session")?.value ||
-    (request.headers.get("Authorization")?.startsWith("Bearer ")
-      ? request.headers.get("Authorization")?.substring(7)
-      : null);
-
-  if (!token) return null;
-  return authenticateSession(token);
-}
+import { getAIExplanation, getApplicationById } from "@/lib/server/db";
+import { getAuthenticatedCitizenUser } from "@/lib/server/auth";
+import { resolveActorUuid } from "@/lib/server/pg-db";
 
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await getAuthenticatedUser(request);
+    const user = await getAuthenticatedCitizenUser(request);
     if (!user) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await context.params;
-    const explanation = await getAIExplanation(id);
+    const app = await getApplicationById(id);
+    if (!app) {
+      return NextResponse.json({ success: false, error: `Application not found: ${id}` }, { status: 404 });
+    }
+
+    const SEEDED_DEMO_CASES = new Set(["PAN-2026-0001", "PAN-2026-0002", "PAN-2026-0003", "PAN-2026-0004", "SCH-2026-2345", "HOU-2026-7781"]);
+    const isPublicDemoCase = process.env.NODE_ENV !== "production" && SEEDED_DEMO_CASES.has(id);
+
+    if (!isPublicDemoCase) {
+      const ownerId = (app as any).citizen_user_id || app.userId;
+      const ownerUuid = await resolveActorUuid("CITIZEN", ownerId);
+      const userUuid = await resolveActorUuid("CITIZEN", user.id);
+      if (ownerId !== user.id && ownerUuid !== userUuid) {
+        return NextResponse.json({ success: false, error: "Forbidden: You can only view explanations for your own applications" }, { status: 403 });
+      }
+    }
+
+    const explanation = await getAIExplanation(app.id || id);
 
     if (!explanation) {
       return NextResponse.json({ success: false, error: "No AI explanation available for this application" }, { status: 404 });

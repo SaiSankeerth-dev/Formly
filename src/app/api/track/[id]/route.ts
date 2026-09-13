@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApplicationById, getAuditLogs } from "@/lib/server/db";
-import { authenticateSession } from "@/lib/server/db";
-import { getAuthoritativeDb } from "@/lib/server/pg-db";
+import { getAuthenticatedCitizenUser } from "@/lib/server/auth";
+import { getAuthoritativeDb, resolveActorUuid } from "@/lib/server/pg-db";
 import { cookies } from "next/headers";
 
 export async function GET(
@@ -10,10 +10,6 @@ export async function GET(
 ) {
   try {
     const cookieStore = await cookies();
-    const token =
-      cookieStore.get("FORMLY_CITIZEN_SESSION")?.value ||
-      cookieStore.get("formly_citizen_session")?.value ||
-      cookieStore.get("seva_saarthi_session")?.value;
     const govToken =
       cookieStore.get("FORMLY_GOV_SESSION")?.value ||
       cookieStore.get("formly_gov_session")?.value;
@@ -25,24 +21,24 @@ export async function GET(
       return NextResponse.json({ success: false, error: `Application not found: ${id}` }, { status: 404 });
     }
 
-    // Allow public tracking only for seeded demo cases; all new dynamic citizen applications require auth
+    // Seeded demo cases are strictly isolated to non-production/test environments; in production, all tracking requires auth
     const SEEDED_DEMO_CASES = new Set(["PAN-2026-0001", "PAN-2026-0002", "PAN-2026-0003", "PAN-2026-0004", "SCH-2026-2345", "HOU-2026-7781"]);
-    const isPublicDemoCase = SEEDED_DEMO_CASES.has(id);
+    const isPublicDemoCase = process.env.NODE_ENV !== "production" && SEEDED_DEMO_CASES.has(id);
 
     if (!isPublicDemoCase) {
       if (govToken) {
         // Government officer is allowed to inspect application tracker
-      } else if (token) {
-        const user = await authenticateSession(token);
+      } else {
+        const user = await getAuthenticatedCitizenUser(request);
         if (!user) {
           return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
         }
         const ownerId = (app as any).citizen_user_id || app.userId;
-        if (ownerId !== user.id) {
+        const ownerUuid = await resolveActorUuid("CITIZEN", ownerId);
+        const userUuid = await resolveActorUuid("CITIZEN", user.id);
+        if (ownerId !== user.id && ownerUuid !== userUuid) {
           return NextResponse.json({ success: false, error: "Forbidden: You can only track your own applications" }, { status: 403 });
         }
-      } else {
-        return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
       }
     }
 

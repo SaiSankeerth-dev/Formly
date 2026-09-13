@@ -43,10 +43,8 @@ export default function CitizenLoginClient() {
   // Handle URL error query parameters (e.g. from OAuth redirect or session failures)
   useEffect(() => {
     const errorParam = searchParams.get("error");
-    if (errorParam === "oauth_failed") {
-      setErrorMessage("Google sign-in could not be completed. Please try again.");
-    } else if (errorParam === "google_not_configured") {
-      setErrorMessage("Google sign-in could not be completed. Please try again.");
+    if (errorParam === "oauth_failed" || errorParam === "google_not_configured") {
+      setErrorMessage("Google sign-in couldn't be completed.");
     } else if (errorParam === "profile_error") {
       setErrorMessage("We couldn't load your profile. Please try again.");
     } else if (errorParam === "disabled") {
@@ -117,45 +115,30 @@ export default function CitizenLoginClient() {
     setErrorMessage("");
 
     try {
-      // 1. Check if Supabase client is configured
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-      const isSupabaseConfigured =
-        supabaseUrl.startsWith("http") && !supabaseUrl.includes("placeholder-project");
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${origin}/auth/callback`,
+          skipBrowserRedirect: true,
+        },
+      });
 
-      if (isSupabaseConfigured) {
-        try {
-          const supabase = createClient();
-          const origin = typeof window !== "undefined" ? window.location.origin : "";
-          const { data, error } = await supabase.auth.signInWithOAuth({
-            provider: "google",
-            options: {
-              redirectTo: `${origin}/auth/callback`,
-            },
-          });
-
-          if (error) {
-            console.warn("[Google OAuth] Supabase returned:", error.message);
-            // Fallback to direct Google OAuth route if available
-            window.location.href = "/api/auth/google";
-            return;
-          }
-
-          if (data?.url) {
-            window.location.href = data.url;
-            return;
-          }
-        } catch (supabaseErr) {
-          console.warn("[Google OAuth] Supabase client initiation error, falling back to direct route:", supabaseErr);
-          window.location.href = "/api/auth/google";
-          return;
-        }
+      if (error) {
+        console.error("[Google OAuth] Supabase signInWithOAuth error:", error.message);
+        setErrorMessage("Google sign-in couldn't be completed.");
+        setIsGoogleLoading(false);
+        triggerErrorShake();
+        return;
       }
 
-      // 2. Direct Google OAuth fallback
-      window.location.href = "/api/auth/google";
-    } catch (err) {
-      console.error("[Google OAuth] Failed to initiate Google sign-in:", err);
-      setErrorMessage("Google sign-in could not be completed. Please try again.");
+      if (data?.url) {
+        window.location.assign(data.url);
+      }
+    } catch (err: any) {
+      console.error("[Google OAuth] Failed to initiate Google sign-in:", err?.message || err);
+      setErrorMessage("Google sign-in couldn't be completed.");
       setIsGoogleLoading(false);
       triggerErrorShake();
     }
@@ -400,16 +383,30 @@ export default function CitizenLoginClient() {
                       : "bg-rose-50 border border-rose-200 text-rose-700 font-medium"
                   }`}
                 >
-                  <div className="flex items-start gap-2.5">
-                    <AlertCircle
-                      className={`w-4 h-4 shrink-0 mt-0.5 ${
-                        isGovAccount ? "text-amber-600" : "text-rose-500"
-                      }`}
-                      aria-hidden="true"
-                    />
-                    <span className={isGovAccount ? "font-semibold text-slate-900" : ""}>
-                      {errorMessage}
-                    </span>
+                  <div className="flex items-start justify-between gap-2.5">
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      <AlertCircle
+                        className={`w-4 h-4 shrink-0 mt-0.5 ${
+                          isGovAccount ? "text-amber-600" : "text-rose-500"
+                        }`}
+                        aria-hidden="true"
+                      />
+                      <span className={isGovAccount ? "font-semibold text-slate-900" : ""}>
+                        {errorMessage}
+                      </span>
+                    </div>
+                    {errorMessage.includes("Google sign-in couldn't be completed") && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setErrorMessage("");
+                          handleGoogleSignIn();
+                        }}
+                        className="shrink-0 px-2.5 py-1 text-[11px] font-bold text-rose-800 bg-rose-100 hover:bg-rose-200 rounded-lg transition-colors cursor-pointer"
+                      >
+                        Try Again
+                      </button>
+                    )}
                   </div>
                   {isGovAccount && (
                     <Link

@@ -1,20 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createPanApplication, authenticateSession } from "@/lib/server/db";
-import { cookies } from "next/headers";
+import { createPanApplication } from "@/lib/server/db";
+import { getAuthenticatedCitizenUser } from "@/lib/server/auth";
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const token =
-      cookieStore.get("FORMLY_CITIZEN_SESSION")?.value ||
-      cookieStore.get("formly_citizen_session")?.value ||
-      cookieStore.get("seva_saarthi_session")?.value;
-
-    if (!token) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = await authenticateSession(token);
+    const user = await getAuthenticatedCitizenUser(request);
     if (!user) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }

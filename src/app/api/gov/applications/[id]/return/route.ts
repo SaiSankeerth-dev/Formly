@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { officerReturnApplication, getAuditLogs } from "@/lib/server/db";
+import { officerReturnApplication, getApplicationById, getAuditLogs } from "@/lib/server/db";
 import { validateGovSession, validateGovRole, unauthorizedResponse, forbiddenResponse } from "@/lib/server/auth";
 
 export async function POST(
@@ -15,6 +15,24 @@ export async function POST(
     }
 
     const { id } = await context.params;
+    const app = await getApplicationById(id);
+    if (!app) {
+      return NextResponse.json({ success: false, error: `Application not found: ${id}` }, { status: 404 });
+    }
+
+    // Phase 10: Officers cannot mutate another officer's assigned case
+    const isAssignedToOther =
+      Boolean(app.assignedOfficerId) &&
+      app.assignedOfficerId !== auth.employee.employee_code &&
+      app.assignedOfficerId !== auth.employee.id;
+    const isDepartmentOfficer = auth.employee.role === "DEPARTMENT_OFFICER";
+
+    if (isAssignedToOther && isDepartmentOfficer) {
+      return forbiddenResponse(
+        `Forbidden: Application ${id} is assigned to officer ${app.assignedOfficerId}. Only the assigned officer or an administrator may decide this case.`
+      );
+    }
+
     const body = await request.json();
     const reason = body.reason || body.correctionReason || body.returnExplanation;
 

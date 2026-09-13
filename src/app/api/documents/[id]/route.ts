@@ -1,26 +1,13 @@
 import { NextResponse } from "next/server";
-import { authenticateSession, getUserDocuments, getUserExtractedFields, deleteDocumentForUser, updateDocumentForUser } from "@/lib/server/db";
-import { cookies } from "next/headers";
-
-async function getAuthenticatedUser(request: Request) {
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get("FORMLY_CITIZEN_SESSION")?.value ||
-    cookieStore.get("formly_citizen_session")?.value ||
-    cookieStore.get("seva_saarthi_session")?.value ||
-    (request.headers.get("Authorization")?.startsWith("Bearer ")
-      ? request.headers.get("Authorization")?.substring(7)
-      : null);
-
-  if (!token) return null;
-  return authenticateSession(token);
-}
+import { getUserDocuments, getUserExtractedFields, deleteDocumentForUser, updateDocumentForUser } from "@/lib/server/db";
+import { getAuthenticatedCitizenUser } from "@/lib/server/auth";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getAuthenticatedUser(request);
+  const user = await getAuthenticatedCitizenUser(request);
   if (!user) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
@@ -46,7 +33,7 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getAuthenticatedUser(request);
+  const user = await getAuthenticatedCitizenUser(request);
   if (!user) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
@@ -69,13 +56,19 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getAuthenticatedUser(request);
+  const user = await getAuthenticatedCitizenUser(request);
   if (!user) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
   const deleted = await deleteDocumentForUser(user.id, id);
+
+  // Sync delete to Supabase documents table if available
+  try {
+    const supabase = await createClient();
+    await supabase.from("documents").delete().match({ id, user_id: user.id });
+  } catch {}
 
   return NextResponse.json({
     success: deleted,

@@ -68,6 +68,7 @@ export async function extractDocumentFields(
     // to ensure the demo doesn't look completely broken if the user uploads a low-quality image.
     if (fields.length > 0) {
       return {
+        success: true,
         documentType: inferredType,
         rawText,
         fields,
@@ -75,16 +76,19 @@ export async function extractDocumentFields(
     }
 
     return {
+      success: true,
       documentType: inferredType,
       rawText: rawText || "Document uploaded successfully. No structured text fields automatically recognized.",
       fields,
     };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("OCR Engine Error:", error);
     return {
+      success: false,
+      error: error?.message || "OCR text extraction failed for this file",
       documentType: inferredType,
-      rawText: "Document uploaded. OCR text extraction could not process this file.",
+      rawText: "",
       fields: [],
     };
   }

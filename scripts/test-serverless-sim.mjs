@@ -5,6 +5,7 @@ import { loginUser } from "../src/lib/server/db.ts";
 async function testServerless() {
   process.env.VERCEL = "1";
   process.env.NODE_ENV = "production";
+  process.env.SESSION_SECRET = process.env.SESSION_SECRET || "simulated-production-secret-4f8a9e2b1c3d5e7f";
 
   // Reset any previous db instance
   await resetAuthoritativeDb();

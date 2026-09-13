@@ -55,6 +55,8 @@ export interface ChecklistSummary {
 }
 
 export interface OcrExtractionResult {
+  success?: boolean;
+  error?: string;
   documentType: DocumentType;
   rawText: string;
   fields: {

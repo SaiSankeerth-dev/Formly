@@ -1,24 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { citizenResubmitCorrection, getApplicationById } from "@/lib/server/db";
-import { authenticateSession } from "@/lib/server/db";
-import { cookies } from "next/headers";
+import { getAuthenticatedCitizenUser } from "@/lib/server/auth";
+import { resolveActorUuid } from "@/lib/server/pg-db";
 
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = await cookies();
-    const token =
-      cookieStore.get("FORMLY_CITIZEN_SESSION")?.value ||
-      cookieStore.get("formly_citizen_session")?.value ||
-      cookieStore.get("seva_saarthi_session")?.value;
-
-    if (!token) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = await authenticateSession(token);
+    const user = await getAuthenticatedCitizenUser(request);
     if (!user) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
@@ -32,7 +22,9 @@ export async function POST(
 
     // Security: Only the owner can resubmit corrections
     const ownerId = (app as any).citizen_user_id || app.userId;
-    if (ownerId !== user.id) {
+    const ownerUuid = await resolveActorUuid("CITIZEN", ownerId);
+    const userUuid = await resolveActorUuid("CITIZEN", user.id);
+    if (ownerId !== user.id && ownerUuid !== userUuid) {
       return NextResponse.json({ success: false, error: "Forbidden: You can only resubmit your own applications" }, { status: 403 });
     }
 

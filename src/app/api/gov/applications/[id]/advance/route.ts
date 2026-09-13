@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { advancePhysicalPipelineStage, getAuditLogs } from "@/lib/server/db";
-import { validateGovSession, unauthorizedResponse, forbiddenResponse } from "@/lib/server/auth";
+import { advancePhysicalPipelineStage, getApplicationById, getAuditLogs } from "@/lib/server/db";
+import { validateGovRole, unauthorizedResponse, forbiddenResponse } from "@/lib/server/auth";
 
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = await validateGovSession(request);
+    const auth = await validateGovRole(request, ["DEPARTMENT_OFFICER", "DEPARTMENT_ADMIN", "SYSTEM_ADMIN"]);
     if (!auth.success) {
       return auth.error?.toLowerCase().includes("forbidden")
         ? forbiddenResponse(auth.error!)
@@ -15,6 +15,24 @@ export async function POST(
     }
 
     const { id } = await context.params;
+    const app = await getApplicationById(id);
+    if (!app) {
+      return NextResponse.json({ success: false, error: `Application not found: ${id}` }, { status: 404 });
+    }
+
+    // Phase 10: Officers cannot mutate another officer's assigned case
+    const isAssignedToOther =
+      Boolean(app.assignedOfficerId) &&
+      app.assignedOfficerId !== auth.employee.employee_code &&
+      app.assignedOfficerId !== auth.employee.id;
+    const isDepartmentOfficer = auth.employee.role === "DEPARTMENT_OFFICER";
+
+    if (isAssignedToOther && isDepartmentOfficer) {
+      return forbiddenResponse(
+        `Forbidden: Application ${id} is assigned to officer ${app.assignedOfficerId}. Only the assigned officer or an administrator may advance this case.`
+      );
+    }
+
     const result = await advancePhysicalPipelineStage(id);
     const logs = await getAuditLogs(id);
     return NextResponse.json({ success: true, application: result, auditLogs: logs });

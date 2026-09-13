@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Search, Bell, ChevronDown, User, LogOut, Folder, Settings, Menu } from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { LotusLogo } from "@/components/ui/LotusLogo";
+import { NotificationPopover } from "@/components/layout/NotificationPopover";
 
 interface HeaderProps {
   onOpenMobileNav?: () => void;
@@ -85,23 +86,20 @@ export function Header({ onOpenMobileNav, onOpenCommandPalette }: HeaderProps = 
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <Link
-            href="/notifications"
-            className="relative p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
-            aria-label="View notifications"
-          >
-            <Bell className="w-4 h-4" />
-            {unreadNotificationsCount > 0 && (
-              <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-white">
-                {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
-              </span>
-            )}
-          </Link>
+          <NotificationPopover
+            buttonClassName="relative p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-[#2F27CE]/30"
+            badgeClassName="absolute top-1 right-1 min-w-[16px] h-3.5 px-0.5 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center border-2 border-white"
+            iconClassName="w-4 h-4"
+          />
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="w-8 h-8 rounded-full bg-[#E0E7FF] text-[#2F27CE] font-bold text-xs flex items-center justify-center ring-1 ring-indigo-200"
+            className="w-8 h-8 rounded-full bg-[#E0E7FF] text-[#2F27CE] font-bold text-xs flex items-center justify-center ring-1 ring-indigo-200 overflow-hidden"
           >
-            {userInitials || <User className="w-4 h-4 text-[#2F27CE]" />}
+            {user?.avatar ? (
+              <img src={user.avatar} alt={displayName} className="w-full h-full object-cover" />
+            ) : (
+              userInitials || <User className="w-4 h-4 text-[#2F27CE]" />
+            )}
           </button>
         </div>
       </header>
@@ -178,20 +176,8 @@ export function Header({ onOpenMobileNav, onOpenCommandPalette }: HeaderProps = 
             )}
           </div>
 
-          {/* Notification Bell with Dynamic Unread Badge */}
-          <Link
-            href="/notifications"
-            className="relative p-2.5 text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl transition-colors shadow-2xs cursor-pointer"
-            title={unreadNotificationsCount > 0 ? `${unreadNotificationsCount} new notification${unreadNotificationsCount > 1 ? "s" : ""}` : "Notifications"}
-            aria-label="View notifications"
-          >
-            <Bell className="w-4 h-4" />
-            {unreadNotificationsCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-xs">
-                {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
-              </span>
-            )}
-          </Link>
+          {/* Notification Bell with Dynamic Unread Badge & Dropdown Popover */}
+          <NotificationPopover />
 
           {/* User Profile Pill matching Reference Image */}
           <div className="relative">
@@ -199,8 +185,12 @@ export function Header({ onOpenMobileNav, onOpenCommandPalette }: HeaderProps = 
               onClick={() => setShowUserMenu(!showUserMenu)}
               className="flex items-center gap-2.5 p-1.5 pr-3 hover:bg-slate-50 rounded-2xl border border-slate-200 bg-white transition-all shadow-2xs cursor-pointer"
             >
-              <div className="w-8 h-8 rounded-full bg-[#E0E7FF] text-[#2F27CE] font-black text-xs flex items-center justify-center">
-                {userInitials || <User className="w-4 h-4 text-[#2F27CE]" />}
+              <div className="w-8 h-8 rounded-full bg-[#E0E7FF] text-[#2F27CE] font-black text-xs flex items-center justify-center overflow-hidden">
+                {user?.avatar ? (
+                  <img src={user.avatar} alt={displayName} className="w-full h-full object-cover" />
+                ) : (
+                  userInitials || <User className="w-4 h-4 text-[#2F27CE]" />
+                )}
               </div>
               <span className="text-xs font-bold text-slate-800 hidden sm:inline truncate max-w-[120px]">
                 {displayName}

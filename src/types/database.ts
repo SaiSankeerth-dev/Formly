@@ -71,6 +71,10 @@ export interface DocumentRow {
   readability_score?: number | null;
   readability_status?: string | null;
   optimization_metadata?: Record<string, any> | null;
+  sha256_hash?: string | null;
+  original_sha256?: string | null;
+  prepared_sha256?: string | null;
+  derived_from?: string | null;
   created_at: string;
   updated_at: string;
 }

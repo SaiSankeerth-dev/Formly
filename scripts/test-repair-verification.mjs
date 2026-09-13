@@ -20,9 +20,13 @@ import {
   calculateAuditTamperHash,
   authenticateSession,
   getEmployeeBySession,
+  loginUser,
   resetPanDemoState,
 } from "../src/lib/server/db.ts";
 import { validateGovSession } from "../src/lib/server/auth.ts";
+import { POST as acceptGovApp } from "../src/app/api/gov/applications/[id]/accept/route.ts";
+import { POST as createGovApp } from "../src/app/api/gov/applications/route.ts";
+import { POST as postGovAudit } from "../src/app/api/gov/audit/route.ts";
 
 function assert(condition, message) {
   if (!condition) {
@@ -101,6 +105,58 @@ async function runRepairVerification() {
   const ownerA = (app1.citizen_user_id || app1.userId);
   assert(ownerA === citizenA_Id, "Application PAN-2026-0001 owner matches Citizen A");
   assert(ownerA !== citizenB_Id, "Application PAN-2026-0001 owner check fails for Citizen B (Anti-IDOR enforced)");
+
+  // Test 1.6: Case Assignment Boundary (Officers cannot mutate cases assigned to other officers)
+  const otherOfficerLogin = await loginUser("sankeerthvss@gmail.com", "1234567890");
+  const otherOfficerToken = otherOfficerLogin.token;
+  const mockReqOtherOfficer = {
+    cookies: {
+      get: (name) => name === "formly_gov_session" ? { value: otherOfficerToken } : null,
+    },
+    json: async () => ({ remarks: "Unauthorized accept attempt" }),
+  };
+  // Case PAN-2026-0001 is assigned to OFF-PAN-7042
+  const crossOfficerRes = await acceptGovApp(mockReqOtherOfficer, { params: Promise.resolve({ id: "PAN-2026-0001" }) });
+  assert(crossOfficerRes.status === 403, "Officer attempting to decide another officer's case is blocked with 403 Forbidden");
+
+  // Test 1.7: Government Application Creation ignores client-supplied userId
+  const mockCreateAppReq = {
+    cookies: {
+      get: (name) => name === "formly_gov_session" ? { value: testSessionToken } : null,
+    },
+    json: async () => ({
+      userId: "spoofed_citizen_uuid_9999",
+      applicantName: "Aarav Gupta",
+      applicantEmail: "aarav.gupta.test@example.com",
+      applicantPhone: "9876543210",
+      citizenData: { fullName: "Aarav Gupta", dateOfBirth: "1995-05-10" },
+      consentGranted: true,
+    }),
+  };
+  const createGovRes = await createGovApp(mockCreateAppReq);
+  assert(createGovRes.status === 201, "Government application creation succeeded");
+  const createGovData = await createGovRes.json();
+  assert(createGovData.application.userId !== "spoofed_citizen_uuid_9999", "Client-supplied userId was strictly ignored (Server-derived ownership enforced)");
+
+  // Test 1.8: Audit POST actor binding strictly enforces server-side officer identity
+  const mockAuditReq = {
+    cookies: {
+      get: (name) => name === "formly_gov_session" ? { value: testSessionToken } : null,
+    },
+    json: async () => ({
+      action: "DECISION_OVERRIDE",
+      applicationId: "PAN-2026-0001",
+      actor: { role: "SYSTEM", id: "forged_system_actor" },
+      tamperHash: "forged_hash",
+      timestamp: "1970-01-01T00:00:00.000Z",
+    }),
+  };
+  const postAuditRes = await postGovAudit(mockAuditReq);
+  assert(postAuditRes.status === 201, "Officer audit POST succeeded");
+  const auditData = await postAuditRes.json();
+  assert(auditData.logEntry.actor.id === "OFF-PAN-7042", "Audit log actor ID strictly bound to authenticated officer OFF-PAN-7042");
+  assert(auditData.logEntry.actor.role === "OFFICER", "Audit log actor role strictly bound to OFFICER");
+  assert(auditData.logEntry.tamperHash !== "forged_hash", "Client-supplied tamperHash rejected; server computed valid SHA-256 tamper hash");
 
   // ----------------------------------------------------------------------
   // SECTION 2: TAMPER-EVIDENT AUDIT TRAIL & POSTGRESQL INVARIANTS

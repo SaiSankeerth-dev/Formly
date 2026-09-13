@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { verifiedServiceById } from "@/lib/registry/verified-service-registry";
 import { verifyOfficialUrl } from "@/lib/registry/official-domain-guard";
 import { INITIAL_PROFILE_FIELDS, DEFAULT_USER } from "@/lib/mock-data/initial-state";
+import { getAuthenticatedCitizenUser } from "@/lib/server/auth";
+import { getUserProfileFields } from "@/lib/server/db";
 
 interface CanonicalDef {
   key: string;
@@ -237,7 +239,25 @@ export async function GET(request: Request) {
     const serviceId = url.searchParams.get("serviceId") || "s001";
     const service = verifiedServiceById(serviceId);
 
-    const { canonical, applicant, safeFields, blockedFields } = buildCanonicalMapping(INITIAL_PROFILE_FIELDS, DEFAULT_USER);
+    const user = await getAuthenticatedCitizenUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Authentication required to access citizen autofill profile." },
+        { status: 401 }
+      );
+    }
+
+    let profileFields = INITIAL_PROFILE_FIELDS;
+    try {
+      const dbFields = await getUserProfileFields(user.id);
+      if (dbFields && dbFields.length > 0) {
+        profileFields = dbFields as any;
+      }
+    } catch (dbErr) {
+      console.warn("[Autofill GET] Error loading user profile fields:", dbErr);
+    }
+
+    const { canonical, applicant, safeFields, blockedFields } = buildCanonicalMapping(profileFields, user);
 
     return NextResponse.json({
       success: true,
@@ -246,7 +266,7 @@ export async function GET(request: Request) {
       officialDomain: service?.officialDomain || "scholarships.gov.in",
       applicationUrl: service?.officialApplicationUrl || "https://scholarships.gov.in",
       citizenProfile: {
-        userId: DEFAULT_USER.id,
+        userId: user.id,
         fullName: canonical.full_name,
         dateOfBirth: canonical.date_of_birth,
         phone: canonical.mobile,
@@ -269,7 +289,7 @@ export async function GET(request: Request) {
         blockedFields,
       },
       canonicalFields: canonical,
-      fields: INITIAL_PROFILE_FIELDS.map((f) => ({
+      fields: profileFields.map((f: any) => ({
         fieldName: f.field_name,
         value: f.value,
         verified: f.verified,
@@ -287,6 +307,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const user = await getAuthenticatedCitizenUser(request);
     const body = await request.json();
     const action = body.action || "GET_AUTOFILL_DATA";
 
@@ -296,12 +317,27 @@ export async function POST(request: Request) {
       action === "AUTOFILL" ||
       action === "GET_AUTOFILL_PAYLOAD"
     ) {
-      let fields = body.payload?.profileFields || body.profileFields;
-      if (!fields || !Array.isArray(fields) || fields.length === 0) {
-        fields = INITIAL_PROFILE_FIELDS;
+      if (!user) {
+        return NextResponse.json(
+          { success: false, error: "Authentication required to access citizen autofill payload." },
+          { status: 401 }
+        );
       }
 
-      const { canonical, applicant, safeFields, blockedFields } = buildCanonicalMapping(fields, DEFAULT_USER);
+      let fields = body.payload?.profileFields || body.profileFields;
+      if (!fields || !Array.isArray(fields) || fields.length === 0) {
+        try {
+          const dbFields = await getUserProfileFields(user.id);
+          if (dbFields && dbFields.length > 0) {
+            fields = dbFields as any;
+          }
+        } catch {}
+        if (!fields || fields.length === 0) {
+          fields = INITIAL_PROFILE_FIELDS;
+        }
+      }
+
+      const { canonical, applicant, safeFields, blockedFields } = buildCanonicalMapping(fields, user);
 
       return NextResponse.json({
         success: true,
@@ -318,12 +354,27 @@ export async function POST(request: Request) {
 
     // 2. MAP_FIELDS - Live form field mapping
     if (action === "MAP_FIELDS") {
-      let fields = body.payload?.profileFields || body.profileFields;
-      if (!fields || !Array.isArray(fields) || fields.length === 0) {
-        fields = INITIAL_PROFILE_FIELDS;
+      if (!user) {
+        return NextResponse.json(
+          { success: false, error: "Authentication required to perform form field mapping." },
+          { status: 401 }
+        );
       }
 
-      const { canonical } = buildCanonicalMapping(fields, DEFAULT_USER);
+      let fields = body.payload?.profileFields || body.profileFields;
+      if (!fields || !Array.isArray(fields) || fields.length === 0) {
+        try {
+          const dbFields = await getUserProfileFields(user.id);
+          if (dbFields && dbFields.length > 0) {
+            fields = dbFields as any;
+          }
+        } catch {}
+        if (!fields || fields.length === 0) {
+          fields = INITIAL_PROFILE_FIELDS;
+        }
+      }
+
+      const { canonical } = buildCanonicalMapping(fields, user);
       const inputElements: any[] = body.payload?.fields || body.fields || body.formFields || body.payload?.formFields || [];
 
       const mappings = inputElements.map((elem) => {
@@ -387,6 +438,13 @@ export async function POST(request: Request) {
 
     // 3. START_AGENT - Extension handoff initialization
     if (action === "START_AGENT") {
+      if (!user) {
+        return NextResponse.json(
+          { success: false, error: "Authentication required to initiate browser agent handoff." },
+          { status: 401 }
+        );
+      }
+
       const serviceId = body.payload?.serviceId || body.serviceId || "s001";
       const portalUrl = body.payload?.portalUrl || body.portalUrl || "https://scholarships.gov.in";
       const service = verifiedServiceById(serviceId);
@@ -401,10 +459,21 @@ export async function POST(request: Request) {
 
       let fields = body.payload?.profileFields;
       if (!fields || !Array.isArray(fields) || fields.length === 0) {
-        fields = INITIAL_PROFILE_FIELDS;
+        if (user) {
+          try {
+            const dbFields = await getUserProfileFields(user.id);
+            if (dbFields && dbFields.length > 0) {
+              fields = dbFields as any;
+            }
+          } catch {}
+        }
+        if (!fields || fields.length === 0) {
+          fields = INITIAL_PROFILE_FIELDS;
+        }
       }
 
-      const { canonical, applicant, safeFields, blockedFields } = buildCanonicalMapping(fields, DEFAULT_USER);
+      const effectiveUser = user || DEFAULT_USER;
+      const { canonical, applicant, safeFields, blockedFields } = buildCanonicalMapping(fields, effectiveUser);
 
       return NextResponse.json({
         success: true,

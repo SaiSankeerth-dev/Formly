@@ -1,29 +1,16 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { authenticateSession, getUserDocuments, addDocumentForUser, getUserExtractedFields } from "@/lib/server/db";
+import { getUserDocuments, addDocumentForUser, getUserExtractedFields } from "@/lib/server/db";
 import { extractDocumentFields } from "@/lib/ocr/ocr-engine";
 import { DocumentType, DocumentRow, ExtractedField } from "@/types";
-import { cookies } from "next/headers";
 import { getDocumentProfile, sanitizeFileName, formatBytes } from "@/lib/documents/document-profiles";
 import { analyzeDocument } from "@/lib/documents/document-analyzer";
 import { prepareDocumentServerSide } from "@/lib/documents/server-document-preparer";
-
-async function getAuthenticatedUser(request: Request) {
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get("FORMLY_CITIZEN_SESSION")?.value ||
-    cookieStore.get("formly_citizen_session")?.value ||
-    cookieStore.get("seva_saarthi_session")?.value ||
-    (request.headers.get("Authorization")?.startsWith("Bearer ")
-      ? request.headers.get("Authorization")?.substring(7)
-      : null);
-
-  if (!token) return null;
-  return await authenticateSession(token);
-}
+import { getAuthenticatedCitizenUser } from "@/lib/server/auth";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
-  const user = await getAuthenticatedUser(request);
+  const user = await getAuthenticatedCitizenUser(request);
   if (!user) {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
@@ -40,10 +27,9 @@ export async function GET(request: Request) {
   });
 }
 
-
 export async function POST(request: Request) {
   try {
-    const user = await getAuthenticatedUser(request);
+    const user = await getAuthenticatedCitizenUser(request);
     if (!user) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
@@ -173,12 +159,22 @@ export async function POST(request: Request) {
     );
 
     const docId = crypto.randomUUID();
+    const origBuffer = Buffer.from(await file.arrayBuffer());
+    const origHash = crypto.createHash("sha256").update(origBuffer).digest("hex");
+    let prepHash = origHash;
+    if (uploadFile !== file) {
+      const prepBuffer = Buffer.from(await (uploadFile as Blob).arrayBuffer());
+      prepHash = crypto.createHash("sha256").update(prepBuffer).digest("hex");
+    }
+
     const ocrResult = await extractDocumentFields(
       uploadFile instanceof File
         ? uploadFile
         : { name: safeName, type: (uploadFile as any).type || "application/pdf", size: uploadFile.size },
       documentType
     );
+
+    const ocrFailed = ocrResult.success === false;
 
     const newDoc: DocumentRow = {
       id: docId,
@@ -188,9 +184,13 @@ export async function POST(request: Request) {
       original_filename: file.name,
       prepared_filename: safeName,
       mime_type: (uploadFile as any).type || analysis.mimeType || file.type || "application/octet-stream",
-      status: "EXTRACTED",
-      ocr_raw_text: ocrResult.rawText,
+      status: ocrFailed ? "FAILED" : "EXTRACTED",
+      ocr_raw_text: ocrResult.rawText || null,
       is_superseded: false,
+      sha256_hash: prepHash,
+      original_sha256: origHash,
+      prepared_sha256: prepHash,
+      derived_from: uploadFile !== file ? origHash : null,
       original_size_bytes: optMeta?.originalSizeBytes || file.size,
       prepared_size_bytes: uploadFile.size,
       target_size_bytes: optMeta?.targetSizeBytes || Math.floor(rule.maxFileSizeBytes * 0.9),
@@ -224,9 +224,26 @@ export async function POST(request: Request) {
 
     await addDocumentForUser(user.id, newDoc, extracted);
 
+    // Sync to Supabase public.documents table if available
+    try {
+      const supabase = await createClient();
+      await supabase.from("documents").insert({
+        id: docId,
+        user_id: user.id,
+        document_type: ocrResult.documentType,
+        original_filename: file.name,
+        storage_path: `vault/${safeName}`,
+        mime_type: newDoc.mime_type,
+        size_bytes: uploadFile.size,
+      });
+    } catch {}
+
     return NextResponse.json({
       success: true,
-      message: "Document uploaded, verified, and OCR extracted successfully",
+      message: ocrFailed
+        ? "Document uploaded and persisted, but OCR text extraction could not process this file"
+        : "Document uploaded, verified, and OCR extracted successfully",
+      ocrFailed,
       document: newDoc,
       extracted_fields: extracted,
       service_validation: {

@@ -14,7 +14,7 @@ export default async function Page() {
   }
 
   const cookieStore = await cookies()
-  const supabase = createClient(cookieStore)
+  const supabase = await createClient(cookieStore)
 
   const { data: todos } = await supabase.from('todos').select()
 

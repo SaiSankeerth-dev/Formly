@@ -1,24 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authenticateSession, getPanApplications, getApplications, createPanApplication, checkIdempotency, recordIdempotency } from "@/lib/server/db";
-import { cookies } from "next/headers";
-
-async function getAuthenticatedUser(request: Request) {
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get("FORMLY_CITIZEN_SESSION")?.value ||
-    cookieStore.get("formly_citizen_session")?.value ||
-    cookieStore.get("seva_saarthi_session")?.value ||
-    (request.headers.get("Authorization")?.startsWith("Bearer ")
-      ? request.headers.get("Authorization")?.substring(7)
-      : null);
-
-  if (!token) return null;
-  return authenticateSession(token);
-}
+import { getPanApplications, getApplications, createPanApplication, checkIdempotency, recordIdempotency } from "@/lib/server/db";
+import { getAuthenticatedCitizenUser } from "@/lib/server/auth";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getAuthenticatedUser(request);
+    const user = await getAuthenticatedCitizenUser(request);
     if (!user) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
@@ -33,7 +20,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getAuthenticatedUser(request);
+    const user = await getAuthenticatedCitizenUser(request);
     if (!user) {
       return NextResponse.json({ success: false, error: "Unauthorized: Citizen login required" }, { status: 401 });
     }
@@ -73,6 +60,19 @@ export async function POST(request: NextRequest) {
       consentGranted: true,
       serviceId,
     });
+
+    // Sync to Supabase public.applications table if available
+    try {
+      const supabase = await createClient();
+      await supabase.from("applications").insert({
+        id: crypto.randomUUID(),
+        user_id: user.id,
+        service_id: serviceId || "PAN",
+        service_name: "PAN Card Application",
+        state: "SUBMITTED",
+        current_step: "OFFICER_REVIEW",
+      });
+    } catch {}
 
     const responseData = { success: true, application: app };
     if (idempotencyKey) {

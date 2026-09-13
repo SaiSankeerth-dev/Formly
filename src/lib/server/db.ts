@@ -87,10 +87,18 @@ export function verifyPassword(password: string, hash: string, salt: string): bo
 // Stateless HMAC Session Tokens for Serverless & Container Isolation
 // ----------------------------------------------------------------------
 
-const SESSION_SECRET =
-  process.env.SESSION_SECRET ||
-  process.env.SUPABASE_JWT_SECRET ||
-  "formly_secure_session_secret_key_2026_sih_prod_auth";
+function getSessionSecret(): string {
+  const secret = process.env.SESSION_SECRET || process.env.SUPABASE_JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "CRITICAL SECURITY ERROR: Missing SESSION_SECRET or SUPABASE_JWT_SECRET in production environment. Failing closed."
+      );
+    }
+    return "formly_secure_session_secret_key_2026_sih_prod_auth";
+  }
+  return secret;
+}
 
 export interface SessionTokenPayload {
   userId: string;
@@ -115,7 +123,7 @@ export function signSessionToken(payload: {
   const json = JSON.stringify(fullPayload);
   const base64Payload = Buffer.from(json, "utf8").toString("base64url");
   const signature = crypto
-    .createHmac("sha256", SESSION_SECRET)
+    .createHmac("sha256", getSessionSecret())
     .update(base64Payload)
     .digest("base64url");
   return `formly_${base64Payload}.${signature}`;
@@ -133,7 +141,7 @@ export function verifySessionToken(token: string): SessionTokenPayload | null {
   const signature = raw.substring(dotIndex + 1);
 
   const expectedSignature = crypto
-    .createHmac("sha256", SESSION_SECRET)
+    .createHmac("sha256", getSessionSecret())
     .update(base64Payload)
     .digest("base64url");
 
@@ -1897,7 +1905,7 @@ export async function getAIExplanation(applicationId: string): Promise<any | nul
 }
 
 export async function createNotification(data: {
-  applicationId: string;
+  applicationId?: string;
   recipientId: string;
   recipientType: "CITIZEN" | "EMPLOYEE";
   type: string;
@@ -1908,10 +1916,28 @@ export async function createNotification(data: {
 }): Promise<void> {
   try {
     await getAuthoritativeDb();
-    await pgQuery(`
-      INSERT INTO notifications (application_id, recipient_id, recipient_type, notification_type, title, body, severity, action_url)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [data.applicationId, data.recipientId, data.recipientType, data.type, data.title, data.body, data.severity, data.actionUrl]
+    const cleanId = data.recipientId.replace(/^u_/, "");
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const recipientUuid = uuidRegex.test(cleanId)
+      ? cleanId
+      : uuidRegex.test(data.recipientId)
+      ? data.recipientId
+      : null;
+    if (!recipientUuid) return;
+
+    await pgQuery(
+      `INSERT INTO notifications (application_id, recipient_id, recipient_type, notification_type, title, body, severity, action_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        data.applicationId || null,
+        recipientUuid,
+        data.recipientType,
+        data.type,
+        data.title,
+        data.body,
+        data.severity,
+        data.actionUrl || null,
+      ]
     );
   } catch (e) {
     console.warn("[createNotification] Error:", e);

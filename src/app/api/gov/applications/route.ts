@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApplications, createPanApplication } from "@/lib/server/db";
 import { validateGovSession, unauthorizedResponse, forbiddenResponse } from "@/lib/server/auth";
+import { pgQuery } from "@/lib/server/pg-db";
+import crypto from "crypto";
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { userId, applicantName, applicantEmail, applicantPhone, citizenData, consentGranted } = body;
+    const { applicantName, applicantEmail, applicantPhone, citizenData, consentGranted } = body;
 
     if (!applicantName || !applicantEmail || !citizenData) {
       return NextResponse.json(
@@ -45,11 +47,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Server-derived citizen ownership:
+    // Resolve citizen identity by verified email in database, or register a verified citizen record
+    let targetCitizenUserId = "";
+    if (applicantEmail) {
+      const existing = await pgQuery<{ id: string }>(
+        `SELECT id FROM users WHERE LOWER(email) = LOWER($1)`,
+        [applicantEmail.trim()]
+      );
+      if (existing.length > 0) {
+        targetCitizenUserId = existing[0].id;
+      }
+    }
+
+    if (!targetCitizenUserId) {
+      const newCitizenId = `u_${crypto.randomUUID()}`;
+      const newSalt = crypto.randomBytes(16).toString("hex");
+      await pgQuery(
+        `INSERT INTO users (id, name, email, phone, "passwordHash", salt, role)
+         VALUES ($1, $2, $3, $4, 'GOV_INTAKE_REGISTRATION', $5, 'Applicant / Citizen')
+         ON CONFLICT DO NOTHING`,
+        [newCitizenId, applicantName.trim(), applicantEmail.trim().toLowerCase(), applicantPhone?.trim() || "", newSalt]
+      );
+      targetCitizenUserId = newCitizenId;
+    }
+
     const app = await createPanApplication({
-      userId: userId || "u_0bc5a3b6-f059-4ab2-9870-46a9c25178b7",
+      userId: targetCitizenUserId,
       applicantName,
       applicantEmail,
-      applicantPhone: applicantPhone || "1234567890",
+      applicantPhone: applicantPhone || "",
       citizenData,
       consentGranted: consentGranted ?? true,
     });

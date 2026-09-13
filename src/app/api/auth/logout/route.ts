@@ -1,10 +1,19 @@
 import { NextResponse } from "next/server";
 import { logoutSession } from "@/lib/server/db";
+import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 
 export async function POST(request: Request) {
   try {
     const cookieStore = await cookies();
+
+    // 1. Supabase Auth signOut (invalidates Supabase session & deletes auth cookies)
+    try {
+      const supabase = await createClient(cookieStore);
+      await supabase.auth.signOut();
+    } catch {}
+
+    // 2. Invalidate local session token if present
     const token =
       cookieStore.get("FORMLY_CITIZEN_SESSION")?.value ||
       cookieStore.get("formly_citizen_session")?.value ||
@@ -23,3 +32,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
+

@@ -1,24 +1,10 @@
 import { NextResponse } from "next/server";
-import { authenticateSession, getCitizenSessions, saveCitizenSession } from "@/lib/server/db";
-import { cookies } from "next/headers";
-
-async function getAuthenticatedUser(request: Request) {
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get("FORMLY_CITIZEN_SESSION")?.value ||
-    cookieStore.get("formly_citizen_session")?.value ||
-    cookieStore.get("seva_saarthi_session")?.value ||
-    (request.headers.get("Authorization")?.startsWith("Bearer ")
-      ? request.headers.get("Authorization")?.substring(7)
-      : null);
-
-  if (!token) return null;
-  return await authenticateSession(token);
-}
+import { getCitizenSessions, saveCitizenSession } from "@/lib/server/db";
+import { getAuthenticatedCitizenUser } from "@/lib/server/auth";
 
 export async function GET(request: Request) {
   try {
-    const user = await getAuthenticatedUser(request);
+    const user = await getAuthenticatedCitizenUser(request);
     if (!user) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
@@ -32,7 +18,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const user = await getAuthenticatedUser(request);
+    const user = await getAuthenticatedCitizenUser(request);
     if (!user) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }

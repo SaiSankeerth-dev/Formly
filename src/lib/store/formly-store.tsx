@@ -1250,125 +1250,88 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
     };
   }, [documents, checklistSummary, realUserApps]);
 
-  // Real Notification State
-  const [readNotificationIds, setReadNotificationIds] = useState<string[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem("seva_saarthi_read_notifications");
-        return saved ? JSON.parse(saved) : [];
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  });
+  // Real Notification State (Loaded from Supabase / PostgreSQL API)
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState<number>(0);
 
-  const markNotificationAsRead = (id: string) => {
-    setReadNotificationIds((prev) => {
-      const next = prev.includes(id) ? prev : [...prev, id];
-      if (typeof window !== "undefined") {
-        localStorage.setItem("seva_saarthi_read_notifications", JSON.stringify(next));
+  const refreshNotifications = useCallback(async () => {
+    if (!user) {
+      setNotifications([]);
+      setUnreadNotificationsCount(0);
+      return;
+    }
+    try {
+      const res = await fetch("/api/notifications");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.notifications)) {
+          const mapped: AppNotification[] = data.notifications.map((n: any) => ({
+            id: n.id,
+            title: n.title,
+            desc: n.body || "",
+            time: new Date(n.created_at).toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            category: (n.notification_type || "PROFILE") as any,
+            href: n.action_url || "/dashboard",
+            read: Boolean(n.read_at),
+          }));
+          setNotifications(mapped);
+          setUnreadNotificationsCount(
+            typeof data.unreadCount === "number"
+              ? data.unreadCount
+              : mapped.filter((m) => !m.read).length
+          );
+          return;
+        }
       }
-      return next;
-    });
+    } catch {}
+  }, [user]);
+
+  useEffect(() => {
+    refreshNotifications();
+  }, [refreshNotifications]);
+
+  useEffect(() => {
+    const handleSync = (e: Event) => {
+      const customEvent = e as CustomEvent<{ unreadCount?: number }>;
+      if (typeof customEvent.detail?.unreadCount === "number") {
+        setUnreadNotificationsCount(customEvent.detail.unreadCount);
+      }
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("SEVA_NOTIFICATIONS_SYNC", handleSync);
+      return () => window.removeEventListener("SEVA_NOTIFICATIONS_SYNC", handleSync);
+    }
+  }, []);
+
+  const markNotificationAsRead = async (id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+    const next = Math.max(0, unreadNotificationsCount - 1);
+    setUnreadNotificationsCount(next);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("SEVA_NOTIFICATIONS_SYNC", { detail: { unreadCount: next } }));
+    }
+    try {
+      await fetch(`/api/notifications/${id}`, { method: "PATCH" });
+    } catch {}
   };
 
-  const clearAllNotifications = () => {
-    const allIds = notifications.map((n) => n.id);
-    setReadNotificationIds(allIds);
+  const clearAllNotifications = async () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setUnreadNotificationsCount(0);
     if (typeof window !== "undefined") {
-      localStorage.setItem("seva_saarthi_read_notifications", JSON.stringify(allIds));
+      window.dispatchEvent(new CustomEvent("SEVA_NOTIFICATIONS_SYNC", { detail: { unreadCount: 0 } }));
     }
+    try {
+      await fetch("/api/notifications", { method: "PATCH" });
+    } catch {}
   };
-
-  // Real Dynamic Notifications
-  const notifications: AppNotification[] = useMemo(() => {
-    const list: AppNotification[] = [];
-
-    // 1. Real Document Events
-    documents.forEach((doc) => {
-      const filename = doc.original_filename || doc.document_type;
-      if (doc.status === "EXTRACTED") {
-        list.push({
-          id: `doc_ext_${doc.id}`,
-          title: `OCR Extracted: ${filename}`,
-          desc: `New fields were extracted from this file. Click to review and confirm in your vault.`,
-          time: "Recent Upload",
-          category: "DOCUMENT",
-          href: "/vault",
-          read: readNotificationIds.includes(`doc_ext_${doc.id}`),
-        });
-      } else if (doc.status === "VERIFIED") {
-        list.push({
-          id: `doc_ver_${doc.id}`,
-          title: `Document Verified: ${filename}`,
-          desc: `All fields have been confirmed and locked into your citizen profile.`,
-          time: "Verified",
-          category: "DOCUMENT",
-          href: "/vault",
-          read: readNotificationIds.includes(`doc_ver_${doc.id}`),
-        });
-      }
-    });
-
-    // 2. Real Profile Completeness Alert (Aligned with 27 Canonical Fields)
-    const completeness = getProfileCompleteness(profileFields);
-
-    if (!completeness.isComplete) {
-      list.push({
-        id: "profile_incomplete",
-        title: `Profile Incomplete (${completeness.emptyCount} details remaining)`,
-        desc: `Your citizen profile is at ${completeness.strength}% strength. Fill in remaining academic, income, or bank details.`,
-        time: "Action Required",
-        category: "PROFILE",
-        href: "/profile",
-        read: readNotificationIds.includes("profile_incomplete"),
-      });
-    } else {
-      list.push({
-        id: "profile_complete",
-        title: `Profile 100% Complete & Verified!`,
-        desc: `All personal, academic, and banking records are in order for instant 1-click portal autofill.`,
-        time: "Completed",
-        category: "PROFILE",
-        href: "/profile",
-        read: readNotificationIds.includes("profile_complete"),
-      });
-    }
-
-    // 3. Real Scheme Readiness Alert
-    const currentService = services.find((s) => s.id === activeServiceId) || services[0];
-    if (currentService) {
-      list.push({
-        id: `scheme_readiness_${currentService.id}`,
-        title: `${currentService.name}: ${checklistSummary.percentageComplete}% Ready`,
-        desc: `${checklistSummary.satisfiedCount} of ${checklistSummary.totalRequirements} criteria met. ${checklistSummary.missingCount} requirement(s) remaining.`,
-        time: "Active Scheme",
-        category: "READINESS",
-        href: "/checklist",
-        read: readNotificationIds.includes(`scheme_readiness_${currentService.id}`),
-      });
-    }
-
-    // 4. Real Account & Security Alert
-    if (user) {
-      list.push({
-        id: `security_session_${user.id}`,
-        title: `Logged in as ${user.name}`,
-        desc: `Verified session active for ${user.email}. Multi-tenant vault encryption active.`,
-        time: "Active",
-        category: "SECURITY",
-        href: "/profile",
-        read: readNotificationIds.includes(`security_session_${user.id}`),
-      });
-    }
-
-    return list;
-  }, [documents, profileFields, services, activeServiceId, checklistSummary, user, readNotificationIds]);
-
-  const unreadNotificationsCount = useMemo(() => {
-    return notifications.filter((n) => !n.read).length;
-  }, [notifications]);
 
   return (
     <SevaSaarthiContext.Provider

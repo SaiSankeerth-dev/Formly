@@ -233,22 +233,26 @@ export default function PanTrackerPage() {
               <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Back to Dashboard</span>
             </Link>
-            <span className="text-slate-300">|</span>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-500 hidden sm:inline">Track Demo Case:</span>
-              <select
-                value={appId}
-                onChange={(e) => router.push(`/applications/${e.target.value}/status`)}
-                className="text-xs font-semibold bg-slate-100 border border-slate-200 text-slate-800 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-              >
-                <option value="PAN-2026-0001">PAN-2026-0001 (Sai Sankeerth - Standard)</option>
-                <option value="SCH-2026-2345">SCH-2026-2345 (Sai Sankeerth - Scholarship)</option>
-                <option value="HOU-2026-7781">HOU-2026-7781 (Sai Sankeerth - PM Housing)</option>
-                <option value="PAN-2026-0002">PAN-2026-0002 (Anjali - API Retry)</option>
-                <option value="PAN-2026-0003">PAN-2026-0003 (Rahul - DOB Conflict)</option>
-                <option value="PAN-2026-0004">PAN-2026-0004 (Priya - Returned for Fix)</option>
-              </select>
-            </div>
+            {process.env.NODE_ENV !== "production" && (
+              <>
+                <span className="text-slate-300">|</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-500 hidden sm:inline">Track Demo Case:</span>
+                  <select
+                    value={appId}
+                    onChange={(e) => router.push(`/applications/${e.target.value}/status`)}
+                    className="text-xs font-semibold bg-slate-100 border border-slate-200 text-slate-800 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  >
+                    <option value="PAN-2026-0001">PAN-2026-0001 (Sai Sankeerth - Standard)</option>
+                    <option value="SCH-2026-2345">SCH-2026-2345 (Sai Sankeerth - Scholarship)</option>
+                    <option value="HOU-2026-7781">HOU-2026-7781 (Sai Sankeerth - PM Housing)</option>
+                    <option value="PAN-2026-0002">PAN-2026-0002 (Anjali - API Retry)</option>
+                    <option value="PAN-2026-0003">PAN-2026-0003 (Rahul - DOB Conflict)</option>
+                    <option value="PAN-2026-0004">PAN-2026-0004 (Priya - Returned for Fix)</option>
+                  </select>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-2.5">

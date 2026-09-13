@@ -6,6 +6,7 @@ import {
   EMBEDDED_MIGRATION_001,
   EMBEDDED_SEED_SQL,
   EMBEDDED_MIGRATION_002,
+  EMBEDDED_MIGRATION_003,
 } from "./embedded-migrations";
 
 declare global {
@@ -231,7 +232,25 @@ async function initSchema(db: PGlite) {
     await db.exec(cleanSqlForPglite(sql002));
   }
 
-  // 5. Seed initial employees & users for government & citizen
+  // 5. Migration 003 (Supabase Auth, RLS Policies, Profiles, Addresses)
+  let sql003 = EMBEDDED_MIGRATION_003;
+  if (!isServerless) {
+    try {
+      const sql003Path = path.resolve(process.cwd(), "supabase/migrations/003_supabase_auth_rls.sql");
+      if (fs.existsSync(sql003Path)) {
+        sql003 = fs.readFileSync(sql003Path, "utf8");
+      }
+    } catch {}
+  }
+  if (sql003) {
+    try {
+      await db.exec(cleanSqlForPglite(sql003));
+    } catch (e: any) {
+      console.warn("[pg-db] Migration 003 non-fatal notice:", e.message);
+    }
+  }
+
+  // 6. Seed initial employees & users for government & citizen
   await seedInitialData(db);
 }
 

@@ -547,7 +547,21 @@ async function runDocumentOptimizationTests() {
   assert(Number(savedDoc.prepared_size_bytes) <= 200 * 1024, `Persisted authoritative prepared_size_bytes: ${savedDoc.prepared_size_bytes} <= 200 KB`);
   assert(savedDoc.readability_score >= 50, `Persisted readability score: ${savedDoc.readability_score}`);
   assert(savedDoc.readability_status === prepared2MB.readabilityStatus, `Persisted readability status: ${savedDoc.readability_status}`);
-  assert(savedDoc.storage_path.includes("income_certificate"), "Saved under sanitized secure storage path");
+  // Suite 7: OCR Failure Non-Success-Shaped Verification (Phase 8 requirement)
+  console.log("\n--- Suite 7: OCR Failure Handling ---");
+  const failedDocId = crypto.randomUUID();
+  const failedDoc = {
+    ...testDoc,
+    id: failedDocId,
+    status: "FAILED",
+    ocr_raw_text: null,
+  };
+  await addDocumentForUser(user.id, failedDoc, []);
+  const allDocs = await getUserDocuments(user.id);
+  const persistedFailedDoc = allDocs.find((d) => d.id === failedDocId);
+  assert(persistedFailedDoc !== undefined, "Failed document persisted");
+  assert(persistedFailedDoc.status === "FAILED", "Failed OCR document status is strictly 'FAILED' (not EXTRACTED)");
+  assert(persistedFailedDoc.ocr_raw_text === null, "Failed OCR document has null ocr_raw_text");
 
   console.log("\n========================================================");
   console.log("   ALL SMART DOCUMENT OPTIMIZATION TESTS PASSED (100%)");

@@ -5,6 +5,7 @@ import { verifyOfficialUrl } from "../src/lib/registry/official-domain-guard.ts"
 import { verifiedServiceById, VERIFIED_SERVICES } from "../src/lib/registry/verified-service-registry.ts";
 import { GET, POST } from "../src/app/api/agent/autofill/route.ts";
 import { INITIAL_PROFILE_FIELDS, DEFAULT_USER } from "../src/lib/mock-data/initial-state.ts";
+import { signSessionToken } from "../src/lib/server/db.ts";
 
 console.log("=== SEVA SAARTHI AUTOFILL VERIFICATION SUITE ===\n");
 
@@ -38,21 +39,45 @@ assert.equal(httpCheck.allowed, false, "Insecure HTTP must be rejected");
 console.log("✓ Official domain guard correctly allows verified HTTPS portals and blocks fake/insecure URLs.");
 
 // TEST 3: GET /api/agent/autofill
-console.log("\nTest 3: Verifying GET /api/agent/autofill...");
-const mockGetReq = new Request("http://localhost:3000/api/agent/autofill", {
+console.log("\nTest 3: Verifying GET /api/agent/autofill auth guard & authenticated retrieval...");
+// 3A: Verify unauthenticated GET is blocked with 401
+const unauthGetReq = new Request("http://localhost:3000/api/agent/autofill", {
   method: "GET",
   headers: { "Content-Type": "application/json" },
 });
-const getRes = await GET(mockGetReq);
+const unauthGetRes = await GET(unauthGetReq);
+assert.equal(unauthGetRes.status, 401, "Unauthenticated GET /api/agent/autofill must return 401");
+const unauthGetData = await unauthGetRes.json();
+assert.equal(unauthGetData.success, false);
+console.log("✓ Security Check: Unauthenticated GET /api/agent/autofill correctly rejected with 401.");
+
+// 3B: Verify authenticated GET succeeds with 200
+const testCitizenToken = signSessionToken({
+  userId: "u_0bc5a3b6-f059-4ab2-9870-46a9c25178b7",
+  name: "Sai Sankeerth",
+  email: "sankeerths615@gmail.com",
+  phone: "9876543210",
+  role: "Applicant / Citizen",
+});
+
+const authGetReq = new Request("http://localhost:3000/api/agent/autofill", {
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${testCitizenToken}`,
+    "Cookie": `FORMLY_CITIZEN_SESSION=${testCitizenToken}`,
+  },
+});
+const getRes = await GET(authGetReq);
+assert.equal(getRes.status, 200, "Authenticated GET must return 200");
 const getData = await getRes.json();
-console.log("getData received:", JSON.stringify(getData));
 assert.equal(getData.success, true);
 assert(getData.data.canonicalFields.full_name, "Full name must be present");
 assert(getData.data.canonicalFields.date_of_birth, "DOB must be present");
 assert(getData.data.canonicalFields.aadhaar_number, "Aadhaar must be present");
 assert(getData.data.canonicalFields.bank_account_no, "Bank account must be present");
 assert(getData.data.canonicalFields.college_name, "College name must be present");
-console.log(`✓ GET returned ${Object.keys(getData.data.canonicalFields).length} canonical profile fields successfully.`);
+console.log(`✓ Authenticated GET returned ${Object.keys(getData.data.canonicalFields).length} canonical profile fields successfully.`);
 
 // TEST 4: POST /api/agent/autofill with MAP_FIELDS
 console.log("\nTest 4: Verifying MAP_FIELDS action in /api/agent/autofill...");
@@ -78,7 +103,8 @@ const mockFormFields = [
   { id: "f19", name: "last_name", label: "Last Name / Surname", type: "text" },
 ];
 
-const mockMapReq = new Request("http://localhost:3000/api/agent/autofill", {
+// 4A: Unauthenticated MAP_FIELDS blocked
+const unauthMapReq = new Request("http://localhost:3000/api/agent/autofill", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
@@ -86,7 +112,24 @@ const mockMapReq = new Request("http://localhost:3000/api/agent/autofill", {
     fields: mockFormFields,
   }),
 });
-const mapRes = await POST(mockMapReq);
+const unauthMapRes = await POST(unauthMapReq);
+assert.equal(unauthMapRes.status, 401, "Unauthenticated MAP_FIELDS must return 401");
+console.log("✓ Security Check: Unauthenticated MAP_FIELDS correctly blocked with 401.");
+
+// 4B: Authenticated MAP_FIELDS succeeds
+const authMapReq = new Request("http://localhost:3000/api/agent/autofill", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${testCitizenToken}`,
+    "Cookie": `FORMLY_CITIZEN_SESSION=${testCitizenToken}`,
+  },
+  body: JSON.stringify({
+    action: "MAP_FIELDS",
+    fields: mockFormFields,
+  }),
+});
+const mapRes = await POST(authMapReq);
 assert.equal(mapRes.status, 200);
 const mapData = await mapRes.json();
 assert.equal(mapData.success, true);
@@ -143,7 +186,9 @@ console.log(`✓ MAP_FIELDS correctly matched ${mapData.matchedCount} safe field
 
 // TEST 5: POST /api/agent/autofill with START_AGENT
 console.log("\nTest 5: Verifying START_AGENT handoff action...");
-const mockStartReq = new Request("http://localhost:3000/api/agent/autofill", {
+
+// 5A: Unauthenticated START_AGENT blocked
+const unauthStartReq = new Request("http://localhost:3000/api/agent/autofill", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
@@ -154,7 +199,27 @@ const mockStartReq = new Request("http://localhost:3000/api/agent/autofill", {
     },
   }),
 });
-const startRes = await POST(mockStartReq);
+const unauthStartRes = await POST(unauthStartReq);
+assert.equal(unauthStartRes.status, 401, "Unauthenticated START_AGENT must return 401");
+console.log("✓ Security Check: Unauthenticated START_AGENT correctly blocked with 401.");
+
+// 5B: Authenticated START_AGENT succeeds
+const authStartReq = new Request("http://localhost:3000/api/agent/autofill", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${testCitizenToken}`,
+    "Cookie": `FORMLY_CITIZEN_SESSION=${testCitizenToken}`,
+  },
+  body: JSON.stringify({
+    action: "START_AGENT",
+    payload: {
+      serviceId: "s001",
+      portalUrl: "https://scholarships.gov.in",
+    },
+  }),
+});
+const startRes = await POST(authStartReq);
 assert.equal(startRes.status, 200);
 const startData = await startRes.json();
 assert.equal(startData.success, true);

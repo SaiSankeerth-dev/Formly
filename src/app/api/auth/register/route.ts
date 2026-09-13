@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { registerUser } from "@/lib/server/db";
 
 export async function POST(request: Request) {
@@ -16,36 +17,79 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Password must be at least 6 characters" }, { status: 400 });
     }
 
-    const { user, token } = await registerUser(name, email, password, phone);
+    const trimmedEmail = email.trim().toLowerCase();
+    const origin = new URL(request.url).origin;
+
+    // 1. Primary: Supabase Auth signUp
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.signUp({
+      email: trimmedEmail,
+      password,
+      options: {
+        data: {
+          full_name: name.trim(),
+          phone: phone?.trim() || "",
+        },
+        emailRedirectTo: `${origin}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+    }
+
+    const authUser = data?.user;
+    const userId = authUser?.id;
+
+    // 2. Attempt automatic profile initialization in public.profiles
+    if (userId) {
+      try {
+        await supabase.from("profiles").upsert(
+          {
+            id: userId,
+            user_id: userId,
+            full_name: name.trim(),
+            phone: phone?.trim() || "",
+          },
+          { onConflict: "id" }
+        );
+      } catch {
+        // Table may be populated by trigger or created later
+      }
+    }
+
+    // 3. Keep local DB in sync for hybrid offline/testing resilience
+    let localToken = "";
+    try {
+      const localResult = await registerUser(name.trim(), trimmedEmail, password, phone);
+      localToken = localResult.token;
+    } catch {}
 
     const response = NextResponse.json({
       success: true,
       message: "Account created successfully",
-      user,
-      token,
+      user: {
+        id: userId || "",
+        name: name.trim(),
+        email: trimmedEmail,
+        phone: phone?.trim() || "",
+        role: "CITIZEN",
+      },
     });
 
-    // Set secure HTTP cookie
-    response.cookies.set({
-      name: "FORMLY_CITIZEN_SESSION",
-      value: token,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-      path: "/",
-    });
+    if (localToken) {
+      response.cookies.set({
+        name: "FORMLY_CITIZEN_SESSION",
+        value: localToken,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 30 * 24 * 60 * 60,
+        path: "/",
+      });
+    }
 
-    response.cookies.set({
-      name: "seva_saarthi_session",
-      value: token,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-      path: "/",
-    });
-
+    // Clear any government cookies
     response.cookies.delete("FORMLY_GOV_SESSION");
     response.cookies.delete("formly_gov_session");
 

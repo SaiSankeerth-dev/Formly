@@ -1,27 +1,12 @@
 import { NextResponse } from "next/server";
 import {
-  authenticateSession,
   getUserProfileFields,
   getUserDocuments,
   getUserRequirementStatuses,
   recomputeRequirementStatuses,
 } from "@/lib/server/db";
 import { INITIAL_SERVICES, INITIAL_REQUIREMENTS } from "@/lib/mock-data/initial-state";
-import { cookies } from "next/headers";
-
-async function getAuthenticatedUser(request: Request) {
-  const cookieStore = await cookies();
-  const token =
-    cookieStore.get("FORMLY_CITIZEN_SESSION")?.value ||
-    cookieStore.get("formly_citizen_session")?.value ||
-    cookieStore.get("seva_saarthi_session")?.value ||
-    (request.headers.get("Authorization")?.startsWith("Bearer ")
-      ? request.headers.get("Authorization")?.substring(7)
-      : null);
-
-  if (!token) return null;
-  return authenticateSession(token);
-}
+import { getAuthenticatedCitizenUser } from "@/lib/server/auth";
 
 export async function GET(
   request: Request,
@@ -31,7 +16,7 @@ export async function GET(
   const service = INITIAL_SERVICES.find((s) => s.id === resolvedParams.id) || INITIAL_SERVICES[0];
   const reqs = INITIAL_REQUIREMENTS.filter((r) => r.service_id === service.id);
 
-  const user = await getAuthenticatedUser(request);
+  const user = await getAuthenticatedCitizenUser(request);
 
   let statuses = user ? await getUserRequirementStatuses(user.id, service.id) : [];
   if (user && statuses.length === 0) {

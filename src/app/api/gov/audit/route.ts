@@ -31,7 +31,32 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const entry = await addAuditLog(body);
+    const { action, applicationId, source, target, purpose, consentToken, result, details } = body;
+
+    if (!action || typeof action !== "string" || !applicationId || typeof applicationId !== "string") {
+      return NextResponse.json(
+        { success: false, error: "action and applicationId are required fields" },
+        { status: 400 }
+      );
+    }
+
+    const entry = await addAuditLog({
+      action: action.trim(),
+      applicationId: applicationId.trim(),
+      source: (typeof source === "string" && source.trim()) || "GOV_PORTAL",
+      target: (typeof target === "string" && target.trim()) || "APPLICATION_CASE",
+      purpose: (typeof purpose === "string" && purpose.trim()) || "Official officer action",
+      consentToken: typeof consentToken === "string" ? consentToken.trim() : undefined,
+      result: result === "FAILURE" ? "FAILURE" : "SUCCESS",
+      details: typeof details === "string" ? details : (details ? JSON.stringify(details) : "Official officer action recorded"),
+      requestId: (typeof body.requestId === "string" && body.requestId.trim()) || `REQ-${Math.floor(1000 + Math.random() * 9000)}`,
+      actor: {
+        id: auth.employee.employee_code || auth.employee.id,
+        name: auth.employee.full_name,
+        role: "OFFICER",
+      },
+    });
+
     return NextResponse.json({ success: true, logEntry: entry }, { status: 201 });
   } catch (error: any) {
     console.error("[API gov/audit POST]", error);
