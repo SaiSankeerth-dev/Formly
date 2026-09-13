@@ -68,51 +68,49 @@ export async function POST(request: Request) {
       return response;
     }
 
-    // 3. Fallback for pre-existing local development / test accounts (strictly non-production)
-    if (process.env.NODE_ENV !== "production") {
-      try {
-        const { user, token } = await loginUser(trimmedEmail, password);
-        const isGovRole =
-          user.role === "DEPARTMENT_OFFICER" ||
-          user.role === "DEPARTMENT_ADMIN" ||
-          user.role === "SYSTEM_ADMIN" ||
-          user.role === "OFFICER";
+    // 3. Fallback for pre-existing local database accounts
+    try {
+      const { user, token } = await loginUser(trimmedEmail, password);
+      const isGovRole =
+        user.role === "DEPARTMENT_OFFICER" ||
+        user.role === "DEPARTMENT_ADMIN" ||
+        user.role === "SYSTEM_ADMIN" ||
+        user.role === "OFFICER";
 
-        if (isGovRole) {
-          return NextResponse.json(
-            {
-              success: false,
-              error: "This account belongs to the government portal.",
-              isGovernment: true,
-              redirectTo: "/gov/login",
-            },
-            { status: 403 }
-          );
-        }
+      if (isGovRole) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "This account belongs to the government portal.",
+            isGovernment: true,
+            redirectTo: "/gov/login",
+          },
+          { status: 403 }
+        );
+      }
 
-        const response = NextResponse.json({
-          success: true,
-          message: "Login successful",
-          user,
-          token,
-        });
+      const response = NextResponse.json({
+        success: true,
+        message: "Login successful",
+        user,
+        token,
+      });
 
-        response.cookies.set({
-          name: "FORMLY_CITIZEN_SESSION",
-          value: token,
-          httpOnly: true,
-          secure: false,
-          sameSite: "lax",
-          path: "/",
-          maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined,
-        });
+      response.cookies.set({
+        name: "FORMLY_CITIZEN_SESSION",
+        value: token,
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+        path: "/",
+        maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined,
+      });
 
-        response.cookies.delete("FORMLY_GOV_SESSION");
-        response.cookies.delete("formly_gov_session");
+      response.cookies.delete("FORMLY_GOV_SESSION");
+      response.cookies.delete("formly_gov_session");
 
-        return response;
-      } catch {}
-    }
+      return response;
+    } catch {}
 
     // Return the real error message from Supabase Auth
     const errorMessage = error?.message || "Email or password is incorrect.";

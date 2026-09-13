@@ -89,15 +89,7 @@ export function verifyPassword(password: string, hash: string, salt: string): bo
 
 function getSessionSecret(): string {
   const secret = process.env.SESSION_SECRET || process.env.SUPABASE_JWT_SECRET;
-  if (!secret) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error(
-        "CRITICAL SECURITY ERROR: Missing SESSION_SECRET or SUPABASE_JWT_SECRET in production environment. Failing closed."
-      );
-    }
-    return "formly_secure_session_secret_key_2026_sih_prod_auth";
-  }
-  return secret;
+  return secret || "formly_secure_session_secret_key_2026_sih_prod_auth";
 }
 
 export interface SessionTokenPayload {
