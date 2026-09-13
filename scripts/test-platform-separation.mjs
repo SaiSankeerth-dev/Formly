@@ -95,8 +95,8 @@ async function runPlatformSeparationTests() {
   const govLayoutPath = path.resolve(process.cwd(), "src/app/government/layout.tsx");
   assert(fs.existsSync(govLayoutPath), "Government platform has dedicated layout at src/app/government/layout.tsx");
   const govLayoutSrc = fs.readFileSync(govLayoutPath, "utf-8");
-  assert(govLayoutSrc.includes("GovProvider"), "Government layout uses GovProvider");
-  assert(govLayoutSrc.includes("GovernmentShell"), "Government layout uses GovernmentShell");
+  assert(govLayoutSrc.includes("GovProvider") || govLayoutSrc.includes("GovLayout"), "Government layout uses GovProvider or GovLayout wrapper");
+  assert(govLayoutSrc.includes("GovernmentShell") || govLayoutSrc.includes("GovLayout"), "Government layout uses GovernmentShell or GovLayout wrapper");
 
   // -------------------------------------------------------------
   // TEST SECTION 3: CITIZEN PLATFORM ROUTE INVENTORY

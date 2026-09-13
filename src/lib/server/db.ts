@@ -560,7 +560,89 @@ export async function getUserProfileFields(userId: string): Promise<ProfileField
      FROM profile_fields WHERE user_id = $1`,
     [actorUuid]
   );
-  return results;
+
+  const existingKeys = new Set(results.map((r) => r.field_name));
+  const synthetic: ProfileField[] = [];
+  const now = new Date().toISOString();
+
+  try {
+    const profRows = await pgQuery(
+      `SELECT * FROM profiles WHERE id = $1 OR user_id = $1 LIMIT 1`,
+      [actorUuid]
+    );
+    if (profRows.length > 0) {
+      const p = profRows[0];
+      const addIfMissing = (fieldName: string, value: any) => {
+        if (value && String(value).trim() && !existingKeys.has(fieldName)) {
+          synthetic.push({
+            id: `syn_${fieldName}_${actorUuid}`,
+            user_id: actorUuid,
+            field_name: fieldName,
+            value: String(value).trim(),
+            source_document_id: null,
+            confidence: 1.0,
+            verified: true,
+            confirmed_at: now,
+            created_at: p.created_at || now,
+            updated_at: p.updated_at || now,
+          } as any);
+          existingKeys.add(fieldName);
+        }
+      };
+
+      addIfMissing("full_name", p.full_name);
+      addIfMissing("phone_number", p.phone);
+      if (p.date_of_birth) {
+        const dobStr = typeof p.date_of_birth === "string" 
+          ? p.date_of_birth.split("T")[0] 
+          : new Date(p.date_of_birth).toISOString().split("T")[0];
+        addIfMissing("date_of_birth", dobStr);
+      }
+      addIfMissing("gender", p.gender);
+      addIfMissing("occupation", p.occupation);
+      addIfMissing("education_degree", p.education);
+    }
+
+    const addrRows = await pgQuery(
+      `SELECT * FROM addresses WHERE user_id = $1 LIMIT 1`,
+      [actorUuid]
+    );
+    if (addrRows.length > 0) {
+      const a = addrRows[0];
+      const addIfMissing = (fieldName: string, value: any) => {
+        if (value && String(value).trim() && !existingKeys.has(fieldName)) {
+          synthetic.push({
+            id: `syn_${fieldName}_${actorUuid}`,
+            user_id: actorUuid,
+            field_name: fieldName,
+            value: String(value).trim(),
+            source_document_id: null,
+            confidence: 1.0,
+            verified: true,
+            confirmed_at: now,
+            created_at: a.created_at || now,
+            updated_at: a.updated_at || now,
+          } as any);
+          existingKeys.add(fieldName);
+        }
+      };
+
+      addIfMissing("state", a.state);
+      addIfMissing("district", a.district);
+      addIfMissing("mandal", a.mandal);
+      addIfMissing("village", a.village);
+      addIfMissing("permanent_address", a.address_line);
+      addIfMissing("pincode", a.pincode);
+      if (a.district || a.state) {
+        const loc = [a.district, a.state].filter(Boolean).join(", ");
+        addIfMissing("location", loc);
+      }
+    }
+  } catch (err) {
+    console.warn("[getUserProfileFields] Synthesis notice:", err);
+  }
+
+  return [...results, ...synthetic];
 }
 
 export async function updateUserProfileField(
@@ -588,6 +670,60 @@ export async function updateUserProfileField(
     RETURNING *`,
     [actorUuid, fieldName, value, sourceDocId, confidence, now]
   );
+
+  // Synchronize with profiles and addresses tables
+  try {
+    const trimmedVal = (value || "").trim();
+    if (["full_name", "phone", "phone_number", "mobile", "date_of_birth", "dob", "gender", "occupation", "education", "education_degree"].includes(fieldName)) {
+      await pgQuery(
+        `INSERT INTO profiles (id, user_id, full_name, phone, created_at, updated_at)
+         VALUES ($1, $1, '', '', NOW(), NOW())
+         ON CONFLICT (id) DO NOTHING`,
+        [actorUuid]
+      ).catch(() => {});
+
+      if (fieldName === "full_name") {
+        await pgQuery(`UPDATE profiles SET full_name = $2, updated_at = NOW() WHERE id = $1 OR user_id = $1`, [actorUuid, trimmedVal]).catch(() => {});
+        await pgQuery(`UPDATE users SET name = $2, "updatedAt" = NOW() WHERE id = $1`, [actorUuid, trimmedVal]).catch(() => {});
+      } else if (fieldName === "phone" || fieldName === "phone_number" || fieldName === "mobile") {
+        await pgQuery(`UPDATE profiles SET phone = $2, updated_at = NOW() WHERE id = $1 OR user_id = $1`, [actorUuid, trimmedVal]).catch(() => {});
+        await pgQuery(`UPDATE users SET phone = $2, "updatedAt" = NOW() WHERE id = $1`, [actorUuid, trimmedVal]).catch(() => {});
+      } else if (fieldName === "date_of_birth" || fieldName === "dob") {
+        await pgQuery(`UPDATE profiles SET date_of_birth = $2::date, updated_at = NOW() WHERE id = $1 OR user_id = $1`, [actorUuid, trimmedVal]).catch(() => {});
+      } else if (fieldName === "gender") {
+        await pgQuery(`UPDATE profiles SET gender = $2, updated_at = NOW() WHERE id = $1 OR user_id = $1`, [actorUuid, trimmedVal]).catch(() => {});
+      } else if (fieldName === "occupation") {
+        await pgQuery(`UPDATE profiles SET occupation = $2, updated_at = NOW() WHERE id = $1 OR user_id = $1`, [actorUuid, trimmedVal]).catch(() => {});
+      } else if (fieldName === "education" || fieldName === "education_degree") {
+        await pgQuery(`UPDATE profiles SET education = $2, updated_at = NOW() WHERE id = $1 OR user_id = $1`, [actorUuid, trimmedVal]).catch(() => {});
+      }
+    }
+
+    if (["state", "district", "mandal", "village", "permanent_address", "address", "address_line", "pincode", "location"].includes(fieldName)) {
+      await pgQuery(
+        `INSERT INTO addresses (user_id, created_at, updated_at)
+         VALUES ($1, NOW(), NOW())
+         ON CONFLICT DO NOTHING`,
+        [actorUuid]
+      ).catch(() => {});
+
+      if (fieldName === "state") {
+        await pgQuery(`UPDATE addresses SET state = $2, updated_at = NOW() WHERE user_id = $1`, [actorUuid, trimmedVal]).catch(() => {});
+      } else if (fieldName === "district") {
+        await pgQuery(`UPDATE addresses SET district = $2, updated_at = NOW() WHERE user_id = $1`, [actorUuid, trimmedVal]).catch(() => {});
+      } else if (fieldName === "mandal") {
+        await pgQuery(`UPDATE addresses SET mandal = $2, updated_at = NOW() WHERE user_id = $1`, [actorUuid, trimmedVal]).catch(() => {});
+      } else if (fieldName === "village") {
+        await pgQuery(`UPDATE addresses SET village = $2, updated_at = NOW() WHERE user_id = $1`, [actorUuid, trimmedVal]).catch(() => {});
+      } else if (fieldName === "permanent_address" || fieldName === "address" || fieldName === "address_line") {
+        await pgQuery(`UPDATE addresses SET address_line = $2, updated_at = NOW() WHERE user_id = $1`, [actorUuid, trimmedVal]).catch(() => {});
+      } else if (fieldName === "pincode") {
+        await pgQuery(`UPDATE addresses SET pincode = $2, updated_at = NOW() WHERE user_id = $1`, [actorUuid, trimmedVal]).catch(() => {});
+      }
+    }
+  } catch (syncErr) {
+    console.warn("[updateUserProfileField] Sync notice:", syncErr);
+  }
 
   return result[0] as any;
 }
@@ -1075,6 +1211,7 @@ let exceptionsMemory: ExceptionRecord[] = getInitialExceptions();
 let connectorRequestsMemory: ConnectorRequestRecord[] = getInitialConnectorRequests();
 let panSequence = 5;
 let schSequence = 2346;
+let auditSequence = 9100;
 
 export function resetPanDemoState(): boolean & Promise<boolean> {
   panApplicationsMemory = getInitialPanApplications();
@@ -1086,6 +1223,7 @@ export function resetPanDemoState(): boolean & Promise<boolean> {
   connectorRequestsMemory = getInitialConnectorRequests();
   panSequence = 5;
   schSequence = 2346;
+  auditSequence = 9100;
 
   const promise = (async () => {
     try {
@@ -1211,8 +1349,8 @@ export function createPanApplication(data: {
     status: "ACTION_REQUIRED",
     priority: "HIGH",
     slaDeadline: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
-    assignedOfficerId: isScholarship ? "OFF-SCH-5001" : "OFF-PAN-7042",
-    assignedOfficerName: isScholarship ? "Test Officer" : "Officer Sai Sankeerth",
+    assignedOfficerId: "OFF-SAN-7043",
+    assignedOfficerName: "Officer Sai Sankeerth",
     consent: {
       granted: data.consentGranted,
       purpose: isScholarship
@@ -1951,11 +2089,15 @@ export async function createNotification(data: {
 // Audit Logs & Tamper Evident Hash
 // ----------------------------------------------------------------------
 
-export function addAuditLog(entry: Omit<AuditLogRecord, "id" | "timestamp">): any {
+export function addAuditLog(entry: Omit<AuditLogRecord, "id" | "timestamp"> & { id?: string; uuid?: string }): any {
   const now = new Date().toISOString();
-  const id = `AUD-${Math.floor(1000 + Math.random() * 9000)}`;
+  auditSequence += 1;
+  const uniqueToken = crypto.randomBytes(3).toString("hex").toUpperCase();
+  const id = entry.id || `AUD-${auditSequence}-${uniqueToken}`;
+  const uuid = entry.uuid || crypto.randomUUID();
   const fullEntry: AuditLogRecord = {
     id,
+    uuid,
     timestamp: now,
     ...entry,
   };
@@ -1989,6 +2131,9 @@ export function getAuditLogs(applicationId?: string): AuditLogRecord[] & Promise
     : [...auditLogsMemory];
 
   for (const l of syncLogs) {
+    if (!l.uuid) {
+      l.uuid = crypto.randomUUID();
+    }
     if (!l.tamperHash) {
       l.tamperHash = calculateAuditTamperHash(l);
     }
@@ -2038,7 +2183,14 @@ export function addConnectorRequest(record: any): any {
 // Idempotency Helpers
 // ----------------------------------------------------------------------
 
+const idempotencyKeysMemory = new Map<string, { operation: string; applicationId?: string; response: any; createdAt: number }>();
+
 export async function checkIdempotency(key: string, operation: string, applicationId?: string): Promise<{ isDuplicate: boolean; response?: any }> {
+  const mem = idempotencyKeysMemory.get(key);
+  if (mem && mem.operation === operation) {
+    return { isDuplicate: true, response: mem.response };
+  }
+
   try {
     await getAuthoritativeDb();
     const res = await pgQuery(
@@ -2046,15 +2198,26 @@ export async function checkIdempotency(key: string, operation: string, applicati
       [key, operation]
     );
     if (res.length > 0) {
-      return { isDuplicate: true, response: res[0].response_snapshot };
+      const snap = typeof res[0].response_snapshot === "string" ? JSON.parse(res[0].response_snapshot) : res[0].response_snapshot;
+      return { isDuplicate: true, response: snap };
     }
   } catch {}
   return { isDuplicate: false };
 }
 
 export async function recordIdempotency(key: string, operation: string, applicationId: string | null, response: any): Promise<void> {
+  idempotencyKeysMemory.set(key, { operation, applicationId: applicationId || undefined, response, createdAt: Date.now() });
   try {
-    await getAuthoritativeDb();
+    const db = await getAuthoritativeDb();
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS idempotency_keys (
+        key VARCHAR(255) PRIMARY KEY,
+        operation VARCHAR(100) NOT NULL,
+        application_id VARCHAR(255),
+        response_snapshot JSONB,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `).catch(() => {});
     await pgQuery(
       `INSERT INTO idempotency_keys (key, operation, application_id, response_snapshot)
        VALUES ($1, $2, $3, $4)

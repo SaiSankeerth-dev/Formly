@@ -60,25 +60,19 @@ export default function HomePage() {
     try {
       const res = await fetch("/api/dashboard");
       if (res.status === 401) {
-        // Session missing or expired -> purge stale state and redirect directly to login
         if (typeof window !== "undefined") {
           localStorage.removeItem("seva_saarthi_active_session");
           localStorage.removeItem("seva_saarthi_active_profile");
         }
-        router.push("/login");
+        router.replace("/login");
         return;
       }
 
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          // First-login onboarding detection: If citizen profile is not yet complete, route to wizard
-          if (data.profile && !data.profile.completed) {
-            const step = data.profile.currentStep || 1;
-            router.push(`/onboarding/profile?step=${step}`);
-            return;
-          }
-
+          // Store dashboard data even if profile incomplete — show dashboard with banner instead of forced redirect
+          // User can complete profile via onboarding link, but dashboard remains accessible
           setDashboardData(data);
           const recents = Array.isArray(data.recentServices)
             ? data.recentServices
@@ -102,14 +96,8 @@ export default function HomePage() {
   }, [router]);
 
   useEffect(() => {
-    if (!isLoadingAuth) {
-      if (!user) {
-        router.push("/login");
-      } else {
-        fetchDashboardData();
-      }
-    }
-  }, [user, isLoadingAuth, router, fetchDashboardData]);
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   const handleOpenService = (service: ServiceDetail) => {
     setSelectedService(service);
@@ -230,9 +218,19 @@ export default function HomePage() {
 
   return (
     <div className="space-y-6 pb-12 w-full max-w-full overflow-x-hidden">
+      {dashboardData?.profile && !dashboardData.profile.completed && (
+        <div className="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-600" />
+            <span className="font-semibold text-slate-800">Complete your profile to get 100% readiness on all services.</span>
+            <span className="text-slate-500 hidden sm:inline">Step {dashboardData.profile.currentStep} of 4</span>
+          </div>
+          <button onClick={() => router.push(`/onboarding/profile?step=${dashboardData.profile.currentStep}`)} className="px-4 py-2 bg-[#2F27CE] text-white rounded-xl font-bold hover:bg-[#231CA8]">Complete Now</button>
+        </div>
+      )}
       {/* ========================================================
-          1. HERO BANNER matching Reference Image
-          ======================================================== */}
+           1. HERO BANNER matching Reference Image
+           ======================================================== */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#F0F4FF] via-[#F8FAFF] to-[#FFFFFF] border border-blue-100/80 p-6 sm:p-8 md:p-10 shadow-xs">
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
           {/* Left Text & Search Content */}

@@ -76,7 +76,11 @@ export async function getAuthenticatedCitizenUser(
     let cookieStore: any = null;
     try {
       cookieStore = await cookies();
-    } catch {}
+    } catch {
+      if (request && "cookies" in request && typeof (request as any).cookies?.getAll === "function") {
+        cookieStore = (request as any).cookies;
+      }
+    }
 
     const supabase = await createClient(cookieStore);
     const { data: { user: authUser }, error } = await supabase.auth.getUser();
@@ -113,15 +117,54 @@ export async function getAuthenticatedCitizenUser(
 
       // Ensure user record exists in PostgreSQL to satisfy relational foreign keys
       try {
-        await pgQuery(
-          `INSERT INTO users (id, name, email, phone, "passwordHash", salt, role, "createdAt")
-           VALUES ($1, $2, $3, $4, 'supabase_auth', 'supabase_auth', 'Applicant / Citizen', $5)
-           ON CONFLICT (id) DO UPDATE SET 
-             name = COALESCE(NULLIF(EXCLUDED.name, ''), users.name),
-             email = COALESCE(NULLIF(EXCLUDED.email, ''), users.email),
-             phone = COALESCE(NULLIF(EXCLUDED.phone, ''), users.phone)`,
-          [citizenUser.id, citizenUser.name, citizenUser.email, citizenUser.phone, citizenUser.createdAt]
+        const existingByEmail = await pgQuery<any>(
+          `SELECT id FROM users WHERE LOWER(email) = LOWER($1) AND id != $2`,
+          [citizenUser.email, citizenUser.id]
         );
+        if (existingByEmail.length > 0) {
+          const oldId = existingByEmail[0].id;
+          await pgQuery(`UPDATE applications SET user_id = $1, citizen_user_id = $1 WHERE user_id = $2 OR citizen_user_id = $2`, [citizenUser.id, oldId]).catch(() => {});
+          await pgQuery(`UPDATE documents SET user_id = $1 WHERE user_id = $2`, [citizenUser.id, oldId]).catch(() => {});
+          await pgQuery(`UPDATE profile_fields SET user_id = $1 WHERE user_id = $2`, [citizenUser.id, oldId]).catch(() => {});
+          await pgQuery(`UPDATE addresses SET user_id = $1 WHERE user_id = $2`, [citizenUser.id, oldId]).catch(() => {});
+          await pgQuery(`UPDATE sessions SET "userId" = $1 WHERE "userId" = $2`, [citizenUser.id, oldId]).catch(() => {});
+          await pgQuery(`UPDATE notifications SET recipient_id = $1 WHERE recipient_id = $2`, [citizenUser.id, oldId]).catch(() => {});
+          await pgQuery(
+            `UPDATE profiles
+             SET
+               full_name = COALESCE(NULLIF(profiles.full_name, ''), old_p.full_name),
+               phone = COALESCE(NULLIF(profiles.phone, ''), old_p.phone),
+               date_of_birth = COALESCE(profiles.date_of_birth, old_p.date_of_birth),
+               gender = COALESCE(NULLIF(profiles.gender, ''), old_p.gender),
+               occupation = COALESCE(NULLIF(profiles.occupation, ''), old_p.occupation),
+               education = COALESCE(NULLIF(profiles.education, ''), old_p.education),
+               avatar_url = COALESCE(NULLIF(profiles.avatar_url, ''), old_p.avatar_url)
+             FROM (SELECT * FROM profiles WHERE id = $2 OR user_id = $2) AS old_p
+             WHERE profiles.id = $1 OR profiles.user_id = $1`,
+            [citizenUser.id, oldId]
+          ).catch(() => {});
+          await pgQuery(`DELETE FROM profiles WHERE (id = $2 OR user_id = $2) AND id != $1 AND user_id != $1`, [citizenUser.id, oldId]).catch(() => {});
+          await pgQuery(`UPDATE profiles SET id = $1, user_id = $1 WHERE id = $2 OR user_id = $2`, [citizenUser.id, oldId]).catch(() => {});
+          await pgQuery(
+            `UPDATE users SET
+               id = $1,
+               name = COALESCE(NULLIF($2, ''), name),
+               phone = COALESCE(NULLIF($3, ''), phone),
+               "updatedAt" = NOW()
+             WHERE id = $4`,
+            [citizenUser.id, citizenUser.name, citizenUser.phone, oldId]
+          ).catch(() => {});
+        } else {
+          await pgQuery(
+            `INSERT INTO users (id, name, email, phone, "passwordHash", salt, role, "createdAt")
+             VALUES ($1, $2, $3, $4, 'supabase_auth', 'supabase_auth', 'Applicant / Citizen', $5)
+             ON CONFLICT (id) DO UPDATE SET 
+               name = COALESCE(NULLIF(EXCLUDED.name, ''), users.name),
+               email = COALESCE(NULLIF(EXCLUDED.email, ''), users.email),
+               phone = COALESCE(NULLIF(EXCLUDED.phone, ''), users.phone)`,
+            [citizenUser.id, citizenUser.name, citizenUser.email, citizenUser.phone, citizenUser.createdAt]
+          ).catch(() => {});
+        }
         await pgQuery(
           `INSERT INTO auth.users (id, email) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING`,
           [citizenUser.id, citizenUser.email]
@@ -134,7 +177,11 @@ export async function getAuthenticatedCitizenUser(
     // Non-fatal, fallback to local session
   }
 
-  // 2. Secondary / Local fallback for offline/seeded test accounts
+  // 2. Secondary / Local fallback for offline/seeded test accounts — disabled in production
+  const allowFallback = process.env.NODE_ENV !== "production" && process.env.VERCEL_ENV !== "production" && process.env.ALLOW_DEMO_FALLBACK !== "false";
+  if (!allowFallback) {
+    return null;
+  }
   let cookieStore: any = null;
   try {
     cookieStore = await cookies();
@@ -189,8 +236,8 @@ export async function validateGovSession(request: NextRequest): Promise<GovSessi
     };
   }
 
-  const validRoles = ["DEPARTMENT_OFFICER", "DEPARTMENT_ADMIN", "SYSTEM_ADMIN"];
-  if (!validRoles.includes(employee.role)) {
+  const validRoles = ["DEPARTMENT_OFFICER", "DEPARTMENT_ADMIN", "SYSTEM_ADMIN", "OFFICER"];
+  if (!validRoles.includes(employee.role as string)) {
     return {
       success: false,
       status: 403,
@@ -198,7 +245,8 @@ export async function validateGovSession(request: NextRequest): Promise<GovSessi
     };
   }
 
-  return { success: true, user, employee };
+  const normalizedRole = ((employee.role as string) === "OFFICER" ? "DEPARTMENT_OFFICER" : employee.role) as "DEPARTMENT_OFFICER" | "DEPARTMENT_ADMIN" | "SYSTEM_ADMIN";
+  return { success: true, user, employee: { ...employee, role: normalizedRole } };
 }
 
 export async function validateGovRole(
@@ -208,7 +256,12 @@ export async function validateGovRole(
   const auth = await validateGovSession(request);
   if (!auth.success) return auth;
 
-  if (!allowedRoles.includes(auth.employee.role)) {
+  const effectiveRole = (auth.employee.role as string) === "OFFICER" ? "DEPARTMENT_OFFICER" : auth.employee.role;
+  const normalizedAllowed = allowedRoles.flatMap((r) =>
+    r === "DEPARTMENT_OFFICER" ? ["DEPARTMENT_OFFICER", "OFFICER"] : [r]
+  );
+
+  if (!normalizedAllowed.includes(auth.employee.role) && !allowedRoles.includes(effectiveRole)) {
     return {
       success: false,
       status: 403,

@@ -71,10 +71,10 @@ function buildCanonicalMapping(rawFields: { field_name: string; value: string }[
   const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
   const middleName = nameParts.length > 2 ? nameParts.slice(1, -1).join(" ") : "";
 
-  // Disaggregate father name
-  const fatherName = map.father_name || map.guardian_name || "V. Ramesh";
+  // Disaggregate father name — no seeded fallback, empty if not provided
+  const fatherName = map.father_name || map.guardian_name || "";
   const fParts = fatherName ? fatherName.trim().split(/\s+/) : [];
-  const fatherFirstName = fParts[0] || fatherName;
+  const fatherFirstName = fParts[0] || fatherName || "";
   const fatherLastName = fParts.length > 1 ? fParts[fParts.length - 1] : "";
 
   // Disaggregate mother name
@@ -147,25 +147,25 @@ function buildCanonicalMapping(rawFields: { field_name: string; value: string }[
     mother_name: motherName,
     mother_first_name: motherFirstName,
     mother_last_name: motherLastName,
-    annual_income: map.annual_income || "180000",
-    income: map.annual_income || "180000",
-    caste_category: map.caste_category || "OBC",
-    category: map.caste_category || "OBC",
-    college_name: map.college_name || "National Institute of Technology",
-    education_degree: map.education_degree || "B.Tech Computer Science and Engineering",
-    roll_number: map.roll_number || "22071A0589",
-    current_year: map.current_year || "3rd Year / 5th Sem",
-    tenth_percentage: map.tenth_percentage || "94.2%",
-    twelfth_percentage: map.twelfth_percentage || "88.4%",
-    bank_name: map.bank_name || "State Bank of India",
-    bank_account_no: map.bank_account_no || "38920194821",
-    bank_ifsc: map.bank_ifsc || "SBIN0020184",
-    account_holder_name: map.account_holder_name || fullName,
-    district: map.district || "Ranga Reddy",
-    mandal: map.mandal || "Serilingampally",
-    location: map.location || "Hyderabad, Telangana",
-    city: map.location || "Hyderabad, Telangana",
-    dbt_seeding_status: map.dbt_seeding_status || "Seeded (Active)",
+    annual_income: map.annual_income || "",
+    income: map.annual_income || "",
+    caste_category: map.caste_category || "",
+    category: map.caste_category || "",
+    college_name: map.college_name || "",
+    education_degree: map.education_degree || "",
+    roll_number: map.roll_number || "",
+    current_year: map.current_year || "",
+    tenth_percentage: map.tenth_percentage || "",
+    twelfth_percentage: map.twelfth_percentage || "",
+    bank_name: map.bank_name || "",
+    bank_account_no: map.bank_account_no || "",
+    bank_ifsc: map.bank_ifsc || "",
+    account_holder_name: map.account_holder_name || fullName || "",
+    district: map.district || "",
+    mandal: map.mandal || "",
+    location: map.location || "",
+    city: map.location || "",
+    dbt_seeding_status: map.dbt_seeding_status || "",
   };
 
   const applicant = {
@@ -337,16 +337,20 @@ export async function POST(request: Request) {
         );
       }
 
-      let fields = body.payload?.profileFields || body.profileFields;
-      if (!fields || !Array.isArray(fields) || fields.length === 0) {
-        try {
-          const dbFields = await getUserProfileFields(user.id);
-          if (dbFields && dbFields.length > 0) {
-            fields = dbFields as any;
-          }
-        } catch {}
-        if (!fields || fields.length === 0) {
-          fields = [];
+      // Authoritative: server DB is source of truth, client payload is never trusted as primary
+      let fields: any[] = [];
+      try {
+        const dbFields = await getUserProfileFields(user.id);
+        if (dbFields && Array.isArray(dbFields) && dbFields.length > 0) {
+          fields = dbFields as any;
+        }
+      } catch {}
+      // Only allow client fields if server has no data (explicitly empty) — still validated length-bounded
+      if (fields.length === 0) {
+        const clientFields = body.payload?.profileFields || body.profileFields;
+        if (Array.isArray(clientFields) && clientFields.length > 0 && clientFields.length <= 100) {
+          const sanitized = clientFields.filter((f: any) => f && typeof f.field_name === 'string' && typeof f.value === 'string' && f.value.length <= 500);
+          if (sanitized.length > 0) fields = sanitized;
         }
       }
 
@@ -374,16 +378,18 @@ export async function POST(request: Request) {
         );
       }
 
-      let fields = body.payload?.profileFields || body.profileFields;
-      if (!fields || !Array.isArray(fields) || fields.length === 0) {
-        try {
-          const dbFields = await getUserProfileFields(user.id);
-          if (dbFields && dbFields.length > 0) {
-            fields = dbFields as any;
-          }
-        } catch {}
-        if (!fields || fields.length === 0) {
-          fields = [];
+      let fields: any[] = [];
+      try {
+        const dbFields = await getUserProfileFields(user.id);
+        if (dbFields && Array.isArray(dbFields) && dbFields.length > 0) {
+          fields = dbFields as any;
+        }
+      } catch {}
+      if (fields.length === 0) {
+        const clientFields = body.payload?.profileFields || body.profileFields;
+        if (Array.isArray(clientFields) && clientFields.length > 0 && clientFields.length <= 100) {
+          const sanitized = clientFields.filter((f: any) => f && typeof f.field_name === 'string' && typeof f.value === 'string' && f.value.length <= 500);
+          if (sanitized.length > 0) fields = sanitized;
         }
       }
 
@@ -417,12 +423,12 @@ export async function POST(request: Request) {
         }
 
         const canonicalKey = matchInputToCanonical(name, label, placeholder);
-        if (canonicalKey && canonical[canonicalKey]) {
+        if (canonicalKey) {
           return {
             elementId: id,
             canonicalField: canonicalKey,
             label,
-            value: canonical[canonicalKey],
+            value: canonical[canonicalKey] || (canonicalKey === "district" ? "Hyderabad" : null),
             confidence: 0.95,
             safeToFill: true,
           };
@@ -470,16 +476,18 @@ export async function POST(request: Request) {
         );
       }
 
-      let fields = body.payload?.profileFields;
-      if (!fields || !Array.isArray(fields) || fields.length === 0) {
-        try {
-          const dbFields = await getUserProfileFields(user.id);
-          if (dbFields && dbFields.length > 0) {
-            fields = dbFields as any;
-          }
-        } catch {}
-        if (!fields) {
-          fields = [];
+      let fields: any[] = [];
+      try {
+        const dbFields = await getUserProfileFields(user.id);
+        if (dbFields && Array.isArray(dbFields) && dbFields.length > 0) {
+          fields = dbFields as any;
+        }
+      } catch {}
+      if (fields.length === 0) {
+        const clientFields = body.payload?.profileFields;
+        if (Array.isArray(clientFields) && clientFields.length > 0 && clientFields.length <= 100) {
+          const sanitized = clientFields.filter((f: any) => f && typeof f.field_name === 'string' && typeof f.value === 'string' && f.value.length <= 500);
+          if (sanitized.length > 0) fields = sanitized;
         }
       }
 
@@ -506,8 +514,14 @@ export async function POST(request: Request) {
       });
     }
 
-    // 4. CONFIRM_SUBMIT - Safety boundary disclaimer
+    // 4. CONFIRM_SUBMIT - Safety boundary disclaimer (auth required)
     if (action === "CONFIRM_SUBMIT") {
+      if (!user) {
+        return NextResponse.json(
+          { success: false, error: "Authentication required to confirm submission." },
+          { status: 401 }
+        );
+      }
       return NextResponse.json(
         {
           success: false,

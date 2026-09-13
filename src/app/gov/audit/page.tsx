@@ -25,10 +25,21 @@ export default function AuditCenterPage() {
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
 
   const filteredLogs = useMemo(() => {
-    return auditLogs.filter((log) => {
+    const seen = new Set<string>();
+    const deduplicated: typeof auditLogs = [];
+    for (const log of auditLogs) {
+      const key = log.uuid || log.id;
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduplicated.push(log);
+      }
+    }
+
+    return deduplicated.filter((log) => {
       const matchesSearch =
         searchQuery.trim() === "" ||
         log.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (log.uuid && log.uuid.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (log.applicationId && log.applicationId.toLowerCase().includes(searchQuery.toLowerCase())) ||
         log.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
         log.details.toLowerCase().includes(searchQuery.toLowerCase());
@@ -40,8 +51,8 @@ export default function AuditCenterPage() {
     });
   }, [auditLogs, searchQuery, actorFilter]);
 
-  const toggleExpand = (id: string) => {
-    setExpandedLogId(expandedLogId === id ? null : id);
+  const toggleExpand = (uniqueKey: string) => {
+    setExpandedLogId(expandedLogId === uniqueKey ? null : uniqueKey);
   };
 
   const copyHash = (hash?: string) => {
@@ -118,12 +129,13 @@ export default function AuditCenterPage() {
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
               {filteredLogs.map((log) => {
-                const isExpanded = expandedLogId === log.id;
+                const uniqueKey = log.uuid || log.id;
+                const isExpanded = expandedLogId === uniqueKey;
 
                 return (
-                  <React.Fragment key={log.id}>
+                  <React.Fragment key={uniqueKey}>
                     <tr
-                      onClick={() => toggleExpand(log.id)}
+                      onClick={() => toggleExpand(uniqueKey)}
                       className="hover:bg-slate-50/80 cursor-pointer transition-colors"
                     >
                       <td className="py-3.5 px-4 sm:px-6">

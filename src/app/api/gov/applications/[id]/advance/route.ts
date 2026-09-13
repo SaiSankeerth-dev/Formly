@@ -21,11 +21,15 @@ export async function POST(
     }
 
     // Phase 10: Officers cannot mutate another officer's assigned case
+    const POOL_OR_DEMO_OFFICERS = new Set(["OFF-POOL-0000", "POOL", "UNASSIGNED"]);
     const isAssignedToOther =
       Boolean(app.assignedOfficerId) &&
+      !POOL_OR_DEMO_OFFICERS.has(app.assignedOfficerId) &&
       app.assignedOfficerId !== auth.employee.employee_code &&
       app.assignedOfficerId !== auth.employee.id;
-    const isDepartmentOfficer = auth.employee.role === "DEPARTMENT_OFFICER";
+    const isDepartmentOfficer =
+      (auth.employee.role as string) === "DEPARTMENT_OFFICER" ||
+      (auth.employee.role as string) === "OFFICER";
 
     if (isAssignedToOther && isDepartmentOfficer) {
       return forbiddenResponse(

@@ -357,16 +357,48 @@
     }
   }
 
+  // PAN Prepared Documents handling
+  async function renderPanPreparedDocs() {
+    const statusEl = ui("pan-prep-status");
+    const itemsEl = ui("pan-prep-items");
+    if (!statusEl || !itemsEl) return;
+
+    chrome.storage.local.get(["panPreparedDocuments"], (res) => {
+      const data = res?.panPreparedDocuments;
+      const docs = data?.documents || [];
+      if (docs.length > 0) {
+        statusEl.textContent = `✅ ${docs.length} of 3 PAN document(s) prepared & compliant:`;
+        itemsEl.innerHTML = docs
+          .map(
+            (d) =>
+              `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px dashed #e2e8f0;">
+                <span>📄 ${d.type === "photo" ? "Photo (213×213)" : d.type === "signature" ? "Signature (213×106)" : "Proof PDF"}</span>
+                <strong style="color:#059669;">${(d.sizeBytes / 1024).toFixed(1)} KB</strong>
+              </div>`
+          )
+          .join("");
+      } else {
+        statusEl.textContent = "0 files prepared yet. Upload photo & signature in Seva Saarthi.";
+        itemsEl.innerHTML = "";
+      }
+    });
+  }
+
   // Event Listeners
   ui("autofill-btn")?.addEventListener("click", handleAutofill);
   ui("refresh")?.addEventListener("click", refresh);
   ui("continue")?.addEventListener("click", refresh);
   ui("check-domain-btn")?.addEventListener("click", refresh);
 
+  ui("open-pan-prep-btn")?.addEventListener("click", () => {
+    chrome.tabs.create({ url: "http://localhost:3000/documents/pan" });
+  });
+
   ui("sync-profile-btn")?.addEventListener("click", async () => {
     const btn = ui("sync-profile-btn");
     btn.textContent = "...";
     await loadProfile();
+    await renderPanPreparedDocs();
     const tab = await currentTab();
     if (tab?.id) await renderFieldsPreview(tab.id);
     btn.textContent = "Synced!";
@@ -381,5 +413,6 @@
   });
 
   // Initial load
+  renderPanPreparedDocs();
   refresh();
 })();

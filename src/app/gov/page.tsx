@@ -532,7 +532,7 @@ export default function GovernmentDashboardPage() {
                   <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
                   <span className="font-semibold text-slate-800">High Priority</span>
                 </div>
-                <span className="font-bold text-slate-900">{stats.highPriority || 4}</span>
+                <span className="font-bold text-slate-900">{stats.highPriority ?? 0}</span>
               </Link>
 
               <Link
@@ -543,7 +543,7 @@ export default function GovernmentDashboardPage() {
                   <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                   <span className="font-semibold text-slate-800">Medium Priority</span>
                 </div>
-                <span className="font-bold text-slate-900">{stats.mediumPriority || 6}</span>
+                <span className="font-bold text-slate-900">{stats.mediumPriority ?? 0}</span>
               </Link>
 
               <Link
@@ -554,7 +554,7 @@ export default function GovernmentDashboardPage() {
                   <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
                   <span className="font-semibold text-slate-800">Normal</span>
                 </div>
-                <span className="font-bold text-slate-900">{stats.normalPriority || 8}</span>
+                <span className="font-bold text-slate-900">{stats.normalPriority ?? 0}</span>
               </Link>
 
               <Link
@@ -565,7 +565,7 @@ export default function GovernmentDashboardPage() {
                   <Clock className="w-3.5 h-3.5 text-amber-500" />
                   <span className="font-semibold text-slate-800">Due Today</span>
                 </div>
-                <span className="font-bold text-slate-900">{stats.dueToday || 5}</span>
+                <span className="font-bold text-slate-900">{stats.dueToday ?? 0}</span>
               </Link>
             </div>
           </div>

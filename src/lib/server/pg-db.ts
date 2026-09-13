@@ -269,6 +269,19 @@ async function initSchema(db: PGlite) {
     }
   }
 
+  // Ensure profiles table has all profile attribute columns
+  await db.exec(`
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS id uuid;
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS user_id uuid;
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS full_name text;
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS phone text;
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS date_of_birth date;
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS gender text;
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS occupation text;
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS education text;
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS avatar_url text;
+  `).catch(() => {});
+
   // 7. Seed initial employees & users for government & citizen
   await seedInitialData(db);
 }
@@ -559,8 +572,10 @@ async function seedInitialData(db: PGlite) {
       role = EXCLUDED.role;
   `);
 
-  // Seed default session tokens for instant demo access
-  await db.query(`
+  // Seed default session tokens for instant demo access — only in non-production
+  const isProdEnv = Boolean(process.env.VERCEL || process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production");
+  if (!isProdEnv) {
+    await db.query(`
     INSERT INTO sessions (token, "userId", "expiresAt")
     VALUES 
       ('demo_citizen_token_sankeerth', 'u_0bc5a3b6-f059-4ab2-9870-46a9c25178b7', NOW() + INTERVAL '30 days'),
@@ -573,6 +588,7 @@ async function seedInitialData(db: PGlite) {
       ('test_formly_citizen_session_5001', 'u_test_citizen_001', NOW() + INTERVAL '1 day')
     ON CONFLICT (token) DO UPDATE SET "userId" = EXCLUDED."userId", "expiresAt" = EXCLUDED."expiresAt";
   `);
+  }
 
   // Seed sample documents for citizen vault
   await db.query(`
@@ -663,7 +679,7 @@ export async function pgQuery<T = any>(sql: string, params: any[] = []): Promise
       msg.includes("Aborted()") ||
       msg.includes("could not read block") ||
       msg.includes("corrupt") ||
-      (msg.includes("relation") && msg.includes("does not exist"))
+      (msg.includes('relation "') && msg.includes('" does not exist') && !msg.includes('column "'))
     ) {
       console.error("[PGlite] Database corruption detected during pgQuery, automatically self-healing:", err);
       await resetAuthoritativeDb();
@@ -686,7 +702,7 @@ export async function pgExec(sql: string): Promise<void> {
       msg.includes("Aborted()") ||
       msg.includes("could not read block") ||
       msg.includes("corrupt") ||
-      (msg.includes("relation") && msg.includes("does not exist"))
+      (msg.includes('relation "') && msg.includes('" does not exist') && !msg.includes('column "'))
     ) {
       console.error("[PGlite] Database corruption detected during pgExec, automatically self-healing:", err);
       await resetAuthoritativeDb();

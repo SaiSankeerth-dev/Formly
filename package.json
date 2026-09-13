@@ -28,8 +28,9 @@
     "test:google": "npx tsx scripts/test-google-auth.mjs",
     "test:isolation": "npx tsx scripts/test-multi-user-isolation.mjs",
     "test:real": "npx tsx scripts/test-autofill-suite.mjs",
-    "extension:pack": "node scripts/pack-extension.mjs",
-    "agent": "node scripts/run-live-agent.mjs"
+    "test:oauth": "npx tsx scripts/test-oauth-redirect-url.mjs",
+    "test:browser": "node scripts/test-clean-browser-oauth-suite.mjs",
+    "extension:pack": "node scripts/pack-extension.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",

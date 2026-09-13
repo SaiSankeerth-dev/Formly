@@ -54,6 +54,36 @@ begin
   ) then
     alter table public.profiles add column user_id uuid references auth.users(id) on delete cascade;
   end if;
+  if not exists (
+    select 1 from information_schema.columns 
+    where table_schema = 'public' and table_name = 'profiles' and column_name = 'date_of_birth'
+  ) then
+    alter table public.profiles add column date_of_birth date;
+  end if;
+  if not exists (
+    select 1 from information_schema.columns 
+    where table_schema = 'public' and table_name = 'profiles' and column_name = 'gender'
+  ) then
+    alter table public.profiles add column gender text;
+  end if;
+  if not exists (
+    select 1 from information_schema.columns 
+    where table_schema = 'public' and table_name = 'profiles' and column_name = 'occupation'
+  ) then
+    alter table public.profiles add column occupation text;
+  end if;
+  if not exists (
+    select 1 from information_schema.columns 
+    where table_schema = 'public' and table_name = 'profiles' and column_name = 'education'
+  ) then
+    alter table public.profiles add column education text;
+  end if;
+  if not exists (
+    select 1 from information_schema.columns 
+    where table_schema = 'public' and table_name = 'profiles' and column_name = 'avatar_url'
+  ) then
+    alter table public.profiles add column avatar_url text;
+  end if;
 end $$;
 
 -- 2. CITIZEN ADDRESSES

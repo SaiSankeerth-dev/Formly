@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   X,
@@ -164,6 +165,27 @@ export function ApplyPanModal({ isOpen, onClose }: ApplyPanModalProps) {
                 <span className="text-slate-500 italic">Simulated integration with CBDT PAN issuance pipeline (Demo Mode)</span>
               </div>
             </div>
+          </div>
+
+          {/* Need Document Prep? */}
+          <div className="bg-indigo-50/60 border border-indigo-100/90 rounded-2xl p-3.5 flex items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <div className="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Need Photo & Signature Prep?</span>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Format photo (213×213) and signature (213×106) for official Protean portal.
+              </p>
+            </div>
+            <Link
+              href="/documents/pan"
+              onClick={onClose}
+              className="px-3 py-1.5 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold rounded-xl shadow-2xs transition-colors shrink-0 flex items-center gap-1"
+            >
+              <span>Open Prep Tool</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
           </div>
 
           {/* Statutory Consent */}

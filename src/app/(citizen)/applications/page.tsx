@@ -29,10 +29,6 @@ export default function MyApplicationsPage() {
     async function loadSessions() {
       try {
         const res = await fetch("/api/sessions");
-        if (res.status === 401) {
-          router.push("/login");
-          return;
-        }
         if (res.ok) {
           const data = await res.json();
           if (data.success && Array.isArray(data.sessions)) {
@@ -46,14 +42,8 @@ export default function MyApplicationsPage() {
       }
     }
 
-    if (!isLoadingAuth) {
-      if (!user) {
-        router.push("/login");
-      } else {
-        loadSessions();
-      }
-    }
-  }, [user, isLoadingAuth, router]);
+    loadSessions();
+  }, []);
 
   const handleContinue = (session: CitizenSessionRecord) => {
     const matched = POPULAR_SERVICES_LIST.find((s) => s.id === session.serviceId);

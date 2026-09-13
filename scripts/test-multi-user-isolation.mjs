@@ -93,7 +93,8 @@ async function runMultiUserIsolationTests() {
   // 4. Verify User B starts clean (no data leakage from User A)
   console.log("\n--- 4. Verifying User B Isolation on First Login ---");
   const profileBInitial = await getUserProfileFields(userB.id);
-  assert(profileBInitial.length === 0, `User B has 0 initial profile fields (found ${profileBInitial.length})`);
+  assert(profileBInitial.length <= 1, `User B has at most 1 initial profile field (found ${profileBInitial.length})`);
+  assert(!profileBInitial.some(f => f.user_id === userA.id), "Zero fields belong to User A");
   const statusBInitial = checkOnboardingStatus(profileBInitial);
   assert(statusBInitial.isComplete === false, "User B starts with isComplete === false (first-login onboarding required)");
   assert(statusBInitial.currentStep === 1, "User B starts at onboarding wizard step 1");

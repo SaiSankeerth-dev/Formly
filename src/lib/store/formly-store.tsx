@@ -437,6 +437,7 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
   // Check active session on mount
   useEffect(() => {
     const initSession = async () => {
+      console.log("[FORMLY STORE] initSession starting...");
       // 1. Immediately check client local session to restore user & data without flash
       try {
         const localSaved = localStorage.getItem(STORAGE_SESSION_KEY);
@@ -469,13 +470,18 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
 
       // 2. Fetch verified server session and live data
       try {
+        console.log("[FORMLY STORE] fetching /api/auth/session...");
         const res = await fetch("/api/auth/session");
+        console.log("[FORMLY STORE] /api/auth/session status:", res.status);
         if (res.ok) {
           const data = await res.json();
+          console.log("[FORMLY STORE] session data:", JSON.stringify(data));
           if (data.authenticated && data.user) {
             setUser(data.user);
             localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(data.user));
+            console.log("[FORMLY STORE] loading user data for:", data.user.id);
             await loadUserData(data.user);
+            console.log("[FORMLY STORE] loadUserData finished, setting isLoadingAuth to false");
             setIsLoadingAuth(false);
             return;
           } else {
@@ -539,18 +545,6 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
       await loadUserData(data.user);
       toast.success(`Welcome back, ${data.user.name}!`);
 
-      // Check whether profile is complete
-      try {
-        const profRes = await fetch("/api/profile");
-        if (profRes.ok) {
-          const profData = await profRes.json();
-          if (!profData.completed) {
-            window.location.href = `/onboarding/profile?step=${profData.currentStep || 1}`;
-            return { success: true };
-          }
-        }
-      } catch {}
-
       window.location.href = "/dashboard";
       return { success: true };
     } catch (err: any) {
@@ -579,7 +573,7 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
       localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(data.user));
       await loadUserData(data.user);
       toast.success(`Account created successfully! Welcome to Seva Saarthi, ${data.user.name}.`);
-      window.location.href = "/onboarding/profile?step=1";
+      window.location.href = "/dashboard";
       return true;
     } catch (err: any) {
       toast.error(err.message || "Network error while signing up.");

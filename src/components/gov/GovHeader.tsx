@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import {
   Menu,
   Search,
-  Bell,
   ChevronDown,
   User,
   FileText,
@@ -14,6 +13,7 @@ import {
   LogOut,
   Building,
 } from "lucide-react";
+import { GovNotificationPopover } from "./GovNotificationPopover";
 
 export interface GovHeaderProps {
   currentUser: {
@@ -84,18 +84,8 @@ export function GovHeader({
 
       {/* Right: Notifications & Officer Profile Menu */}
       <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-        {/* Notifications Bell */}
-        <button
-          className="relative p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
-          title="Notifications"
-        >
-          <Bell className="w-5 h-5" />
-          {((stats.exceptions || 0) > 0 || (stats.needsReview || 0) > 0) && (
-            <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-xs">
-              {(stats.exceptions || 0) + ((stats.dueToday || 0) > 0 ? 1 : 0) || 5}
-            </span>
-          )}
-        </button>
+        {/* Operational Notifications Popover */}
+        <GovNotificationPopover />
 
         {/* Officer Profile Menu */}
         <div className="relative">

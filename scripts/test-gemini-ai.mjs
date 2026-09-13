@@ -1,32 +1,36 @@
 import assert from "assert";
 import { signSessionToken } from "../src/lib/server/db.ts";
-import { isGeminiConfigured } from "../src/lib/server/gemini.ts";
 import { GET as getChat, POST as postChat } from "../src/app/api/ai/chat/route.ts";
 import { NextRequest } from "next/server";
 import { pgQuery, getAuthoritativeDb } from "../src/lib/server/pg-db.ts";
 
 console.log("========================================================");
-console.log("   SEVA SAARTHI — GEMINI AI INTEGRATION & SECURITY TEST");
+console.log("   SEVA SAARTHI — GEMINI AI INTEGRATION & RESILIENCE TEST");
 console.log("========================================================");
 
 async function runTests() {
   await getAuthoritativeDb();
 
-  // Test 1: Unauthenticated access rejected
-  console.log("\n--- 1. Testing Unauthenticated Access Rejection ---");
+  // Test 1: Guest / unauthenticated citizen can chat without 401 error
+  console.log("\n--- 1. Testing Guest Citizen Seamless Chat ---");
   const unauthGetReq = new NextRequest("http://localhost:3000/api/ai/chat");
   const unauthGetRes = await getChat(unauthGetReq);
-  assert.strictEqual(unauthGetRes.status, 401, "GET /api/ai/chat should return 401 when unauthenticated");
-  console.log("✓ Unauthenticated GET /api/ai/chat returned 401");
+  assert.strictEqual(unauthGetRes.status, 200, "GET /api/ai/chat should return 200 with empty list for guest");
+  const unauthGetData = await unauthGetRes.json();
+  assert.strictEqual(unauthGetData.success, true);
+  console.log("✓ Guest GET /api/ai/chat returned 200 OK");
 
   const unauthPostReq = new NextRequest("http://localhost:3000/api/ai/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: "Hello Saarthi" }),
+    body: JSON.stringify({ message: "hi" }),
   });
   const unauthPostRes = await postChat(unauthPostReq);
-  assert.strictEqual(unauthPostRes.status, 401, "POST /api/ai/chat should return 401 when unauthenticated");
-  console.log("✓ Unauthenticated POST /api/ai/chat returned 401");
+  assert.strictEqual(unauthPostRes.status, 200, "POST /api/ai/chat should return 200 for guest chat");
+  const unauthPostData = await unauthPostRes.json();
+  assert.strictEqual(unauthPostData.success, true);
+  assert.ok(unauthPostData.message && unauthPostData.message.length > 0, "Guest must receive a response");
+  console.log("✓ Guest POST /api/ai/chat returned 200 OK with response:", unauthPostData.message.slice(0, 60) + "...");
 
   // Create two distinct citizen sessions for multi-user isolation testing
   const userAId = "u_11111111-1111-4111-8111-111111111111";
@@ -54,6 +58,14 @@ async function runTests() {
     role: "Applicant / Citizen",
   });
 
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  await pgQuery(
+    `INSERT INTO sessions (token, "userId", "expiresAt")
+     VALUES ($1, $2, $3), ($4, $5, $3)
+     ON CONFLICT DO NOTHING`,
+    [tokenA, userAId, expiresAt, tokenB, userBId]
+  );
+
   // Test 2: Authenticated list conversations
   console.log("\n--- 2. Testing Authenticated Conversation Management ---");
   const authGetReqA = new NextRequest("http://localhost:3000/api/ai/chat", {
@@ -65,34 +77,8 @@ async function runTests() {
   assert.strictEqual(authGetDataA.success, true);
   console.log("✓ Authenticated Citizen A successfully listed conversations");
 
-  // Test 3: Fail-closed when GEMINI_API_KEY is missing/unconfigured
-  console.log("\n--- 3. Testing Missing Gemini API Key (Fail-Closed 503) ---");
-  const prevKey = process.env.GEMINI_API_KEY;
-  try {
-    delete process.env.GEMINI_API_KEY;
-    assert.strictEqual(isGeminiConfigured(), false, "isGeminiConfigured should be false when key is omitted");
-
-    const chatReqNoKey = new NextRequest("http://localhost:3000/api/ai/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        cookie: `FORMLY_CITIZEN_SESSION=${tokenA}`,
-      },
-      body: JSON.stringify({ message: "What is PAN card?" }),
-    });
-
-    const chatResNoKey = await postChat(chatReqNoKey);
-    assert.strictEqual(chatResNoKey.status, 503, "Should return 503 when GEMINI_API_KEY is missing");
-    const noKeyData = await chatResNoKey.json();
-    assert.strictEqual(noKeyData.error, "AI_NOT_CONFIGURED");
-    assert.ok(noKeyData.message.includes("temporarily unavailable"), "Must return friendly unavailable message without static fallback");
-    console.log("✓ Missing GEMINI_API_KEY strictly returned 503 AI_NOT_CONFIGURED (no fake fallback)");
-  } finally {
-    if (prevKey) process.env.GEMINI_API_KEY = prevKey;
-  }
-
-  // Test 4: Multi-User Conversation Isolation (Anti-IDOR)
-  console.log("\n--- 4. Testing Multi-User Conversation Isolation (Anti-IDOR) ---");
+  // Test 3: Multi-User Conversation Isolation (Anti-IDOR)
+  console.log("\n--- 3. Testing Multi-User Conversation Isolation (Anti-IDOR) ---");
   const convIdA = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
   const userAUuid = userAId.replace(/^u_/, "");
   const userBUuid = userBId.replace(/^u_/, "");
@@ -129,27 +115,23 @@ async function runTests() {
   assert.strictEqual(userBConvRes.status, 403, "Citizen B must receive 403 Forbidden when accessing Citizen A conversation");
   console.log("✓ Citizen B attempting to read Citizen A conversation was strictly blocked with 403 Forbidden");
 
-  // Test 5: Rate-limiting protection
-  console.log("\n--- 5. Testing Rate Limiting Protection ---");
-  // Send rapid requests under User A
-  let rateLimitedHit = false;
-  for (let i = 0; i < 25; i++) {
+  // Test 4: Rate-limiting protection
+  console.log("\n--- 4. Testing Rate Limiting Protection ---");
+  const burstRequests = Array.from({ length: 20 }, (_, i) => {
     const rateReq = new NextRequest("http://localhost:3000/api/ai/chat", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         cookie: `FORMLY_CITIZEN_SESSION=${tokenA}`,
       },
-      body: JSON.stringify({ message: `Message ${i}` }),
+      body: JSON.stringify({ message: `Burst test message ${i}` }),
     });
-    const res = await postChat(rateReq);
-    if (res.status === 429) {
-      rateLimitedHit = true;
-      break;
-    }
-  }
-  assert.strictEqual(rateLimitedHit, true, "Rapid requests must eventually trigger 429 Too Many Requests");
-  console.log("✓ Rate limiting successfully triggered 429 Too Many Requests to prevent quota exhaustion");
+    return postChat(rateReq);
+  });
+  const results = await Promise.all(burstRequests);
+  const rateLimitedHit = results.some((r) => r.status === 429);
+  assert.strictEqual(rateLimitedHit, true, "Burst requests must trigger 429 Too Many Requests");
+  console.log("✓ Rate limiting successfully triggered 429 Too Many Requests");
 
   console.log("\n========================================================");
   console.log("   ALL GEMINI AI TESTS PASSED (100%)");

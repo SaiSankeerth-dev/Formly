@@ -7,6 +7,7 @@ import {
   HelpCircle,
   Bell,
   Compass,
+  Sparkles,
 } from "lucide-react";
 import React from "react";
 
@@ -25,7 +26,7 @@ export interface CitizenNavItem {
 export const CITIZEN_PRIMARY_NAV: CitizenNavItem[] = [
   {
     id: "nav_dashboard",
-    label: "Dashboard",
+    label: "Home",
     href: "/dashboard",
     icon: Home,
     description: "Citizen homepage and ongoing application tracking",
@@ -39,7 +40,7 @@ export const CITIZEN_PRIMARY_NAV: CitizenNavItem[] = [
   },
   {
     id: "nav_applications",
-    label: "Applications",
+    label: "My Applications",
     href: "/applications",
     icon: FileText,
     description: "View and manage submitted applications",
@@ -68,6 +69,13 @@ export const CITIZEN_PRIMARY_NAV: CitizenNavItem[] = [
 ];
 
 export const CITIZEN_SECONDARY_NAV: CitizenNavItem[] = [
+  {
+    id: "nav_pan_prep",
+    label: "PAN Document Prep",
+    href: "/documents/pan",
+    icon: Sparkles,
+    description: "Prepare photo (213×213), signature (213×106) & PDF for PAN",
+  },
   {
     id: "nav_help",
     label: "Help & Support",

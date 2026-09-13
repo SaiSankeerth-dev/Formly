@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useRef } from "react";
+import Link from "next/link";
 import {
   Folder,
   Upload,
@@ -129,13 +130,47 @@ export function DocumentsManager() {
           </p>
         </div>
 
-        <button
-          onClick={() => setIsUploadOpen(true)}
-          className="px-4 py-2.5 bg-[#2F27CE] hover:bg-[#261fa8] text-white text-xs font-bold rounded-2xl shadow-xs transition-all flex items-center gap-2 self-start sm:self-auto cursor-pointer"
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Link
+            href="/documents/pan"
+            className="px-4 py-2.5 bg-gradient-to-r from-indigo-50 to-blue-50 hover:from-indigo-100 hover:to-blue-100 text-indigo-700 text-xs font-bold rounded-2xl border border-indigo-200/80 shadow-xs transition-all flex items-center gap-2"
+          >
+            <Sparkles className="w-4 h-4 text-indigo-600" />
+            <span>PAN Document Prep</span>
+          </Link>
+          <button
+            onClick={() => setIsUploadOpen(true)}
+            className="px-4 py-2.5 bg-[#2F27CE] hover:bg-[#261fa8] text-white text-xs font-bold rounded-2xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <Upload className="w-4 h-4" />
+            <span>Upload Document</span>
+          </button>
+        </div>
+      </div>
+
+      {/* PAN Document Preparation Callout Banner */}
+      <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-blue-900 text-white rounded-3xl p-5 sm:p-6 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-white/20 text-indigo-100 border border-white/20">
+              Official PAN Standards
+            </span>
+            <span className="text-xs text-indigo-200 font-medium">Protean (NSDL) & UTIITSL</span>
+          </div>
+          <h3 className="text-base sm:text-lg font-black tracking-tight text-white">
+            Need to prepare Photo, Signature, or Proof for PAN?
+          </h3>
+          <p className="text-xs text-indigo-200 max-w-xl leading-relaxed">
+            Format photo to exact 213×213 px (&lt;50 KB), whiten signature to 213×106 px (&lt;30 KB), and convert proof to A4 PDF (&lt;300 KB) with 100% client-side privacy.
+          </p>
+        </div>
+        <Link
+          href="/documents/pan"
+          className="px-5 py-2.5 bg-white hover:bg-slate-50 text-indigo-900 font-bold text-xs rounded-2xl shadow-sm transition-all flex items-center gap-2 shrink-0 self-start sm:self-auto"
         >
-          <Upload className="w-4 h-4" />
-          <span>Upload Document</span>
-        </button>
+          <span>Open PAN Document Prep</span>
+          <ArrowRight className="w-4 h-4 text-indigo-700" />
+        </Link>
       </div>
 
       {/* Categories Filter Pills */}

@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Unauthorized: Citizen login required" }, { status: 401 });
     }
 
-    const idempotencyKey = request.headers.get("Idempotency-Key");
+    const idempotencyKey = request.headers.get("idempotency-key") || request.headers.get("Idempotency-Key");
     if (idempotencyKey) {
       const { isDuplicate, response } = await checkIdempotency(idempotencyKey, "CREATE_APPLICATION");
       if (isDuplicate) {

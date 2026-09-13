@@ -1,16 +1,18 @@
-import type { Metadata } from "next";
-import { Suspense } from "react";
-import CitizenLoginClient from "./CitizenLoginClient";
+import React, { Suspense } from "react";
+import { CitizenAuthView } from "@/components/auth/CitizenAuthView";
 
-export const metadata: Metadata = {
-  title: "Citizen Login — Seva Saarthi",
-  description: "Sign in to your Seva Saarthi citizen account. One Form. A Smarter India.",
-};
+export const dynamic = "force-dynamic";
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#FBFBFE]" />}>
-      <CitizenLoginClient />
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[#F5F8FF]">
+          <div className="w-8 h-8 border-3 border-[#3B49DF] border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <CitizenAuthView initialMode="login" />
     </Suspense>
   );
 }

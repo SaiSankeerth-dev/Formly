@@ -12,6 +12,7 @@ import { CitizenFooter } from "@/components/citizen/CitizenFooter";
 export function CitizenLayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { isLoadingAuth, user } = useSevaSaarthi();
+  console.log("[CITIZEN SHELL] pathname:", pathname, "isLoadingAuth:", isLoadingAuth, "user:", user?.id);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<AnyService | null>(null);

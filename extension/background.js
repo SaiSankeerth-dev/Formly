@@ -96,12 +96,27 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.type === "SYNC_PREPARED_DOCUMENTS") {
+    const payload = message.payload || {};
+    chrome.storage.local.set({ panPreparedDocuments: payload });
+    sendResponse({ ok: true, syncedAt: new Date().toISOString() });
+    return true;
+  }
+
+  if (message.type === "GET_PREPARED_DOCUMENTS") {
+    chrome.storage.local.get(["panPreparedDocuments"], (result) => {
+      sendResponse({ documents: result.panPreparedDocuments || null });
+    });
+    return true;
+  }
+
   if (message.type === "GET_CITIZEN_PROFILE") {
-    chrome.storage.local.get(["citizenProfile", "activeService", "activeProfileMap"], (result) => {
+    chrome.storage.local.get(["citizenProfile", "activeService", "activeProfileMap", "panPreparedDocuments"], (result) => {
       sendResponse({
         profile: result.citizenProfile || null,
         activeService: result.activeService || null,
         profileMap: result.activeProfileMap || null,
+        panPreparedDocuments: result.panPreparedDocuments || null,
       });
     });
     return true;

@@ -14,18 +14,6 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: "/government",
-        destination: "/gov",
-      },
-      {
-        source: "/government/applications",
-        destination: "/gov/applications",
-      },
-      {
-        source: "/government/applications/:id",
-        destination: "/gov/workspace/:id",
-      },
-      {
         source: "/gov/application-queue",
         destination: "/gov/queue",
       },
@@ -36,10 +24,6 @@ const nextConfig = {
       {
         source: "/gov/returned",
         destination: "/gov/applications?filter=returned",
-      },
-      {
-        source: "/government/:path*",
-        destination: "/gov/:path*",
       },
     ];
   },

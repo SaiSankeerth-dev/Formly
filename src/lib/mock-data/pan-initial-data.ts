@@ -1015,6 +1015,7 @@ export function getInitialAuditLogs(): AuditLogRecord[] {
   return [
     {
       id: "AUD-9001",
+      uuid: "00000000-0000-4000-8000-000000009001",
       applicationId: "PAN-2026-0001",
       timestamp: "2026-09-09T14:02:10Z",
       actor: { id: "u_0bc5a3b6", name: "Sai Sankeerth", role: "CITIZEN" },
@@ -1031,6 +1032,7 @@ export function getInitialAuditLogs(): AuditLogRecord[] {
     },
     {
       id: "AUD-9002",
+      uuid: "00000000-0000-4000-8000-000000009002",
       applicationId: "PAN-2026-0001",
       timestamp: "2026-09-09T14:03:00Z",
       actor: { id: "SYS_ENGINE", name: "Consent Manager", role: "SYSTEM_WORKFLOW" },
@@ -1047,6 +1049,7 @@ export function getInitialAuditLogs(): AuditLogRecord[] {
     },
     {
       id: "AUD-9003",
+      uuid: "00000000-0000-4000-8000-000000009003",
       applicationId: "PAN-2026-0001",
       timestamp: "2026-09-09T14:04:12Z",
       actor: { id: "SYS_CONNECTOR", name: "UIDAI e-KYC Connector", role: "CONNECTOR_JOB" },
@@ -1063,6 +1066,7 @@ export function getInitialAuditLogs(): AuditLogRecord[] {
     },
     {
       id: "AUD-9004",
+      uuid: "00000000-0000-4000-8000-000000009004",
       applicationId: "PAN-2026-0001",
       timestamp: "2026-09-09T14:05:00Z",
       actor: { id: "SYS_ROUTER", name: "Government Routing Engine", role: "SYSTEM_WORKFLOW" },
@@ -1078,6 +1082,7 @@ export function getInitialAuditLogs(): AuditLogRecord[] {
     },
     {
       id: "AUD-9005",
+      uuid: "00000000-0000-4000-8000-000000009005",
       applicationId: "PAN-2026-0001",
       timestamp: "2026-09-09T14:21:00Z",
       actor: { id: "OFF-PAN-7042", name: "Officer Sai Sankeerth", role: "OFFICER" },

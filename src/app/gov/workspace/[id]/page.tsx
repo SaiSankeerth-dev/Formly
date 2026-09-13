@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -33,12 +33,24 @@ export default function PanApplicationWorkspacePage() {
   const params = useParams();
   const router = useRouter();
   const { currentUser, refreshAll } = useGov();
-  const appId = params?.id as string;
 
+  const getInitialAppId = () => {
+    if (params?.id && typeof params.id === "string") return params.id;
+    if (typeof window !== "undefined") {
+      const parts = window.location.pathname.split("/").filter(Boolean);
+      const last = parts[parts.length - 1];
+      if (last && last !== "[id]") return last;
+    }
+    return "";
+  };
+
+  const [appId, setAppId] = useState<string>(getInitialAppId);
   const [application, setApplication] = useState<PanApplicationRecord | null>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  console.log("[Workspace Render]", { appId, loading, hasApplication: !!application, rawParams: params });
 
   // Dialog States
   const [acceptModalOpen, setAcceptModalOpen] = useState(false);
@@ -59,10 +71,12 @@ export default function PanApplicationWorkspacePage() {
   const [rejectionEvidence, setRejectionEvidence] = useState("UIDAI e-KYC record vs Submitted CBSE Matriculation Memo");
   const [rejectionConfirmed, setRejectionConfirmed] = useState(false);
 
-  const fetchCaseDetails = async () => {
+  const fetchCaseDetails = useCallback(async (idToFetch?: string) => {
+    const targetId = idToFetch || appId || getInitialAppId();
+    if (!targetId || targetId === "[id]") return;
     try {
       setLoading(true);
-      const res = await fetch(`/api/gov/applications/${appId}`);
+      const res = await fetch(`/api/gov/applications/${targetId}`);
       const data = await res.json();
       if (data.success && data.application) {
         setApplication(data.application);
@@ -76,13 +90,15 @@ export default function PanApplicationWorkspacePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [appId]);
 
   useEffect(() => {
-    if (appId) {
-      fetchCaseDetails();
+    const id = getInitialAppId();
+    if (id) {
+      setAppId(id);
+      fetchCaseDetails(id);
     }
-  }, [appId]);
+  }, [params?.id]);
 
   const handleAction = async (action: string, payload: any = {}) => {
     setIsProcessing(true);
@@ -652,7 +668,7 @@ export default function PanApplicationWorkspacePage() {
 
             <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
               {auditLogs.map((log) => (
-                <div key={log.id} className="text-xs border-b border-slate-50 pb-2.5 last:border-0">
+                <div key={log.uuid || log.id} className="text-xs border-b border-slate-50 pb-2.5 last:border-0">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-slate-800 text-[11px]">{log.action.replace(/_/g, " ")}</span>
                     <span className="text-[10px] text-slate-400">

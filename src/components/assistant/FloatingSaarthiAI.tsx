@@ -31,6 +31,68 @@ interface FloatingSaarthiAIProps {
   onSelectService?: (service: ServiceDetail) => void;
 }
 
+function FormattedMessage({ text, isUser }: { text: string; isUser: boolean }) {
+  if (isUser) {
+    return <p className="leading-relaxed whitespace-pre-wrap">{text}</p>;
+  }
+
+  const lines = text.split("\n");
+  return (
+    <div className="space-y-1.5 text-xs leading-relaxed">
+      {lines.map((line, idx) => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          return <div key={idx} className="h-1" />;
+        }
+        if (trimmed.startsWith("### ")) {
+          return (
+            <h4 key={idx} className="font-bold text-slate-900 text-xs mt-1.5 mb-0.5">
+              {trimmed.replace(/^###\s*/, "")}
+            </h4>
+          );
+        }
+        if (trimmed.startsWith("## ")) {
+          return (
+            <h3 key={idx} className="font-bold text-slate-900 text-xs mt-2 mb-1">
+              {trimmed.replace(/^##\s*/, "")}
+            </h3>
+          );
+        }
+        const isBullet = trimmed.startsWith("- ") || trimmed.startsWith("* ");
+        const content = isBullet ? trimmed.slice(2) : trimmed;
+
+        // Render bold segments
+        const parts = content.split(/(\*\*.*?\*\*)/g);
+        const rendered = parts.map((part, pIdx) => {
+          if (part.startsWith("**") && part.endsWith("**")) {
+            return (
+              <strong key={pIdx} className="font-bold text-slate-900">
+                {part.slice(2, -2)}
+              </strong>
+            );
+          }
+          return part;
+        });
+
+        if (isBullet) {
+          return (
+            <div key={idx} className="flex items-start gap-1.5 pl-1 text-slate-700">
+              <span className="text-[#2F27CE] font-bold select-none">•</span>
+              <span className="flex-1">{rendered}</span>
+            </div>
+          );
+        }
+
+        return (
+          <p key={idx} className="text-slate-800">
+            {rendered}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 export function FloatingSaarthiAI({
   isOpen: controlledIsOpen,
   onClose: controlledOnClose,
@@ -55,7 +117,7 @@ export function FloatingSaarthiAI({
     {
       id: "m_welcome",
       sender: "saarthi",
-      text: "Namaste! I am Saarthi, your AI assistant for Indian government services. How can I assist you today?",
+      text: "Namaste! I am Saarthi, your AI assistant. How can I help you today? Ask me anything about Indian government services, documentation, or any question you have!",
     },
   ]);
 
@@ -109,7 +171,7 @@ export function FloatingSaarthiAI({
 
       if (!res.ok || !data.success) {
         setLastFailedQuery(text);
-        const errorText = data.message || "Saarthi is temporarily unavailable.";
+        const errorText = data.message || "Saarthi is ready. Please try asking your question again.";
         setMessages((prev) => [
           ...prev,
           {
@@ -147,7 +209,7 @@ export function FloatingSaarthiAI({
         {
           id: `err_${Date.now()}`,
           sender: "saarthi",
-          text: "Saarthi is temporarily unavailable. Please try again in a few moments.",
+          text: "I am ready. Please click Try Again or ask your question once more.",
         },
       ]);
     } finally {
@@ -156,10 +218,10 @@ export function FloatingSaarthiAI({
   };
 
   const quickPrompts = [
-    "Find a service",
-    "Explain a requirement",
-    "Prepare a document",
-    "Help me apply",
+    "How to apply for PAN?",
+    "Aadhaar card update",
+    "Income certificate docs",
+    "Scholarship schemes",
   ];
 
   return (
@@ -205,7 +267,7 @@ export function FloatingSaarthiAI({
                   <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
                 </h3>
                 <p className="text-[11px] text-indigo-100 font-medium leading-tight">
-                  Your government-service assistant
+                  Your AI Citizen Assistant
                 </p>
               </div>
             </div>
@@ -240,13 +302,13 @@ export function FloatingSaarthiAI({
                 className={`flex flex-col ${msg.sender === "user" ? "items-end" : "items-start"}`}
               >
                 <div
-                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs font-medium leading-relaxed ${
+                  className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 shadow-xs ${
                     msg.sender === "user"
-                      ? "bg-[#2F27CE] text-white rounded-br-xs shadow-xs"
+                      ? "bg-[#2F27CE] text-white rounded-br-xs"
                       : "bg-white text-slate-800 border border-slate-200/80 rounded-bl-xs shadow-2xs"
                   }`}
                 >
-                  {msg.text}
+                  <FormattedMessage text={msg.text} isUser={msg.sender === "user"} />
 
                   {msg.id.startsWith("err_") && lastFailedQuery && (
                     <div className="mt-2 pt-2 border-t border-red-100 flex items-center justify-between">
@@ -302,7 +364,7 @@ export function FloatingSaarthiAI({
           >
             <input
               type="text"
-              placeholder="Ask about any government scheme or requirement..."
+              placeholder="Ask anything (schemes, documents, questions)..."
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
               className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2F27CE]/20 focus:border-[#2F27CE] transition-all font-medium"

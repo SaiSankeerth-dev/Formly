@@ -137,6 +137,7 @@ export interface PanApplicationRecord {
 
 export interface AuditLogRecord {
   id: string;
+  uuid?: string;
   applicationId?: string;
   timestamp: string;
   actor: {

@@ -115,7 +115,10 @@ async function runMatrix() {
   const callbackNoCodeRes = await fetch(`${CITIZEN_ORIGIN}/auth/callback`, { redirect: "manual" });
   assert.ok([302, 307, 308].includes(callbackNoCodeRes.status), "Callback without code must redirect");
   const callbackNoCodeLoc = callbackNoCodeRes.headers.get("location") || "";
-  assert.ok(callbackNoCodeLoc.includes("/login?error=oauth_failed"), "Must redirect to /login?error=oauth_failed");
+  assert.ok(
+    callbackNoCodeLoc.includes("/login?error=google_auth_failed") || callbackNoCodeLoc.includes("/login?error=oauth_failed"),
+    "Must redirect to /login with oauth error"
+  );
   console.log("✓ Callback route /auth/callback exists, handles missing/invalid code, and safely redirects to /login.");
 
   // 8. Government Login

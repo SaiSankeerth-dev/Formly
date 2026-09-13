@@ -1,16 +1,24 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Bell, CheckCircle2, AlertTriangle, Info, Clock, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { useSevaSaarthi } from "@/lib/store/formly-store";
 
 export default function NotificationsPage() {
+  const router = useRouter();
+  const { user, isLoadingAuth } = useSevaSaarthi();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchNotifications = async () => {
     try {
       const res = await fetch("/api/notifications");
+      if (res.status === 401) {
+        setNotifications([]);
+        return;
+      }
       const data = await res.json();
       if (data.success) {
         setNotifications(data.notifications);

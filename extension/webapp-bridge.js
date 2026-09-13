@@ -21,6 +21,17 @@
     }
   };
 
+  // 2b. Listen for SEVA_SAARTHI_PREPARED_DOCUMENTS event from PAN document preparation
+  const handlePreparedDocuments = (e) => {
+    const payload = e.detail || (e.data && e.data.data);
+    if (payload) {
+      chrome.runtime.sendMessage({
+        type: "SYNC_PREPARED_DOCUMENTS",
+        payload: payload,
+      });
+    }
+  };
+
   window.addEventListener("SEVA_SAARTHI_ACTIVATE_SERVICE", handleActivateService);
   document.addEventListener("SEVA_SAARTHI_ACTIVATE_SERVICE", handleActivateService);
   window.addEventListener("SEVA_SAARTHI_LAUNCH_SERVICE", handleActivateService);
@@ -29,12 +40,18 @@
   window.addEventListener("SEVA_SAARTHI_SYNC_PROFILE", handleSyncProfile);
   document.addEventListener("SEVA_SAARTHI_SYNC_PROFILE", handleSyncProfile);
 
+  window.addEventListener("SEVA_SAARTHI_PREPARED_DOCUMENTS", handlePreparedDocuments);
+  document.addEventListener("SEVA_SAARTHI_PREPARED_DOCUMENTS", handlePreparedDocuments);
+
   window.addEventListener("message", (e) => {
     if (e.data && (e.data.type === "SEVA_SAARTHI_ACTIVATE_SERVICE" || e.data.type === "SEVA_SAARTHI_LAUNCH_SERVICE")) {
       handleActivateService(e);
     }
     if (e.data && e.data.type === "SEVA_SAARTHI_SYNC_PROFILE") {
       handleSyncProfile(e);
+    }
+    if (e.data && e.data.type === "SEVA_SAARTHI_PREPARED_DOCUMENTS") {
+      handlePreparedDocuments(e);
     }
   });
 

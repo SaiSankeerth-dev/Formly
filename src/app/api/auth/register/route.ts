@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { registerUser } from "@/lib/server/db";
+import { getOAuthRedirectUrl } from "@/lib/auth/oauth-url";
 
 export async function POST(request: Request) {
   try {
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
           full_name: name.trim(),
           phone: phone?.trim() || "",
         },
-        emailRedirectTo: `${origin}/auth/callback`,
+        emailRedirectTo: getOAuthRedirectUrl({ origin }),
       },
     });
 

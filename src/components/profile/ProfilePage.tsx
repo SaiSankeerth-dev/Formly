@@ -87,14 +87,8 @@ export function ProfilePage() {
   }, [router]);
 
   useEffect(() => {
-    if (!isLoadingAuth) {
-      if (!user) {
-        router.push("/login");
-      } else {
-        fetchProfile();
-      }
-    }
-  }, [user, isLoadingAuth, router, fetchProfile]);
+    fetchProfile();
+  }, [fetchProfile]);
 
   const completeness = getProfileCompleteness(profileFields);
   const emptyFieldsCount = completeness.emptyCount;

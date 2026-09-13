@@ -40,9 +40,29 @@ export function GovernmentLoginView() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!employeeId.trim() || !password.trim()) {
+  const handleSubmit = async (e?: React.FormEvent | React.SyntheticEvent) => {
+    if (e && typeof e.preventDefault === "function") e.preventDefault();
+
+    let emp = employeeId.trim();
+    let pass = password.trim();
+
+    // DOM fallback for automation / browser autofill
+    if (!emp && typeof document !== "undefined") {
+      const el = document.getElementById("employeeId") as HTMLInputElement;
+      if (el?.value) {
+        emp = el.value.trim();
+        setEmployeeId(emp);
+      }
+    }
+    if (!pass && typeof document !== "undefined") {
+      const el = document.getElementById("password") as HTMLInputElement;
+      if (el?.value) {
+        pass = el.value.trim();
+        setPassword(pass);
+      }
+    }
+
+    if (!emp || !pass) {
       setErrorMessage("Please enter both your Employee ID and password.");
       return;
     }
@@ -55,8 +75,8 @@ export function GovernmentLoginView() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          employeeId: employeeId.trim(),
-          password: password.trim(),
+          employeeId: emp,
+          password: pass,
         }),
       });
 
@@ -338,7 +358,9 @@ export function GovernmentLoginView() {
               {/* Primary Submit Button */}
               <button
                 type="submit"
-                disabled={isLoggingIn || !employeeId.trim() || !password.trim()}
+                id="gov-login-submit"
+                onClick={handleSubmit}
+                disabled={isLoggingIn}
                 className="w-full py-3.5 bg-[#2F27CE] hover:bg-[#251FB5] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs sm:text-sm rounded-2xl shadow-md shadow-indigo-200 transition-all flex items-center justify-center gap-2 group cursor-pointer"
               >
                 {isLoggingIn ? (

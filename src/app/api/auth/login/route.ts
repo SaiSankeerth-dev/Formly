@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthoritativeDb } from "@/lib/server/pg-db";
-import { loginUser, getEmployeeBySession } from "@/lib/server/db";
+import { loginUser, getEmployeeBySession, signSessionToken } from "@/lib/server/db";
 
 export async function POST(request: Request) {
   try {
@@ -39,7 +40,14 @@ export async function POST(request: Request) {
     }
 
     // 2. Primary Citizen Authentication: Supabase Auth single source of truth
-    const supabase = await createClient();
+    const cookieStore = await cookies();
+    const cookiesToSet: Array<{ name: string; value: string; options?: any }> = [];
+    const supabase = await createClient({
+      cookieStore,
+      onSetCookies: (incoming) => {
+        cookiesToSet.push(...incoming);
+      },
+    });
     const { data, error } = await supabase.auth.signInWithPassword({
       email: trimmedEmail,
       password,
@@ -52,18 +60,56 @@ export async function POST(request: Request) {
         email: authUser.email || trimmedEmail,
         name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || trimmedEmail.split("@")[0],
         phone: authUser.user_metadata?.phone || authUser.phone || "",
-        role: "CITIZEN",
+        role: "Applicant / Citizen",
       };
+
+      const token = signSessionToken({
+        userId: authUser.id,
+        name: userPayload.name,
+        email: userPayload.email,
+        phone: userPayload.phone,
+        role: "Applicant / Citizen",
+      });
 
       const response = NextResponse.json({
         success: true,
         message: "Login successful",
         user: userPayload,
+        token,
+      });
+
+      // Forward all Supabase session cookies with root path
+      for (const c of cookiesToSet) {
+        response.cookies.set(c.name, c.value, {
+          ...c.options,
+          path: "/",
+          sameSite: "lax",
+        });
+      }
+
+      // Set fallback citizen session cookie with root path
+      response.cookies.set({
+        name: "FORMLY_CITIZEN_SESSION",
+        value: token,
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+        path: "/",
+        maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined,
+      });
+      response.cookies.set({
+        name: "seva_saarthi_session",
+        value: token,
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+        path: "/",
+        maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined,
       });
 
       // Clear any conflicting government session cookies
-      response.cookies.delete("FORMLY_GOV_SESSION");
-      response.cookies.delete("formly_gov_session");
+      response.cookies.set({ name: "FORMLY_GOV_SESSION", value: "", maxAge: 0, path: "/" });
+      response.cookies.set({ name: "formly_gov_session", value: "", maxAge: 0, path: "/" });
 
       return response;
     }
@@ -105,9 +151,18 @@ export async function POST(request: Request) {
         path: "/",
         maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined,
       });
+      response.cookies.set({
+        name: "seva_saarthi_session",
+        value: token,
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+        path: "/",
+        maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined,
+      });
 
-      response.cookies.delete("FORMLY_GOV_SESSION");
-      response.cookies.delete("formly_gov_session");
+      response.cookies.set({ name: "FORMLY_GOV_SESSION", value: "", maxAge: 0, path: "/" });
+      response.cookies.set({ name: "formly_gov_session", value: "", maxAge: 0, path: "/" });
 
       return response;
     } catch {}

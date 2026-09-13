@@ -28,14 +28,22 @@ export async function middleware(request: NextRequest) {
       forwardedPort === "3000" ||
       forwardedHost.endsWith(":3000"));
 
-  // 1. Skip static assets, Next internal files, public media, and health check
+  // 1. Skip static assets, Next internal files, auth callback, public media, and health check
   if (
+    pathname === "/auth/callback" ||
+    pathname.startsWith("/auth/callback") ||
     pathname.startsWith("/_next") ||
-    pathname.startsWith("/api/agent") ||
     pathname.startsWith("/api/health") ||
     pathname.includes(".") // static files: favicon.ico, images, svgs, etc.
   ) {
     return NextResponse.next();
+  }
+
+  // 1b. If an OAuth code arrives at any non-callback URL (e.g. root '/' due to Site URL fallback), forward directly to /auth/callback
+  if (pathname !== "/auth/callback" && request.nextUrl.searchParams.has("code")) {
+    const callbackUrl = new URL("/auth/callback", request.url);
+    callbackUrl.search = request.nextUrl.search;
+    return NextResponse.redirect(callbackUrl);
   }
 
   // 2. Retrieve isolated session cookies
@@ -226,51 +234,43 @@ export async function middleware(request: NextRequest) {
   // Authenticated if Supabase user is returned or legacy citizen session exists
   const isCitizenAuthenticated = Boolean(citizenUser || citizenSession);
 
-  const isCitizenLogin = pathname === "/login" || pathname === "/signup";
-  if (isCitizenLogin) {
-    // If already authenticated as citizen, go to citizen dashboard
-    // Notice: Having a govSession does NOT redirect to citizen dashboard!
-    if (isCitizenAuthenticated) {
-      const redirectRes = NextResponse.redirect(new URL("/dashboard", request.url));
-      supabaseResponse.cookies.getAll().forEach((c) => {
-        redirectRes.cookies.set(c.name, c.value, c);
-      });
-      return redirectRes;
-    }
+  // 1. If citizen is already authenticated and visits /login or /signup, redirect to /dashboard
+  if (isCitizenAuthenticated && (pathname === "/login" || pathname === "/signup")) {
+    const redirectRes = NextResponse.redirect(new URL("/dashboard", request.url));
+    supabaseResponse.cookies.getAll().forEach((c) => {
+      redirectRes.cookies.set(c.name, c.value, { ...c, path: "/" });
+    });
+    return redirectRes;
+  }
+
+  // 2. Allow unauthenticated access to citizen public auth pages
+  if (pathname === "/login" || pathname === "/signup") {
     return supabaseResponse;
   }
 
-  // Protected citizen routes
-  const protectedCitizenPrefixes = [
+  // 3. Protected citizen routes require authentication
+  const protectedCitizenRoutes = [
     "/dashboard",
-    "/documents",
     "/profile",
-    "/onboarding",
-    "/vault",
+    "/documents",
     "/tasks",
+    "/notifications",
     "/checklist",
-    "/assistant",
-    "/settings",
+    "/onboarding",
+    "/applications",
   ];
 
   const isProtectedCitizenRoute =
-    protectedCitizenPrefixes.some(
-      (p) => pathname === p || pathname.startsWith(p + "/")
-    ) ||
-    (pathname.startsWith("/applications") && !pathname.includes("/status") && !pathname.startsWith("/applications/track"));
+    pathname === "/" ||
+    protectedCitizenRoutes.some((route) => pathname === route || pathname.startsWith(route + "/"));
 
-  if (isProtectedCitizenRoute) {
-    // Protected Citizen Routes: require valid Supabase session
-    // Notice: A government session does NOT grant access to citizen dashboard
-    if (!isCitizenAuthenticated) {
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("from", pathname);
-      const redirectRes = NextResponse.redirect(loginUrl);
-      supabaseResponse.cookies.getAll().forEach((c) => {
-        redirectRes.cookies.set(c.name, c.value, c);
-      });
-      return redirectRes;
-    }
+  if (!isCitizenAuthenticated && isProtectedCitizenRoute) {
+    const loginUrl = new URL("/login", request.url);
+    const redirectRes = NextResponse.redirect(loginUrl);
+    supabaseResponse.cookies.getAll().forEach((c) => {
+      redirectRes.cookies.set(c.name, c.value, { ...c, path: "/" });
+    });
+    return redirectRes;
   }
 
   return supabaseResponse;
