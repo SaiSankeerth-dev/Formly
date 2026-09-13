@@ -112,7 +112,7 @@ export default function DataMapperPage() {
       const parsed = JSON.parse(testPayload);
       const canonical = mapToCanonical(selectedSystem, parsed);
       setNormalizedOutput(canonical);
-      toast.success("Successfully normalized payload to Seva Saarthi Canonical Schema!");
+      toast.success("Successfully normalized payload to Sarkaar Seva Canonical Schema!");
     } catch (err: any) {
       toast.error(`JSON Parse or mapping error: ${err.message}`);
     }
@@ -131,14 +131,14 @@ export default function DataMapperPage() {
             GOVERNMENT DATA MAPPER
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Normalizing disparate state & central department schema vocabularies into the Seva Saarthi canonical model.
+            Normalizing disparate state & central department schema vocabularies into the Sarkaar Seva canonical model.
           </p>
         </div>
 
         {/* System Selector Tabs */}
         <div className="flex items-center gap-1 bg-slate-100 p-1.5 rounded-2xl">
           {Object.keys(SYSTEM_SCHEMAS).map((key) => {
-            const sch = SYSTEM_SCHEMAS[key];
+            const schema = SYSTEM_SCHEMAS[key];
             const isSelected = selectedSystem === key;
             return (
               <button
@@ -147,10 +147,10 @@ export default function DataMapperPage() {
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                   isSelected
                     ? "bg-white text-slate-950 shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
+                    : "text-slate-500 hover:text-slate-800"
                 }`}
               >
-                {key === "uidai" ? "UIDAI (Aadhaar)" : key === "nsdl_pan" ? "Income Tax / NSDL" : key === "digilocker" ? "DigiLocker" : "India Post"}
+                {schema.systemName.split(" ")[0]}
               </button>
             );
           })}
@@ -162,7 +162,7 @@ export default function DataMapperPage() {
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div>
             <h2 className="text-sm font-bold text-slate-900">
-              {activeSchema.systemName} ➔ Seva Saarthi Canonical
+              {activeSchema.systemName} ➔ Sarkaar Seva Canonical
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
               Protocol: {activeSchema.protocol} • Spec: {activeSchema.version} • {activeSchema.organization}
@@ -178,7 +178,7 @@ export default function DataMapperPage() {
             <thead>
               <tr className="border-b border-slate-200 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 <th className="pb-3">Source Field (External Department)</th>
-                <th className="pb-3">Seva Saarthi Canonical Field</th>
+                <th className="pb-3">Sarkaar Seva Canonical Field</th>
                 <th className="pb-3">Source Data Type</th>
                 <th className="pb-3">Transformation Function</th>
                 <th className="pb-3">Semantic Purpose</th>
@@ -242,10 +242,10 @@ export default function DataMapperPage() {
             />
           </div>
 
-          {/* Right: Normalized Seva Saarthi Canonical Output */}
+          {/* Right: Normalized Sarkaar Seva Canonical Output */}
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-              <span>Normalized Seva Saarthi Canonical Record:</span>
+              <span>Normalized Sarkaar Seva Canonical Record:</span>
               <span className="text-[10px] text-emerald-600 font-bold">Standardized Across All Services</span>
             </div>
             <div className="w-full font-mono text-xs p-3.5 bg-slate-900 text-emerald-300 rounded-2xl border border-slate-800 min-h-[280px] overflow-auto leading-relaxed">

@@ -46,7 +46,7 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
   const isLoginPage = pathname === "/login" || pathname === "/government/login" || pathname === "/gov/login";
 
   if (isLoginPage) {
-    return <div className="min-h-screen bg-[#0A1128]">{children}</div>;
+    return <div className="min-h-screen bg-[#F8FAFC]">{children}</div>;
   }
 
   const { currentUser, stats, applications } = useGov();

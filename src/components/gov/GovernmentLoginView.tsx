@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
 import {
   User,
   Lock,
@@ -18,9 +17,7 @@ import {
   Loader2,
   X,
   Building2,
-  HelpCircle,
 } from "lucide-react";
-import { LotusLogo } from "@/components/ui/LotusLogo";
 import { StateEmblem } from "@/components/ui/StateEmblem";
 import { toast } from "sonner";
 
@@ -91,35 +88,37 @@ export function GovernmentLoginView() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F8FC] text-slate-900 flex flex-col justify-between items-center py-6 px-4 sm:px-8 relative overflow-hidden font-sans select-none">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col justify-between items-center py-6 px-4 sm:px-8 relative overflow-hidden font-sans select-none">
       {/* Background Decorative Flowing Tricolor Ribbons */}
-      <div className="absolute -top-24 -right-24 w-96 h-96 pointer-events-none opacity-40 z-0">
-        <svg viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-          <path d="M50 0 C150 120 280 200 400 240" stroke="#FF9933" strokeWidth="24" strokeLinecap="round" opacity="0.6" />
-          <path d="M100 0 C190 140 310 230 400 280" stroke="#CBD5E1" strokeWidth="20" strokeLinecap="round" opacity="0.4" />
-          <path d="M150 0 C230 160 340 260 400 320" stroke="#138808" strokeWidth="24" strokeLinecap="round" opacity="0.5" />
+      <div className="absolute top-0 right-0 w-[550px] h-[550px] pointer-events-none z-0 overflow-hidden">
+        <svg viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full opacity-65">
+          <path d="M180 -40 C260 120 380 220 540 280" stroke="#FF9933" strokeWidth="44" strokeLinecap="round" opacity="0.8" />
+          <path d="M220 -40 C300 130 410 240 540 320" stroke="#FFFFFF" strokeWidth="38" strokeLinecap="round" opacity="0.9" />
+          <path d="M260 -40 C340 140 440 260 540 360" stroke="#138808" strokeWidth="44" strokeLinecap="round" opacity="0.75" />
         </svg>
       </div>
 
-      <div className="absolute -bottom-24 -left-24 w-96 h-96 pointer-events-none opacity-40 z-0">
-        <svg viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-          <path d="M0 160 C120 200 250 280 350 400" stroke="#FF9933" strokeWidth="24" strokeLinecap="round" opacity="0.5" />
-          <path d="M0 210 C100 250 220 320 300 400" stroke="#CBD5E1" strokeWidth="20" strokeLinecap="round" opacity="0.4" />
-          <path d="M0 260 C80 290 190 350 250 400" stroke="#138808" strokeWidth="24" strokeLinecap="round" opacity="0.6" />
+      <div className="absolute bottom-0 left-0 w-[550px] h-[550px] pointer-events-none z-0 overflow-hidden">
+        <svg viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full opacity-65">
+          <path d="M-40 260 C80 300 180 370 240 540" stroke="#FF9933" strokeWidth="44" strokeLinecap="round" opacity="0.75" />
+          <path d="M-40 300 C90 330 190 410 280 540" stroke="#FFFFFF" strokeWidth="38" strokeLinecap="round" opacity="0.9" />
+          <path d="M-40 340 C100 360 200 450 320 540" stroke="#138808" strokeWidth="44" strokeLinecap="round" opacity="0.8" />
         </svg>
       </div>
 
       {/* 1. TOP HEADER BAR */}
       <header className="w-full max-w-6xl flex items-center justify-between py-2 px-2 sm:px-4 mb-4 z-10">
-        {/* Top-Left: Seva Saarthi Citizen Brand Context */}
+        {/* Top-Left: Dedicated Sarkaar Seva Government Brand */}
         <div className="flex items-center gap-3">
-          <LotusLogo size={36} className="shrink-0 drop-shadow-xs" />
+          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-[#1E3A8A] shadow-xs">
+            <StateEmblem size={24} className="text-[#1E3A8A]" />
+          </div>
           <div>
-            <div className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-tight">
-              Seva Saarthi
+            <div className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-tight flex items-center gap-1.5">
+              Sarkaar <span className="text-[#2F27CE]">Seva</span>
             </div>
             <div className="text-[11px] font-semibold text-slate-500 leading-tight">
-              One Form. A Smarter India.
+              Government Operations Platform
             </div>
           </div>
         </div>
@@ -143,9 +142,9 @@ export function GovernmentLoginView() {
       {/* 2. MAIN TWO-COLUMN CARD CONTAINER */}
       <main className="w-full max-w-6xl bg-white border border-slate-200/80 rounded-[32px] shadow-2xl shadow-slate-200/60 overflow-hidden grid grid-cols-1 lg:grid-cols-12 z-10">
         {/* LEFT COLUMN: BRAND & TRUST SHOWCASE */}
-        <div className="lg:col-span-6 relative flex flex-col justify-between p-8 sm:p-10 bg-gradient-to-br from-[#EBF3FC] via-[#F3F7FD] to-white border-b lg:border-b-0 lg:border-r border-slate-100 overflow-hidden">
-          {/* Header Typography */}
-          <div>
+        <div className="lg:col-span-6 relative flex flex-col justify-between bg-gradient-to-br from-[#EBF3FC] via-[#F3F7FD] to-white border-b lg:border-b-0 lg:border-r border-slate-100 overflow-hidden">
+          {/* Header Typography & Features */}
+          <div className="p-8 sm:p-10 pb-4">
             <div className="text-[10px] font-black tracking-[0.2em] text-[#1E3A8A] uppercase mb-2">
               GOVERNMENT OPERATIONS PLATFORM
             </div>
@@ -159,174 +158,86 @@ export function GovernmentLoginView() {
               Enable Officers. Streamline Services. Empower Citizens.
             </p>
 
-            {/* 4 Value Statements / Feature Rows */}
-            <div className="space-y-3 mt-6">
-              {/* Feature 1 */}
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-blue-100/70 text-[#2F27CE] flex items-center justify-center shrink-0 shadow-2xs">
-                  <Shield className="w-4 h-4 stroke-[2.5]" />
+            {/* 4 Value Statements & Floating Script */}
+            <div className="relative mt-6">
+              <div className="space-y-3.5 max-w-[280px] sm:max-w-[310px]">
+                {/* Feature 1 */}
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-blue-100/70 text-[#2F27CE] flex items-center justify-center shrink-0 shadow-2xs">
+                    <Shield className="w-4 h-4 stroke-[2.5]" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900">Secure Access</div>
+                    <div className="text-[11px] text-slate-500 font-medium">Protected and role-based access</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900">Secure Access</div>
-                  <div className="text-[11px] text-slate-500 font-medium">Protected and role-based access</div>
+
+                {/* Feature 2 */}
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-blue-100/70 text-[#2F27CE] flex items-center justify-center shrink-0 shadow-2xs">
+                    <Users className="w-4 h-4 stroke-[2.5]" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900">Efficient Operations</div>
+                    <div className="text-[11px] text-slate-500 font-medium">Tools for faster service delivery</div>
+                  </div>
+                </div>
+
+                {/* Feature 3 */}
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-blue-100/70 text-[#2F27CE] flex items-center justify-center shrink-0 shadow-2xs">
+                    <FileText className="w-4 h-4 stroke-[2.5]" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900">Audited Actions</div>
+                    <div className="text-[11px] text-slate-500 font-medium">Transparent and accountable workflows</div>
+                  </div>
+                </div>
+
+                {/* Feature 4 */}
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-blue-100/70 text-[#2F27CE] flex items-center justify-center shrink-0 shadow-2xs">
+                    <Settings className="w-4 h-4 stroke-[2.5]" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900">Better Governance</div>
+                    <div className="text-[11px] text-slate-500 font-medium">Technology for a stronger India</div>
+                  </div>
                 </div>
               </div>
 
-              {/* Feature 2 */}
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-blue-100/70 text-[#2F27CE] flex items-center justify-center shrink-0 shadow-2xs">
-                  <Users className="w-4 h-4 stroke-[2.5]" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900">Efficient Operations</div>
-                  <div className="text-[11px] text-slate-500 font-medium">Tools for faster service delivery</div>
-                </div>
-              </div>
-
-              {/* Feature 3 */}
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-blue-100/70 text-[#2F27CE] flex items-center justify-center shrink-0 shadow-2xs">
-                  <FileText className="w-4 h-4 stroke-[2.5]" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900">Audited Actions</div>
-                  <div className="text-[11px] text-slate-500 font-medium">Transparent and accountable workflows</div>
-                </div>
-              </div>
-
-              {/* Feature 4 */}
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-blue-100/70 text-[#2F27CE] flex items-center justify-center shrink-0 shadow-2xs">
-                  <Settings className="w-4 h-4 stroke-[2.5]" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900">Better Governance</div>
-                  <div className="text-[11px] text-slate-500 font-medium">Technology for a stronger India</div>
-                </div>
+              {/* Floating Seva for a Stronger India Handwritten Script with Tricolor Strokes */}
+              <div className="absolute right-0 bottom-2 pointer-events-none select-none">
+                <img
+                  src="/gov/seva-script-transparent.png"
+                  alt="Seva for a Stronger India"
+                  className="w-28 sm:w-32 object-contain"
+                />
               </div>
             </div>
           </div>
 
-          {/* Bottom Visual: Civic Building Illustration with Tricolor Flag & Motto Bar */}
-          <div className="mt-8 pt-4 relative">
-            {/* Cursive Tagline with Flowing Tricolor stroke */}
-            <div className="flex flex-col items-end pr-3 mb-1">
-              <span className="font-serif italic text-xs sm:text-sm font-semibold text-slate-600 tracking-wide">
-                Seva for a Stronger India
+          {/* Bottom Visual: Rashtrapati Bhavan Photographic Illustration with Motto Bar */}
+          <div className="mt-4 w-full">
+            <div className="w-full overflow-hidden">
+              <img
+                src="/gov/gov-palace-exact.png"
+                alt="Rashtrapati Bhavan - Government of India"
+                className="w-full h-auto object-cover object-top block"
+              />
+            </div>
+
+            {/* Bottom Royal Blue Motto Bar */}
+            <div className="w-full bg-[#1E58B8] text-white py-3 px-5 sm:px-6 flex items-center gap-3 text-[11px] sm:text-xs font-semibold shadow-inner">
+              <StateEmblem size={20} className="text-white shrink-0" />
+              <span className="tracking-wide">
+                Digital Governance &nbsp;|&nbsp; Efficient Services &nbsp;|&nbsp; Empowered Citizens
               </span>
-              <div className="h-0.5 w-24 mt-0.5 flex rounded-full overflow-hidden">
-                <div className="flex-1 bg-[#FF9933]" />
-                <div className="flex-1 bg-white border-y border-slate-200" />
-                <div className="flex-1 bg-[#138808]" />
-              </div>
-            </div>
-
-            {/* Architectural Vector Facade Illustration */}
-            <div className="w-full h-44 sm:h-48 relative rounded-2xl overflow-hidden border border-slate-200/70 bg-gradient-to-b from-sky-100/80 via-blue-50/50 to-amber-50/30 shadow-inner">
-              <svg viewBox="0 0 540 220" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full object-cover">
-                <defs>
-                  <linearGradient id="skyWash" x1="270" y1="0" x2="270" y2="220" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#DBEAFE" stopOpacity="0.8" />
-                    <stop offset="0.6" stopColor="#EFF6FF" stopOpacity="0.4" />
-                    <stop offset="1" stopColor="#FEF3C7" stopOpacity="0.3" />
-                  </linearGradient>
-                  <linearGradient id="domeSandstone" x1="270" y1="20" x2="270" y2="100" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#D97706" />
-                    <stop offset="0.5" stopColor="#F59E0B" />
-                    <stop offset="1" stopColor="#B45309" />
-                  </linearGradient>
-                  <linearGradient id="buildingStone" x1="270" y1="80" x2="270" y2="190" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#FDE68A" />
-                    <stop offset="0.7" stopColor="#F59E0B" stopOpacity="0.8" />
-                    <stop offset="1" stopColor="#D97706" />
-                  </linearGradient>
-                  <linearGradient id="treeGreen1" x1="60" y1="90" x2="60" y2="190" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#15803D" />
-                    <stop offset="1" stopColor="#166534" />
-                  </linearGradient>
-                  <linearGradient id="treeGreen2" x1="480" y1="90" x2="480" y2="190" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#15803D" />
-                    <stop offset="1" stopColor="#166534" />
-                  </linearGradient>
-                </defs>
-
-                {/* Sky */}
-                <rect width="540" height="220" fill="url(#skyWash)" />
-
-                {/* Left Lush Trees */}
-                <ellipse cx="40" cy="140" rx="35" ry="45" fill="url(#treeGreen1)" opacity="0.9" />
-                <ellipse cx="70" cy="130" rx="40" ry="50" fill="url(#treeGreen1)" opacity="0.95" />
-                <ellipse cx="100" cy="145" rx="30" ry="40" fill="url(#treeGreen1)" opacity="0.85" />
-
-                {/* Right Lush Trees */}
-                <ellipse cx="440" cy="145" rx="30" ry="40" fill="url(#treeGreen2)" opacity="0.85" />
-                <ellipse cx="470" cy="130" rx="40" ry="50" fill="url(#treeGreen2)" opacity="0.95" />
-                <ellipse cx="500" cy="140" rx="35" ry="45" fill="url(#treeGreen2)" opacity="0.9" />
-
-                {/* Ground / Road Forecourt */}
-                <rect x="0" y="180" width="540" height="40" fill="#CBD5E1" opacity="0.8" />
-                <line x1="0" y1="180" x2="540" y2="180" stroke="#94A3B8" strokeWidth="2" />
-
-                {/* Central Secretariat Wings */}
-                <rect x="90" y="125" width="360" height="55" rx="2" fill="url(#buildingStone)" stroke="#B45309" strokeWidth="1" />
-                {/* Wing Windows / Colonnade Rows */}
-                {[105, 120, 135, 150, 165, 180, 195, 210, 330, 345, 360, 375, 390, 405, 420, 435].map((x, i) => (
-                  <rect key={i} x={x} y="138" width="8" height="24" rx="2" fill="#78350F" opacity="0.75" />
-                ))}
-
-                {/* Central Palace Portico / Colonnade */}
-                <rect x="215" y="110" width="110" height="70" fill="#FCD34D" stroke="#B45309" strokeWidth="1.5" />
-                {/* Portico Columns */}
-                {[225, 240, 255, 270, 285, 300, 315].map((cx, i) => (
-                  <rect key={i} x={cx - 3} y="122" width="6" height="58" rx="1" fill="#FEF08A" stroke="#B45309" strokeWidth="0.8" />
-                ))}
-
-                {/* Central Classical Pediment Triangle */}
-                <polygon points="210,110 330,110 270,85" fill="#F59E0B" stroke="#92400E" strokeWidth="1.5" />
-
-                {/* Central Dome Drum & Arch Windows */}
-                <rect x="235" y="65" width="70" height="22" rx="2" fill="#D97706" stroke="#78350F" strokeWidth="1" />
-                {[242, 252, 262, 272, 282, 292].map((wx, i) => (
-                  <rect key={i} x={wx} y="70" width="6" height="12" rx="1.5" fill="#451A03" />
-                ))}
-
-                {/* Main Dome Arch */}
-                <path d="M235 65 C235 30, 305 30, 305 65 Z" fill="url(#domeSandstone)" stroke="#78350F" strokeWidth="1.5" />
-
-                {/* Cupola Finial & Spike */}
-                <rect x="266" y="24" width="8" height="8" rx="1" fill="#FDE68A" stroke="#78350F" strokeWidth="1" />
-                <line x1="270" y1="24" x2="270" y2="4" stroke="#475569" strokeWidth="2" />
-
-                {/* Indian National Flag Waving On Top */}
-                <g transform="translate(270, 4)">
-                  {/* Saffron Stripe */}
-                  <path d="M0 0 C8 -2, 16 2, 26 0 L26 6 C16 8, 8 4, 0 6 Z" fill="#FF9933" />
-                  {/* White Stripe */}
-                  <path d="M0 6 C8 4, 16 8, 26 6 L26 12 C16 14, 8 10, 0 12 Z" fill="#FFFFFF" />
-                  {/* Ashoka Chakra */}
-                  <circle cx="13" cy="9" r="2.2" fill="none" stroke="#000080" strokeWidth="0.6" />
-                  <circle cx="13" cy="9" r="0.6" fill="#000080" />
-                  {/* Green Stripe */}
-                  <path d="M0 12 C8 10, 16 14, 26 12 L26 18 C16 20, 8 16, 0 18 Z" fill="#138808" />
-                </g>
-
-                {/* Subtle Ashoka Chakra watermark in the sky */}
-                <circle cx="270" cy="50" r="14" stroke="#FDE68A" strokeWidth="0.8" strokeDasharray="2 2" fill="none" opacity="0.4" />
-              </svg>
-            </div>
-
-            {/* Bottom Dark Blue Motto Bar */}
-            <div className="w-full bg-[#1E3A8A] text-white rounded-xl py-2.5 px-4 flex items-center justify-between text-[10px] sm:text-[11px] font-semibold mt-3 shadow-md">
-              <div className="flex items-center gap-2">
-                <StateEmblem size={18} className="text-amber-400 shrink-0" />
-                <span className="tracking-wide">Digital Governance &nbsp;•&nbsp; Efficient Services &nbsp;•&nbsp; Empowered Citizens</span>
-              </div>
-              <span className="hidden sm:inline text-amber-300/90 text-[10px] uppercase tracking-wider font-mono">OPERATIONS</span>
             </div>
           </div>
         </div>
 
-        {/* RIGHT COLUMN: REAL SAKRAAR SEVA LOGIN FORM */}
+        {/* RIGHT COLUMN: REAL SARKAAR SEVA LOGIN FORM */}
         <div className="lg:col-span-6 p-8 sm:p-12 flex flex-col justify-between bg-white">
           <div>
             {/* Top Blue Brand Accent Pill */}
@@ -401,7 +312,7 @@ export function GovernmentLoginView() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-hidden p-1 rounded-md"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-hidden p-1 rounded-md cursor-pointer"
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? (
@@ -418,7 +329,7 @@ export function GovernmentLoginView() {
                 <button
                   type="button"
                   onClick={() => setShowHelpModal(true)}
-                  className="text-xs font-semibold text-[#2F27CE] hover:text-[#251FB5] transition-colors focus:outline-hidden"
+                  className="text-xs font-semibold text-[#2F27CE] hover:text-[#251FB5] transition-colors focus:outline-hidden cursor-pointer"
                 >
                   Forgot password?
                 </button>
@@ -467,7 +378,7 @@ export function GovernmentLoginView() {
                 <button
                   type="button"
                   onClick={() => setShowHelpModal(true)}
-                  className="text-[#2F27CE] hover:underline font-semibold focus:outline-hidden"
+                  className="text-[#2F27CE] hover:underline font-semibold focus:outline-hidden cursor-pointer"
                 >
                   Contact your administrator
                 </button>
@@ -478,12 +389,12 @@ export function GovernmentLoginView() {
           {/* Right Panel Footer */}
           <footer className="mt-8 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 font-medium">
             <div className="flex items-center gap-2">
-              <span>© 2026 Seva Saarthi</span>
+              <span>© 2026 Sarkaar Seva</span>
               <span>•</span>
               <button
                 type="button"
                 onClick={() => toast.info("Sarkaar Seva enforces zero-trust data protection policies.")}
-                className="hover:text-slate-600 transition-colors"
+                className="hover:text-slate-600 transition-colors cursor-pointer"
               >
                 Privacy
               </button>
@@ -491,7 +402,7 @@ export function GovernmentLoginView() {
               <button
                 type="button"
                 onClick={() => toast.info("Authorized government personnel operational terms apply.")}
-                className="hover:text-slate-600 transition-colors"
+                className="hover:text-slate-600 transition-colors cursor-pointer"
               >
                 Terms
               </button>
@@ -499,7 +410,7 @@ export function GovernmentLoginView() {
               <button
                 type="button"
                 onClick={() => toast.info("Encrypted with SHA-512 and HMAC session security.")}
-                className="hover:text-slate-600 transition-colors"
+                className="hover:text-slate-600 transition-colors cursor-pointer"
               >
                 Security
               </button>
@@ -520,7 +431,7 @@ export function GovernmentLoginView() {
               <button
                 type="button"
                 onClick={() => setShowHelpModal(false)}
-                className="p-1 text-slate-400 hover:text-slate-700 rounded-xl"
+                className="p-1 text-slate-400 hover:text-slate-700 rounded-xl cursor-pointer"
                 aria-label="Close dialog"
               >
                 <X className="w-5 h-5" />
@@ -549,13 +460,33 @@ export function GovernmentLoginView() {
               </div>
             </div>
 
+            <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-2xl text-xs text-slate-700 flex items-center justify-between">
+              <div>
+                <span className="font-bold text-blue-900">Quick Demo Access:</span>
+                <div className="font-mono text-[11px] text-blue-800 mt-0.5">
+                  ID: OFF-PAN-7042 &bull; Pass: 1234567890
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmployeeId("OFF-PAN-7042");
+                  setPassword("1234567890");
+                  setShowHelpModal(false);
+                }}
+                className="px-3 py-1.5 bg-[#2F27CE] hover:bg-[#251FB5] text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer"
+              >
+                Fill Demo
+              </button>
+            </div>
+
             <div className="pt-2">
               <button
                 type="button"
                 onClick={() => setShowHelpModal(false)}
-                className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-colors"
+                className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
               >
-                Understood
+                Close
               </button>
             </div>
           </div>
