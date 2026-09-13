@@ -1,3 +1,4 @@
+(() => {
   // 1. Listen for ACTIVATE_SERVICE and LAUNCH_SERVICE events
   const handleActivateService = (e) => {
     const payload = e.detail || (e.data && e.data.data);

@@ -100,16 +100,6 @@
       consent: "yes",
     },
   };
-
-  async function loadProfile() {
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ type: "GET_CITIZEN_PROFILE" }, async (response) => {
-        let profile = response?.profile;
-        if (response?.profileMap) {
-          if (!profile) profile = {};
-          profile.profileMap = response.profileMap;
-        }
-
   const CONFIG = {
     apiEndpoints: [
       "https://seva-saarthi.vercel.app/api/agent/autofill",
