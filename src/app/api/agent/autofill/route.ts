@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifiedServiceById } from "@/lib/registry/verified-service-registry";
 import { verifyOfficialUrl } from "@/lib/registry/official-domain-guard";
-import { INITIAL_PROFILE_FIELDS, DEFAULT_USER } from "@/lib/mock-data/initial-state";
 import { getAuthenticatedCitizenUser } from "@/lib/server/auth";
 import { getUserProfileFields } from "@/lib/server/db";
 
@@ -57,38 +56,38 @@ function buildCanonicalMapping(rawFields: { field_name: string; value: string }[
     }
   }
 
-  const fullName = map.full_name || user?.name || DEFAULT_USER.name;
-  const mobile = map.phone_number || map.mobile || user?.phone || DEFAULT_USER.phone;
-  const email = map.email || user?.email || DEFAULT_USER.email;
-  const dob = map.date_of_birth || "2001-08-15";
-  const gender = map.gender || "Male";
-  const aadhaar = map.aadhaar_number || "5492 8173 9012";
-  const address = map.permanent_address || map.location || "H.No 4-52/1, Green Hills Colony, Gachibowli, Hyderabad, Telangana - 500032";
-  const pincode = map.pincode || "500032";
+  const fullName = map.full_name || user?.name || "";
+  const mobile = map.phone_number || map.mobile || user?.phone || "";
+  const email = map.email || user?.email || "";
+  const dob = map.date_of_birth || "";
+  const gender = map.gender || "";
+  const aadhaar = map.aadhaar_number || "";
+  const address = map.permanent_address || map.location || "";
+  const pincode = map.pincode || "";
 
   // Disaggregate full name
-  const nameParts = fullName.trim().split(/\s+/);
-  const firstName = nameParts[0] || fullName;
-  const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : firstName;
+  const nameParts = fullName ? fullName.trim().split(/\s+/) : [];
+  const firstName = nameParts[0] || fullName || "";
+  const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
   const middleName = nameParts.length > 2 ? nameParts.slice(1, -1).join(" ") : "";
 
   // Disaggregate father name
-  const fatherName = map.father_name || "Suresh Kumar";
-  const fParts = fatherName.trim().split(/\s+/);
+  const fatherName = map.father_name || "";
+  const fParts = fatherName ? fatherName.trim().split(/\s+/) : [];
   const fatherFirstName = fParts[0] || fatherName;
   const fatherLastName = fParts.length > 1 ? fParts[fParts.length - 1] : "";
 
   // Disaggregate mother name
-  const motherName = map.mother_name || "Laxmi Devi";
-  const mParts = motherName.trim().split(/\s+/);
+  const motherName = map.mother_name || "";
+  const mParts = motherName ? motherName.trim().split(/\s+/) : [];
   const motherFirstName = mParts[0] || motherName;
   const motherLastName = mParts.length > 1 ? mParts[mParts.length - 1] : "";
 
   // DOB variations
-  let dobFormatted = "15/08/2001";
-  let dobDay = "15";
-  let dobMonth = "08";
-  let dobYear = "2001";
+  let dobFormatted = "";
+  let dobDay = "";
+  let dobMonth = "";
+  let dobYear = "";
   if (dob.includes("-")) {
     const parts = dob.split("-");
     if (parts.length === 3) {
@@ -96,6 +95,14 @@ function buildCanonicalMapping(rawFields: { field_name: string; value: string }[
       dobMonth = parts[1];
       dobDay = parts[2];
       dobFormatted = `${dobDay}/${dobMonth}/${dobYear}`;
+    }
+  } else if (dob.includes("/")) {
+    dobFormatted = dob;
+    const parts = dob.split("/");
+    if (parts.length === 3) {
+      dobDay = parts[0];
+      dobMonth = parts[1];
+      dobYear = parts[2];
     }
   }
 
@@ -238,6 +245,12 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const serviceId = url.searchParams.get("serviceId") || "s001";
     const service = verifiedServiceById(serviceId);
+    if (!service) {
+      return NextResponse.json(
+        { success: false, error: `Invalid service context: ${serviceId}` },
+        { status: 400 }
+      );
+    }
 
     const user = await getAuthenticatedCitizenUser(request);
     if (!user) {
@@ -247,7 +260,7 @@ export async function GET(request: Request) {
       );
     }
 
-    let profileFields = INITIAL_PROFILE_FIELDS;
+    let profileFields: any[] = [];
     try {
       const dbFields = await getUserProfileFields(user.id);
       if (dbFields && dbFields.length > 0) {
@@ -262,9 +275,9 @@ export async function GET(request: Request) {
     return NextResponse.json({
       success: true,
       serviceId,
-      serviceName: service?.serviceName || "Post Matric Scholarship",
-      officialDomain: service?.officialDomain || "scholarships.gov.in",
-      applicationUrl: service?.officialApplicationUrl || "https://scholarships.gov.in",
+      serviceName: service.serviceName,
+      officialDomain: service.officialDomain,
+      applicationUrl: service.officialApplicationUrl,
       citizenProfile: {
         userId: user.id,
         fullName: canonical.full_name,
@@ -333,7 +346,7 @@ export async function POST(request: Request) {
           }
         } catch {}
         if (!fields || fields.length === 0) {
-          fields = INITIAL_PROFILE_FIELDS;
+          fields = [];
         }
       }
 
@@ -370,7 +383,7 @@ export async function POST(request: Request) {
           }
         } catch {}
         if (!fields || fields.length === 0) {
-          fields = INITIAL_PROFILE_FIELDS;
+          fields = [];
         }
       }
 
@@ -459,21 +472,18 @@ export async function POST(request: Request) {
 
       let fields = body.payload?.profileFields;
       if (!fields || !Array.isArray(fields) || fields.length === 0) {
-        if (user) {
-          try {
-            const dbFields = await getUserProfileFields(user.id);
-            if (dbFields && dbFields.length > 0) {
-              fields = dbFields as any;
-            }
-          } catch {}
-        }
-        if (!fields || fields.length === 0) {
-          fields = INITIAL_PROFILE_FIELDS;
+        try {
+          const dbFields = await getUserProfileFields(user.id);
+          if (dbFields && dbFields.length > 0) {
+            fields = dbFields as any;
+          }
+        } catch {}
+        if (!fields) {
+          fields = [];
         }
       }
 
-      const effectiveUser = user || DEFAULT_USER;
-      const { canonical, applicant, safeFields, blockedFields } = buildCanonicalMapping(fields, effectiveUser);
+      const { canonical, applicant, safeFields, blockedFields } = buildCanonicalMapping(fields, user);
 
       return NextResponse.json({
         success: true,

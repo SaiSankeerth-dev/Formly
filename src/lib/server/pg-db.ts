@@ -7,6 +7,7 @@ import {
   EMBEDDED_SEED_SQL,
   EMBEDDED_MIGRATION_002,
   EMBEDDED_MIGRATION_003,
+  EMBEDDED_MIGRATION_004,
 } from "./embedded-migrations";
 
 declare global {
@@ -250,7 +251,25 @@ async function initSchema(db: PGlite) {
     }
   }
 
-  // 6. Seed initial employees & users for government & citizen
+  // 6. Migration 004 (User-owned AI Conversations & Messages)
+  let sql004 = EMBEDDED_MIGRATION_004;
+  if (!isServerless) {
+    try {
+      const sql004Path = path.resolve(process.cwd(), "supabase/migrations/004_ai_conversations.sql");
+      if (fs.existsSync(sql004Path)) {
+        sql004 = fs.readFileSync(sql004Path, "utf8");
+      }
+    } catch {}
+  }
+  if (sql004) {
+    try {
+      await db.exec(cleanSqlForPglite(sql004));
+    } catch (e: any) {
+      console.warn("[pg-db] Migration 004 non-fatal notice:", e.message);
+    }
+  }
+
+  // 7. Seed initial employees & users for government & citizen
   await seedInitialData(db);
 }
 
@@ -602,6 +621,34 @@ async function seedInitialData(db: PGlite) {
       END IF;
     END $$;
   `).catch(() => {});
+
+  // Seed sample profile fields for demo citizen
+  await db.exec(`
+    INSERT INTO profiles (id, user_id, full_name, phone)
+    VALUES ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Sai Sankeerth', '9876543210')
+    ON CONFLICT (user_id) DO NOTHING;
+
+    INSERT INTO profile_fields (user_id, field_name, field_key, value, source_document_id, confidence, verification_status, confirmed_at, created_at, updated_at)
+    VALUES
+      ('00000000-0000-0000-0000-000000000001', 'full_name', 'full_name', 'Sai Sankeerth', null, 0.99, 'VERIFIED', now(), now(), now()),
+      ('00000000-0000-0000-0000-000000000001', 'date_of_birth', 'date_of_birth', '2001-08-15', null, 0.98, 'VERIFIED', now(), now(), now()),
+      ('00000000-0000-0000-0000-000000000001', 'phone_number', 'phone_number', '9876543210', null, 0.99, 'VERIFIED', now(), now(), now()),
+      ('00000000-0000-0000-0000-000000000001', 'email', 'email', 'sankeerths615@gmail.com', null, 0.99, 'VERIFIED', now(), now(), now()),
+      ('00000000-0000-0000-0000-000000000001', 'annual_income', 'annual_income', '180000', null, 0.96, 'VERIFIED', now(), now(), now()),
+      ('00000000-0000-0000-0000-000000000001', 'aadhaar_number', 'aadhaar_number', '5492 8173 9012', null, 0.99, 'VERIFIED', now(), now(), now()),
+      ('00000000-0000-0000-0000-000000000001', 'gender', 'gender', 'Male', null, 0.95, 'VERIFIED', now(), now(), now()),
+      ('00000000-0000-0000-0000-000000000001', 'college_name', 'college_name', 'JNTU College of Engineering Hyderabad', null, 0.95, 'VERIFIED', now(), now(), now()),
+      ('00000000-0000-0000-0000-000000000001', 'education_degree', 'education_degree', 'B.Tech Computer Science & Engineering', null, 0.95, 'VERIFIED', now(), now(), now()),
+      ('00000000-0000-0000-0000-000000000001', 'roll_number', 'roll_number', '21011A0542', null, 0.95, 'VERIFIED', now(), now(), now()),
+      ('00000000-0000-0000-0000-000000000001', 'bank_account_no', 'bank_account_no', '918237465019', null, 0.97, 'VERIFIED', now(), now(), now()),
+      ('00000000-0000-0000-0000-000000000001', 'bank_ifsc', 'bank_ifsc', 'SBIN0020104', null, 0.99, 'VERIFIED', now(), now(), now()),
+      ('00000000-0000-0000-0000-000000000001', 'bank_name', 'bank_name', 'State Bank of India', null, 0.99, 'VERIFIED', now(), now(), now()),
+      ('00000000-0000-0000-0000-000000000001', 'permanent_address', 'permanent_address', 'H.No 4-52/1, Green Hills Colony, Gachibowli, Hyderabad, Telangana - 500032', null, 0.95, 'VERIFIED', now(), now(), now()),
+      ('00000000-0000-0000-0000-000000000001', 'pincode', 'pincode', '500032', null, 0.98, 'VERIFIED', now(), now(), now())
+    ON CONFLICT (user_id, field_key) DO NOTHING;
+  `).catch((err) => {
+    console.warn("[seedInitialData] Profile fields insert warning:", err);
+  });
 }
 
 export async function pgQuery<T = any>(sql: string, params: any[] = []): Promise<T[]> {
@@ -734,6 +781,11 @@ export async function resolveActorUuid(actorType: string, actorId?: string | nul
       );
       if (directAuth.rows.length > 0 && isValidUuid((directAuth.rows[0] as any).id)) {
         return (directAuth.rows[0] as any).id;
+      }
+
+      if (actorId.startsWith("u_")) {
+        const stripped = actorId.substring(2);
+        if (isValidUuid(stripped)) return stripped;
       }
 
       // If user exists in users table, create an auth.users record with a new UUID

@@ -76,9 +76,13 @@ export function FloatingSaarthiAI({
     return () => window.removeEventListener("SEVA_SAARTHI_OPEN_AI", handleGlobalOpen);
   }, []);
 
-  const handleSendMessage = (queryText: string) => {
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [isLoadingAI, setIsLoadingAI] = useState(false);
+  const [lastFailedQuery, setLastFailedQuery] = useState<string | null>(null);
+
+  const handleSendMessage = async (queryText: string) => {
     const text = queryText.trim();
-    if (!text) return;
+    if (!text || isLoadingAI) return;
 
     const userMsg: Message = {
       id: `u_${Date.now()}`,
@@ -88,88 +92,67 @@ export function FloatingSaarthiAI({
 
     setMessages((prev) => [...prev, userMsg]);
     setInputQuery("");
+    setIsLoadingAI(true);
+    setLastFailedQuery(null);
 
-    // Generate context-aware AI response for Indian citizen services
-    setTimeout(() => {
-      const lower = text.toLowerCase();
-      let replyText = "";
+    try {
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: text,
+          conversationId,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setLastFailedQuery(text);
+        const errorText = data.message || "Saarthi is temporarily unavailable.";
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `err_${Date.now()}`,
+            sender: "saarthi",
+            text: errorText,
+          },
+        ]);
+        return;
+      }
+
+      if (data.conversationId) {
+        setConversationId(data.conversationId);
+      }
+
       let matchedService: ServiceDetail | undefined = undefined;
-      let matchedLink: { label: string; url: string } | undefined = undefined;
-
-      if (lower.includes("pan") || lower.includes("tax") || lower.includes("nsdl") || lower.includes("protean")) {
-        matchedService = POPULAR_SERVICES_LIST.find((s) => s.id === "pan-application-protean");
-        replyText =
-          "To apply for a new PAN Card (Form 49A), you will need proof of identity (Aadhaar), date of birth proof, and address proof. You can complete the application directly on the official Protean portal.";
-        matchedLink = {
-          label: "Open Protean Official Portal",
-          url: "https://onlineservices.proteantech.in/paam/endUserRegisterContact.html",
-        };
-      } else if (lower.includes("income") || lower.includes("revenue")) {
-        matchedService = POPULAR_SERVICES_LIST.find((s) => s.id === "income-certificate");
-        replyText =
-          "Income Certificates are issued by the State Revenue Department / e-District portal. Ensure you have your salary slips or self-declaration affidavit and Aadhaar card ready.";
-        matchedLink = {
-          label: "Open ServicePlus Portal",
-          url: "https://serviceonline.gov.in/",
-        };
-      } else if (lower.includes("caste") || lower.includes("obc") || lower.includes("sc") || lower.includes("st")) {
-        matchedService = POPULAR_SERVICES_LIST.find((s) => s.id === "caste-certificate");
-        replyText =
-          "Caste / Community certificates require genealogical proof or an existing family member's certificate, along with school leaving records mentioning your caste.";
-        matchedLink = {
-          label: "Open ServicePlus Portal",
-          url: "https://serviceonline.gov.in/",
-        };
-      } else if (lower.includes("scholarship") || lower.includes("nsp") || lower.includes("student")) {
-        matchedService = POPULAR_SERVICES_LIST.find((s) => s.id === "scholarship-nsp");
-        replyText =
-          "For National Scholarship Portal (NSP) schemes, make sure your bank account is active and seeded with the Aadhaar NPCI mapper. You will need your academic bonafide certificate and previous marks memo.";
-        matchedLink = {
-          label: "Open National Scholarship Portal",
-          url: "https://scholarships.gov.in/",
-        };
-      } else if (lower.includes("voter") || lower.includes("election") || lower.includes("epic")) {
-        matchedService = POPULAR_SERVICES_LIST.find((s) => s.id === "voter-services");
-        replyText =
-          "You can submit Form 6 for a new voter registration on the official ECI Voters' Service Portal. You will need a photograph and address proof.";
-        matchedLink = {
-          label: "Open ECI Voters' Portal",
-          url: "https://voters.eci.gov.in/",
-        };
-      } else if (lower.includes("passport")) {
-        matchedService = POPULAR_SERVICES_LIST.find((s) => s.id === "passport-seva");
-        replyText =
-          "Passport applications are processed through the official Passport Seva portal. Ensure your Aadhaar address matches your current residence, and keep 10th matriculation memo ready for Non-ECR status.";
-        matchedLink = {
-          label: "Open Passport Seva Portal",
-          url: "https://services1.passportindia.gov.in/",
-        };
-      } else if (lower.includes("driving") || lower.includes("licence") || lower.includes("sarathi") || lower.includes("rto")) {
-        matchedService = POPULAR_SERVICES_LIST.find((s) => s.id === "driving-licence");
-        replyText =
-          "Learner's and Driving Licence applications can be submitted online on the MoRTH Sarathi Parivahan portal with Aadhaar authentication.";
-        matchedLink = {
-          label: "Open Sarathi Parivahan",
-          url: "https://sarathi.parivahan.gov.in/",
-        };
-      } else if (lower.includes("document") || lower.includes("size") || lower.includes("pdf") || lower.includes("compress")) {
-        replyText =
-          "Most government portals restrict uploads to 200 KB PDF format. You can prepare and optimize your documents in the 'Your Documents' section without altering any names, numbers, or seals.";
-      } else {
-        replyText =
-          "I can assist you with discovering verified government services, checking document requirements, and preparing your files to meet destination portal limits. Which service would you like to explore?";
+      if (data.serviceId) {
+        matchedService = POPULAR_SERVICES_LIST.find((s) => s.id === data.serviceId);
       }
 
       const aiMsg: Message = {
         id: `ai_${Date.now()}`,
         sender: "saarthi",
-        text: replyText,
-        link: matchedLink,
+        text: data.message,
+        link: data.suggestedLink,
         service: matchedService,
       };
 
       setMessages((prev) => [...prev, aiMsg]);
-    }, 400);
+    } catch (err) {
+      console.error("[FloatingSaarthiAI] Request failed:", err);
+      setLastFailedQuery(text);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `err_${Date.now()}`,
+          sender: "saarthi",
+          text: "Saarthi is temporarily unavailable. Please try again in a few moments.",
+        },
+      ]);
+    } finally {
+      setIsLoadingAI(false);
+    }
   };
 
   const quickPrompts = [
@@ -265,6 +248,17 @@ export function FloatingSaarthiAI({
                 >
                   {msg.text}
 
+                  {msg.id.startsWith("err_") && lastFailedQuery && (
+                    <div className="mt-2 pt-2 border-t border-red-100 flex items-center justify-between">
+                      <button
+                        onClick={() => handleSendMessage(lastFailedQuery)}
+                        className="text-[11px] font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
+                      >
+                        Try Again
+                      </button>
+                    </div>
+                  )}
+
                   {/* Card / Link inside AI response */}
                   {msg.link && (
                     <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
@@ -286,6 +280,15 @@ export function FloatingSaarthiAI({
                 </div>
               </div>
             ))}
+
+            {isLoadingAI && (
+              <div className="flex flex-col items-start">
+                <div className="max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs font-medium leading-relaxed bg-white text-slate-500 border border-slate-200/80 rounded-bl-xs shadow-2xs flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-500 animate-spin" />
+                  <span>Saarthi is thinking...</span>
+                </div>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
 
