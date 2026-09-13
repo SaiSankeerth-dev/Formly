@@ -22,10 +22,11 @@ export async function middleware(request: NextRequest) {
     process.env.PLATFORM === "government";
 
   const isCitizenPlatform =
-    port === "3000" ||
-    host.endsWith(":3000") ||
-    forwardedPort === "3000" ||
-    forwardedHost.endsWith(":3000");
+    !isGovPlatform &&
+    (port === "3000" ||
+      host.endsWith(":3000") ||
+      forwardedPort === "3000" ||
+      forwardedHost.endsWith(":3000"));
 
   // 1. Skip static assets, Next internal files, public media, and health check
   if (
