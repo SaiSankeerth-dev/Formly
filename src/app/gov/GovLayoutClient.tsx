@@ -1,13 +1,3 @@
 "use client";
 
-import React from "react";
-import { GovProvider } from "@/lib/store/gov-store";
-import { GovernmentShell } from "@/components/gov/GovernmentShell";
-
-export function GovLayoutClient({ children }: { children: React.ReactNode }) {
-  return (
-    <GovProvider>
-      <GovernmentShell>{children}</GovernmentShell>
-    </GovProvider>
-  );
-}
+export { GovLayout as GovLayoutClient } from "@/components/gov/GovLayout";

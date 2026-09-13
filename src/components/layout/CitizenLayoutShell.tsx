@@ -3,10 +3,11 @@
 import React, { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
-import { Sidebar, MobileNavDrawer } from "@/components/layout/Sidebar";
-import { Header } from "@/components/layout/Header";
+import { CitizenNavigation, CitizenMobileNavigation } from "@/components/citizen/CitizenNavigation";
+import { CitizenHeader } from "@/components/citizen/CitizenHeader";
 import { CommandPalette } from "@/components/layout/CommandPalette";
 import { ServiceDetailDrawer, AnyService } from "@/components/services/ServiceDetailDrawer";
+import { CitizenFooter } from "@/components/citizen/CitizenFooter";
 
 export function CitizenLayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -52,15 +53,16 @@ export function CitizenLayoutShell({ children }: { children: React.ReactNode }) 
   // Authenticated full citizen dashboard shell
   return (
     <div className="min-h-screen flex bg-[#FBFBFE] w-full max-w-full overflow-x-hidden relative">
-      <Sidebar />
+      <CitizenNavigation />
       <div className="flex-1 flex flex-col min-w-0 w-full max-w-full overflow-x-hidden">
-        <Header
+        <CitizenHeader
           onOpenMobileNav={() => setIsMobileNavOpen(true)}
           onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
         />
         <main className="flex-1 p-4 sm:p-6 md:p-8 max-w-7xl w-full mx-auto box-border overflow-x-hidden">
           {children}
         </main>
+        <CitizenFooter />
       </div>
 
       {/* Global Command Palette */}
@@ -78,7 +80,7 @@ export function CitizenLayoutShell({ children }: { children: React.ReactNode }) 
       />
 
       {/* Mobile Drawer */}
-      <MobileNavDrawer
+      <CitizenMobileNavigation
         isOpen={isMobileNavOpen}
         onClose={() => setIsMobileNavOpen(false)}
       />

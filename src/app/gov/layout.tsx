@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { GovLayoutClient } from "./GovLayoutClient";
+import { GovLayout } from "@/components/gov/GovLayout";
 
 export const metadata: Metadata = {
   title: {
@@ -9,6 +9,6 @@ export const metadata: Metadata = {
   description: "Secure access to the Sarkaar Seva government operations platform.",
 };
 
-export default function GovLayout({ children }: { children: React.ReactNode }) {
-  return <GovLayoutClient>{children}</GovLayoutClient>;
+export default function GovRootLayout({ children }: { children: React.ReactNode }) {
+  return <GovLayout>{children}</GovLayout>;
 }

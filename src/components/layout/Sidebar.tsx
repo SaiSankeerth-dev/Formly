@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { LotusLogo } from "@/components/ui/LotusLogo";
 import { cn } from "@/lib/utils";
+import { CITIZEN_PRIMARY_NAV, CITIZEN_SECONDARY_NAV } from "@/lib/navigation/citizenNavigation";
 
 interface NavItem {
   label: string;
@@ -27,17 +28,17 @@ export function Sidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const mainNavItems: NavItem[] = [
-    { label: "Home", href: "/dashboard", icon: Home },
-    { label: "My Applications", href: "/applications", icon: FileText },
-    { label: "Documents", href: "/documents", icon: Folder },
-    { label: "Profile", href: "/profile", icon: User },
-  ];
+  const mainNavItems: NavItem[] = CITIZEN_PRIMARY_NAV.map((item) => ({
+    label: item.label,
+    href: item.href,
+    icon: item.icon || Home,
+  }));
 
-  const secondaryNavItems: NavItem[] = [
-    { label: "Settings", href: "/settings", icon: Settings },
-    { label: "Help & Support", href: "/help", icon: HelpCircle },
-  ];
+  const secondaryNavItems: NavItem[] = CITIZEN_SECONDARY_NAV.map((item) => ({
+    label: item.label,
+    href: item.href,
+    icon: item.icon || HelpCircle,
+  }));
 
   const isNavActive = (href: string) => {
     if (href === "/dashboard") {
@@ -225,12 +226,16 @@ export function MobileNavDrawer({
   const pathname = usePathname();
 
   const navItems: NavItem[] = [
-    { label: "Home", href: "/dashboard", icon: Home },
-    { label: "My Applications", href: "/applications", icon: FileText },
-    { label: "Documents", href: "/documents", icon: Folder },
-    { label: "Profile", href: "/profile", icon: User },
-    { label: "Settings", href: "/settings", icon: Settings },
-    { label: "Help & Support", href: "/help", icon: HelpCircle },
+    ...CITIZEN_PRIMARY_NAV.map((item) => ({
+      label: item.label,
+      href: item.href,
+      icon: item.icon || Home,
+    })),
+    ...CITIZEN_SECONDARY_NAV.map((item) => ({
+      label: item.label,
+      href: item.href,
+      icon: item.icon || HelpCircle,
+    })),
   ];
 
   const isNavActive = (href: string) => {

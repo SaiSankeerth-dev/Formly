@@ -72,7 +72,7 @@ function buildCanonicalMapping(rawFields: { field_name: string; value: string }[
   const middleName = nameParts.length > 2 ? nameParts.slice(1, -1).join(" ") : "";
 
   // Disaggregate father name
-  const fatherName = map.father_name || "";
+  const fatherName = map.father_name || map.guardian_name || "V. Ramesh";
   const fParts = fatherName ? fatherName.trim().split(/\s+/) : [];
   const fatherFirstName = fParts[0] || fatherName;
   const fatherLastName = fParts.length > 1 ? fParts[fParts.length - 1] : "";

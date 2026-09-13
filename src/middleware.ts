@@ -67,7 +67,21 @@ export async function middleware(request: NextRequest) {
       );
     }
 
-    // 2. Block access to Citizen-only pages on Government platform
+    // 2. Canonical redirects for Government platform entry points
+    if (pathname === "/login" || pathname === "/signup") {
+      return NextResponse.redirect(new URL("/gov/login", request.url));
+    }
+    if (pathname === "/dashboard" || pathname === "/") {
+      return NextResponse.redirect(new URL("/gov/dashboard", request.url));
+    }
+    if (pathname === "/applications") {
+      return NextResponse.redirect(new URL("/gov/applications", request.url));
+    }
+    if (pathname === "/settings" || pathname.startsWith("/settings/")) {
+      return NextResponse.redirect(new URL("/gov/settings", request.url));
+    }
+
+    // 3. Block access to Citizen-only pages on Government platform
     const citizenOnlyPages = [
       "/documents",
       "/profile",
@@ -81,6 +95,9 @@ export async function middleware(request: NextRequest) {
       "/signup",
       "/portal",
       "/track",
+      "/support",
+      "/privacy",
+      "/terms",
     ];
     const isCitizenAppStatus = pathname.startsWith("/applications/") && pathname.includes("/status");
     if (citizenOnlyPages.some((p) => pathname === p || pathname.startsWith(p + "/")) || isCitizenAppStatus) {
@@ -118,9 +135,7 @@ export async function middleware(request: NextRequest) {
       pathname === "/audit" ||
       pathname.startsWith("/audit/") ||
       pathname === "/monitoring" ||
-      pathname.startsWith("/monitoring/") ||
-      pathname === "/settings" ||
-      pathname.startsWith("/settings/");
+      pathname.startsWith("/monitoring/");
 
     if (isGovRouteOnCitizen) {
       return new NextResponse(
