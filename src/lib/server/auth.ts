@@ -77,8 +77,30 @@ export async function getAuthenticatedCitizenUser(
     try {
       cookieStore = await cookies();
     } catch {
-      if (request && "cookies" in request && typeof (request as any).cookies?.getAll === "function") {
+      // Ignore Next.js headers failure in non-SSR context
+    }
+
+    if (!cookieStore && request) {
+      if ("cookies" in request && typeof (request as any).cookies?.getAll === "function") {
         cookieStore = (request as any).cookies;
+      } else {
+        const headers = (request as any).headers;
+        const cookieHeader = headers && typeof headers.get === "function" ? headers.get("cookie") : "";
+        if (cookieHeader) {
+          const parsed = cookieHeader.split(";").map((pair: string) => {
+            const idx = pair.indexOf("=");
+            if (idx === -1) return null;
+            return {
+              name: pair.slice(0, idx).trim(),
+              value: decodeURIComponent(pair.slice(idx + 1).trim()),
+            };
+          }).filter(Boolean);
+          cookieStore = {
+            getAll: () => parsed,
+            get: (name: string) => parsed.find((c: any) => c.name === name),
+            set: () => {},
+          };
+        }
       }
     }
 
@@ -174,14 +196,10 @@ export async function getAuthenticatedCitizenUser(
       return citizenUser;
     }
   } catch (supabaseErr) {
-    // Non-fatal, fallback to local session
+    // Non-fatal, fallback to verified session token
   }
 
-  // 2. Secondary / Local fallback for offline/seeded test accounts — disabled in production
-  const allowFallback = process.env.NODE_ENV !== "production" && process.env.VERCEL_ENV !== "production" && process.env.ALLOW_DEMO_FALLBACK !== "false";
-  if (!allowFallback) {
-    return null;
-  }
+  // 2. Secondary: Authenticate verified stateless session token (signed via SESSION_SECRET)
   let cookieStore: any = null;
   try {
     cookieStore = await cookies();

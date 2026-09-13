@@ -39,6 +39,10 @@ export async function POST(request: Request) {
       // Non-fatal check
     }
 
+    const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
+    const rawProto = request.headers.get("x-forwarded-proto");
+    const isSecure = rawProto === "https" || process.env.NODE_ENV === "production" || (!host.includes("localhost") && !host.includes("127.0.0.1"));
+
     // 2. Primary Citizen Authentication: Supabase Auth single source of truth
     const cookieStore = await cookies();
     const cookiesToSet: Array<{ name: string; value: string; options?: any }> = [];
@@ -84,6 +88,7 @@ export async function POST(request: Request) {
           ...c.options,
           path: "/",
           sameSite: "lax",
+          secure: isSecure,
         });
       }
 
@@ -92,7 +97,7 @@ export async function POST(request: Request) {
         name: "FORMLY_CITIZEN_SESSION",
         value: token,
         httpOnly: true,
-        secure: false,
+        secure: isSecure,
         sameSite: "lax",
         path: "/",
         maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined,
@@ -101,7 +106,7 @@ export async function POST(request: Request) {
         name: "seva_saarthi_session",
         value: token,
         httpOnly: true,
-        secure: false,
+        secure: isSecure,
         sameSite: "lax",
         path: "/",
         maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined,
@@ -146,7 +151,7 @@ export async function POST(request: Request) {
         name: "FORMLY_CITIZEN_SESSION",
         value: token,
         httpOnly: true,
-        secure: false,
+        secure: isSecure,
         sameSite: "lax",
         path: "/",
         maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined,
@@ -155,7 +160,7 @@ export async function POST(request: Request) {
         name: "seva_saarthi_session",
         value: token,
         httpOnly: true,
-        secure: false,
+        secure: isSecure,
         sameSite: "lax",
         path: "/",
         maxAge: rememberMe ? 30 * 24 * 60 * 60 : undefined,

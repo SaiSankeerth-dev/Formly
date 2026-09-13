@@ -40,7 +40,10 @@ export function ProfilePage() {
     logout,
   } = useSevaSaarthi();
 
-  const [pageState, setPageState] = useState<ProfilePageState>("LOADING");
+  const [pageState, setPageState] = useState<ProfilePageState>(() => {
+    if (profileFields && profileFields.length > 0) return "READY";
+    return "LOADING";
+  });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [tempValues, setTempValues] = useState<Record<string, string>>({});
@@ -52,39 +55,63 @@ export function ProfilePage() {
 
   // Real backend profile fetch
   const fetchProfile = useCallback(async () => {
-    setPageState("LOADING");
+    if (pageState !== "READY") {
+      setPageState("LOADING");
+    }
     setErrorMessage(null);
     try {
       const res = await fetch("/api/profile");
       if (res.status === 401) {
-        router.push("/login");
+        // Only redirect to /login if user is genuinely logged out
+        // Never bounce to /login when user is authenticated (which triggers /login -> /dashboard redirect loop)
+        if (!user && !isLoadingAuth) {
+          router.push("/login");
+          return;
+        }
+        if (profileFields && profileFields.length > 0) {
+          setPageState("READY");
+        } else {
+          setPageState("EMPTY");
+        }
         return;
       }
       if (!res.ok) {
-        setPageState("ERROR");
-        setErrorMessage("Your profile couldn't be loaded right now.");
+        if (profileFields && profileFields.length > 0) {
+          setPageState("READY");
+        } else {
+          setPageState("ERROR");
+          setErrorMessage("Your profile couldn't be loaded right now.");
+        }
         return;
       }
       const data = await res.json();
       if (data.success) {
         const fields = Array.isArray(data.data) ? data.data : [];
-        if (fields.length === 0) {
+        if (fields.length === 0 && profileFields.length === 0) {
           setPageState("EMPTY");
-        } else if (!data.completed) {
+        } else if (!data.completed && fields.length === 0) {
           setPageState("INCOMPLETE");
         } else {
           setPageState("READY");
         }
       } else {
-        setPageState("ERROR");
-        setErrorMessage(data.error || "Your profile couldn't be loaded right now.");
+        if (profileFields && profileFields.length > 0) {
+          setPageState("READY");
+        } else {
+          setPageState("ERROR");
+          setErrorMessage(data.error || "Your profile couldn't be loaded right now.");
+        }
       }
     } catch (err: any) {
       console.warn("[ProfilePage] Failed to fetch /api/profile", err);
-      setPageState("ERROR");
-      setErrorMessage("Your profile couldn't be loaded right now.");
+      if (profileFields && profileFields.length > 0) {
+        setPageState("READY");
+      } else {
+        setPageState("ERROR");
+        setErrorMessage("Your profile couldn't be loaded right now.");
+      }
     }
-  }, [router]);
+  }, [router, user, isLoadingAuth, profileFields, pageState]);
 
   useEffect(() => {
     fetchProfile();
