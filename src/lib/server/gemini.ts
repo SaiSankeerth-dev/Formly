@@ -60,48 +60,17 @@ Safety, Ethics & Privacy:
 - Respect citizen privacy and encourage safe digital practices.
 - Multi-lingual Support: You support English, Hindi, Hinglish, and major Indian languages (Telugu, Tamil, Kannada, Marathi, Bengali, Gujarati, etc.) seamlessly according to the citizen's preference.`;
 
-import fs from "fs";
-import path from "path";
-
-function ensureEnvLoaded(): void {
-  if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim().length > 0) return;
-  try {
-    const envFiles = [".env.local", ".env"];
-    for (const f of envFiles) {
-      const p = path.resolve(process.cwd(), f);
-      if (fs.existsSync(p)) {
-        const lines = fs.readFileSync(p, "utf-8").split("\n");
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (trimmed && !trimmed.startsWith("#")) {
-            const idx = trimmed.indexOf("=");
-            if (idx > 0) {
-              const k = trimmed.substring(0, idx).trim();
-              const v = trimmed.substring(idx + 1).trim().replace(/^['"]|['"]$/g, "");
-              if (k && !process.env[k]) {
-                process.env[k] = v;
-              }
-            }
-          }
-        }
-      }
-    }
-  } catch {}
-}
-
 export function isGeminiConfigured(): boolean {
-  ensureEnvLoaded();
   const key = process.env.GEMINI_API_KEY;
   return Boolean(key && key.trim().length > 0);
 }
 
 export function getGeminiClient(): GoogleGenAI {
-  ensureEnvLoaded();
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey || !apiKey.trim()) {
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  if (!apiKey) {
     throw new Error("GEMINI_NOT_CONFIGURED: Missing GEMINI_API_KEY environment variable.");
   }
-  return new GoogleGenAI({ apiKey: apiKey.trim() });
+  return new GoogleGenAI({ apiKey });
 }
 
 export function classifyIntent(query: string, reply: string): SaarthiIntent {
