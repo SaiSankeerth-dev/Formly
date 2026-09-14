@@ -39,8 +39,12 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 1b. If an OAuth code arrives at any non-callback URL (e.g. root '/' due to Site URL fallback), forward directly to /auth/callback
-  if (pathname !== "/auth/callback" && request.nextUrl.searchParams.has("code")) {
+  // 1b. If an OAuth code or error arrives at any non-callback URL (e.g. root '/' due to Site URL fallback), forward directly to /auth/callback
+  if (
+    pathname !== "/auth/callback" &&
+    pathname !== "/login" &&
+    (request.nextUrl.searchParams.has("code") || request.nextUrl.searchParams.has("error"))
+  ) {
     const callbackUrl = new URL("/auth/callback", request.url);
     callbackUrl.search = request.nextUrl.search;
     return NextResponse.redirect(callbackUrl);

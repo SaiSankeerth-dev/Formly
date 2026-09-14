@@ -13,7 +13,8 @@ export async function GET(request: Request) {
   const errorDesc = requestUrl.searchParams.get("error_description");
 
   // Determine origin and secure protocol safely for local dev, Vercel preview, and production domains
-  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || requestUrl.host;
+  const rawHost = request.headers.get("x-forwarded-host") || request.headers.get("host") || requestUrl.host;
+  const host = rawHost.split(",")[0].trim();
   const rawProto = request.headers.get("x-forwarded-proto");
   const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
   const proto = isLocal ? "http" : (rawProto ? rawProto.split(",")[0].trim() : "https");
@@ -21,25 +22,27 @@ export async function GET(request: Request) {
   const isSecure = proto === "https";
 
   // Safe development logging
-  console.log(`[AUTH CALLBACK] callback_reached=true code_present=${Boolean(code)}`);
+  console.log(`[AUTH CALLBACK] callback_reached=true code_present=${Boolean(code)} origin=${origin}`);
 
   if (errorParam || errorDesc) {
+    const reason = errorDesc || errorParam || "oauth_provider_error";
     console.error("[AUTH CALLBACK] OAuth provider error returned:", errorParam, errorDesc);
-    return NextResponse.redirect(`${origin}/login?error=google_auth_failed`);
+    return NextResponse.redirect(`${origin}/login?error=google_auth_failed&reason=${encodeURIComponent(reason)}`);
   }
 
   if (!code) {
     console.error("[AUTH CALLBACK] Missing authorization code in query params");
-    return NextResponse.redirect(`${origin}/login?error=google_auth_failed`);
+    return NextResponse.redirect(`${origin}/login?error=google_auth_failed&reason=missing_code`);
   }
 
   try {
     const cookieStore = await cookies();
     const responseCookies: Array<{ name: string; value: string; options?: CookieOptions }> = [];
 
-    // Create server Supabase client capturing all cookie mutations
+    // Create server Supabase client capturing all cookie mutations and passing raw request headers
     const supabase = await createClient({
       cookieStore,
+      request,
       onSetCookies: (cookiesToSet) => {
         responseCookies.push(...cookiesToSet);
       },
@@ -48,26 +51,23 @@ export async function GET(request: Request) {
     // Exchange PKCE authorization code for authenticated Supabase session
     const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (exchangeError || !data?.user) {
-      console.error("[AUTH CALLBACK] exchange_result=failure error=", exchangeError?.message || "No user data returned");
-      return NextResponse.redirect(`${origin}/login?error=google_auth_failed`);
+    let user = data?.user;
+
+    // Resilient Session Recovery: If code exchange encountered an issue (e.g. concurrent or duplicate call), check if user session already exists
+    if (!user) {
+      const { data: existingData } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+      if (existingData?.user) {
+        user = existingData.user;
+      }
     }
 
-    console.log(`[AUTH CALLBACK] exchange_result=success session_created=true`);
-
-    // Authoritative user identity derived from Supabase Auth
-    const {
-      data: { user: authUser },
-      error: getUserError,
-    } = await supabase.auth.getUser();
-
-    const user = authUser || data.user;
     if (!user || !user.id) {
-      console.error("[AUTH CALLBACK] Failed to resolve authenticated user after code exchange:", getUserError?.message);
-      return NextResponse.redirect(`${origin}/login?error=session_establishment_failed`);
+      const reason = exchangeError?.message || "code_exchange_failed";
+      console.error("[AUTH CALLBACK] exchange_result=failure error=", reason);
+      return NextResponse.redirect(`${origin}/login?error=google_auth_failed&reason=${encodeURIComponent(reason)}`);
     }
 
-    console.log(`[AUTH CALLBACK] user_id=${user.id}`);
+    console.log(`[AUTH CALLBACK] exchange_result=success session_created=true user_id=${user.id}`);
 
     const fullName =
       user.user_metadata?.full_name ||

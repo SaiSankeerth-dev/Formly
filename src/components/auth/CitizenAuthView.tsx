@@ -96,12 +96,21 @@ export function CitizenAuthView({ initialMode = "login" }: CitizenAuthViewProps)
   // Handle URL error messages from callback redirects
   useEffect(() => {
     const errorParam = searchParams.get("error");
+    const reasonParam = searchParams.get("reason") || searchParams.get("error_description");
     if (errorParam === "google_auth_failed") {
-      setErrorMessage("Google authentication was canceled or failed. Please try again.");
+      setErrorMessage(
+        reasonParam
+          ? `Google authentication failed: ${reasonParam}`
+          : "Google authentication was canceled or failed. Please try again."
+      );
     } else if (errorParam === "session_establishment_failed") {
-      setErrorMessage("Could not establish a secure session. Please try again.");
+      setErrorMessage(
+        reasonParam
+          ? `Session establishment failed: ${reasonParam}`
+          : "Could not establish a secure session. Please try again."
+      );
     } else if (errorParam) {
-      setErrorMessage(errorParam);
+      setErrorMessage(reasonParam ? `${errorParam}: ${reasonParam}` : errorParam);
     }
   }, [searchParams]);
 
