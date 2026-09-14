@@ -428,7 +428,7 @@ export async function POST(request: Request) {
             elementId: id,
             canonicalField: canonicalKey,
             label,
-            value: canonical[canonicalKey] || (canonicalKey === "district" ? "Hyderabad" : null),
+            value: canonical[canonicalKey] || null,
             confidence: 0.95,
             safeToFill: true,
           };

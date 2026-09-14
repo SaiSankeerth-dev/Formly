@@ -436,39 +436,45 @@
     if (values.address && !values.permanent_address) values.permanent_address = values.address;
 
     // Intelligent name decomposition
-    const fullName = (values.full_name || user.name || "Sai Sankeerth").trim();
-    const nameParts = fullName.split(/\s+/).filter(Boolean);
-    if (!values.first_name) {
-      values.first_name = nameParts[0] || "Sai";
-    }
-    if (!values.last_name && !values.surname) {
-      if (nameParts.length > 1) {
-        values.last_name = nameParts[nameParts.length - 1];
-        values.surname = nameParts[nameParts.length - 1];
-        if (nameParts.length > 2 && !values.middle_name) {
-          values.middle_name = nameParts.slice(1, -1).join(" ");
+    const fullName = (values.full_name || user.name || "").trim();
+    if (fullName) {
+      const nameParts = fullName.split(/\s+/).filter(Boolean);
+      if (!values.first_name) {
+        values.first_name = nameParts[0] || "";
+      }
+      if (!values.last_name && !values.surname) {
+        if (nameParts.length > 1) {
+          values.last_name = nameParts[nameParts.length - 1];
+          values.surname = nameParts[nameParts.length - 1];
+          if (nameParts.length > 2 && !values.middle_name) {
+            values.middle_name = nameParts.slice(1, -1).join(" ");
+          }
+        } else {
+          values.last_name = nameParts[0];
+          values.surname = nameParts[0];
         }
-      } else {
-        values.last_name = nameParts[0];
-        values.surname = nameParts[0];
       }
     }
 
     // Father name decomposition
-    const fatherName = (values.father_name || "Suresh Kumar").trim();
-    const fParts = fatherName.split(/\s+/).filter(Boolean);
-    if (!values.father_first_name) values.father_first_name = fParts[0] || fatherName;
-    if (!values.father_last_name) values.father_last_name = fParts.length > 1 ? fParts[fParts.length - 1] : "";
+    const fatherName = (values.father_name || "").trim();
+    if (fatherName) {
+      const fParts = fatherName.split(/\s+/).filter(Boolean);
+      if (!values.father_first_name) values.father_first_name = fParts[0] || fatherName;
+      if (!values.father_last_name) values.father_last_name = fParts.length > 1 ? fParts[fParts.length - 1] : "";
+    }
 
     // Mother name decomposition
-    const motherName = (values.mother_name || "Laxmi Devi").trim();
-    const mParts = motherName.split(/\s+/).filter(Boolean);
-    if (!values.mother_first_name) values.mother_first_name = mParts[0] || motherName;
-    if (!values.mother_last_name) values.mother_last_name = mParts.length > 1 ? mParts[mParts.length - 1] : "";
+    const motherName = (values.mother_name || "").trim();
+    if (motherName) {
+      const mParts = motherName.split(/\s+/).filter(Boolean);
+      if (!values.mother_first_name) values.mother_first_name = mParts[0] || motherName;
+      if (!values.mother_last_name) values.mother_last_name = mParts.length > 1 ? mParts[mParts.length - 1] : "";
+    }
 
     // Title / Salutation
-    const gender = (values.gender || "Male").trim();
-    if (!values.title) {
+    const gender = (values.gender || "").trim();
+    if (gender && !values.title) {
       values.title = gender.toLowerCase().startsWith("f") ? "SMT" : "SHRI";
     }
 
@@ -476,50 +482,58 @@
     if (!values.cat_type) values.cat_type = "INDIVIDUAL";
 
     // Format DOB to DD/MM/YYYY
-    const rawDob = values.date_of_birth || values.dob || "2001-08-15";
-    let formattedDob = "15/08/2001";
-    let isoDob = "2001-08-15";
-    let dobDay = "15";
-    let dobMonth = "08";
-    let dobYear = "2001";
+    const rawDob = values.date_of_birth || values.dob || "";
+    if (rawDob) {
+      let formattedDob = "";
+      let isoDob = "";
+      let dobDay = "";
+      let dobMonth = "";
+      let dobYear = "";
 
-    const matchIso = String(rawDob).match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
-    if (matchIso) {
-      const [, y, m, d] = matchIso;
-      dobYear = y;
-      dobMonth = m.padStart(2, "0");
-      dobDay = d.padStart(2, "0");
-      formattedDob = `${dobDay}/${dobMonth}/${dobYear}`;
-      isoDob = `${dobYear}-${dobMonth}-${dobDay}`;
-    } else {
-      const matchSlash = String(rawDob).match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
-      if (matchSlash) {
-        const [, d, m, y] = matchSlash;
+      const matchIso = String(rawDob).match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+      if (matchIso) {
+        const [, y, m, d] = matchIso;
         dobYear = y;
         dobMonth = m.padStart(2, "0");
         dobDay = d.padStart(2, "0");
         formattedDob = `${dobDay}/${dobMonth}/${dobYear}`;
         isoDob = `${dobYear}-${dobMonth}-${dobDay}`;
+      } else {
+        const matchSlash = String(rawDob).match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+        if (matchSlash) {
+          const [, d, m, y] = matchSlash;
+          dobYear = y;
+          dobMonth = m.padStart(2, "0");
+          dobDay = d.padStart(2, "0");
+          formattedDob = `${dobDay}/${dobMonth}/${dobYear}`;
+          isoDob = `${dobYear}-${dobMonth}-${dobDay}`;
+        }
+      }
+
+      if (formattedDob) {
+        values.date_of_birth = formattedDob;
+        values.date_of_birth_iso = isoDob;
+        values.dob = formattedDob;
+        values.dob_formatted = formattedDob;
+        values.dob_day = dobDay;
+        values.dob_month = dobMonth;
+        values.dob_year = dobYear;
       }
     }
 
-    values.date_of_birth = formattedDob;
-    values.date_of_birth_iso = isoDob;
-    values.dob = formattedDob;
-    values.dob_formatted = formattedDob;
-    values.dob_day = dobDay;
-    values.dob_month = dobMonth;
-    values.dob_year = dobYear;
-
     // Aadhaar variations
-    const rawAadhaar = values.aadhaar_number || values.aadhaar || "5492 8173 9012";
-    const cleanAadhaar = rawAadhaar.replace(/\s+/g, "");
-    values.aadhaar_clean = cleanAadhaar;
-    values.aadhaar = rawAadhaar;
-    values.aadhaar_number = rawAadhaar;
-    values.uid1 = cleanAadhaar.slice(0, 4);
-    values.uid2 = cleanAadhaar.slice(4, 8);
-    values.uid3 = cleanAadhaar.slice(8, 12);
+    const rawAadhaar = values.aadhaar_number || values.aadhaar || "";
+    if (rawAadhaar) {
+      const cleanAadhaar = rawAadhaar.replace(/\s+/g, "");
+      values.aadhaar_clean = cleanAadhaar;
+      values.aadhaar = rawAadhaar;
+      values.aadhaar_number = rawAadhaar;
+      if (cleanAadhaar.length >= 12) {
+        values.uid1 = cleanAadhaar.slice(0, 4);
+        values.uid2 = cleanAadhaar.slice(4, 8);
+        values.uid3 = cleanAadhaar.slice(8, 12);
+      }
+    }
 
     values.consent = "yes";
     return values;

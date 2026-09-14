@@ -84,7 +84,27 @@ begin
   ) then
     alter table public.profiles add column avatar_url text;
   end if;
+  if not exists (
+    select 1 from information_schema.columns 
+    where table_schema = 'public' and table_name = 'profiles' and column_name = 'phone_verified'
+  ) then
+    alter table public.profiles add column phone_verified boolean default false;
+  end if;
+  if not exists (
+    select 1 from information_schema.columns 
+    where table_schema = 'public' and table_name = 'profiles' and column_name = 'phone_verified_at'
+  ) then
+    alter table public.profiles add column phone_verified_at timestamptz;
+  end if;
+  if not exists (
+    select 1 from information_schema.columns 
+    where table_schema = 'public' and table_name = 'profiles' and column_name = 'profile_completed'
+  ) then
+    alter table public.profiles add column profile_completed boolean default false;
+  end if;
 end $$;
+
+create unique index if not exists idx_profiles_id on public.profiles (id);
 
 -- 2. CITIZEN ADDRESSES
 create table if not exists public.addresses (

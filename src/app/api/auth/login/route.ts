@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthoritativeDb } from "@/lib/server/pg-db";
-import { loginUser, getEmployeeBySession, signSessionToken } from "@/lib/server/db";
+import { loginUser, getEmployeeBySession, signSessionToken, getUserProfileFields } from "@/lib/server/db";
+import { checkOnboardingStatus } from "@/lib/constants/profile";
 
 export async function POST(request: Request) {
   try {
@@ -86,11 +87,20 @@ export async function POST(request: Request) {
         role: "Applicant / Citizen",
       });
 
+      let isComplete = false;
+      try {
+        const fields = await getUserProfileFields(authUser.id);
+        const status = checkOnboardingStatus(fields, userPayload);
+        isComplete = status.isComplete;
+      } catch {}
+
       const response = NextResponse.json({
         success: true,
         message: "Login successful",
         user: userPayload,
         token,
+        completed: isComplete,
+        redirectTo: isComplete ? "/dashboard" : "/onboarding/profile",
       });
 
       // Forward all Supabase session cookies with root path
@@ -151,11 +161,20 @@ export async function POST(request: Request) {
         );
       }
 
+      let isComplete = false;
+      try {
+        const fields = await getUserProfileFields(user.id);
+        const status = checkOnboardingStatus(fields, user);
+        isComplete = status.isComplete;
+      } catch {}
+
       const response = NextResponse.json({
         success: true,
         message: "Login successful",
         user,
         token,
+        completed: isComplete,
+        redirectTo: isComplete ? "/dashboard" : "/onboarding/profile",
       });
 
       response.cookies.set({

@@ -71,8 +71,10 @@ export default function HomePage() {
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          // Store dashboard data even if profile incomplete — show dashboard with banner instead of forced redirect
-          // User can complete profile via onboarding link, but dashboard remains accessible
+          if (!data.profile?.completed) {
+            router.replace("/onboarding/profile");
+            return;
+          }
           setDashboardData(data);
           const recents = Array.isArray(data.recentServices)
             ? data.recentServices

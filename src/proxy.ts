@@ -258,6 +258,7 @@ export async function proxy(request: NextRequest) {
     "/checklist",
     "/onboarding",
     "/applications",
+    "/settings",
   ];
 
   const isProtectedCitizenRoute =

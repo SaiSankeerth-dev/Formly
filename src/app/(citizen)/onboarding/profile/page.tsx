@@ -17,6 +17,7 @@ import {
 import { LotusLogo } from "@/components/ui/LotusLogo";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { toast } from "sonner";
+import { PhoneOtpFlow } from "@/components/auth/PhoneOtpFlow";
 
 function ProfileOnboardingContent() {
   const router = useRouter();
@@ -29,22 +30,48 @@ function ProfileOnboardingContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
 
-  // Synchronize wizard step with URL query parameter
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+
+  // Synchronize wizard step with URL query parameter, strictly preventing jump past step 2 if unverified
   useEffect(() => {
     const raw = Number(searchParams.get("step"));
     if (raw >= 1 && raw <= 4) {
+      if (raw > 2 && !isPhoneVerified) {
+        setCurrentStep(2);
+        router.replace("/onboarding/profile?step=2");
+        return;
+      }
       setCurrentStep(raw);
     }
-  }, [searchParams]);
+  }, [searchParams, isPhoneVerified, router]);
 
   // Form State
   const [fullName, setFullName] = useState("");
+  const [fatherName, setFatherName] = useState("");
+  const [motherName, setMotherName] = useState("");
   const [dob, setDob] = useState("");
   const [gender, setGender] = useState("Male");
   const [avatar, setAvatar] = useState("");
 
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+
+  // Check authoritative phone verification status
+  useEffect(() => {
+    const checkPhoneVerification = async () => {
+      try {
+        const res = await fetch("/api/citizen/phone-verify");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.phone_verified) {
+            setIsPhoneVerified(true);
+            if (data.phone && !phone) setPhone(data.phone);
+          }
+        }
+      } catch {}
+    };
+    checkPhoneVerification();
+  }, [phone]);
 
   const [stateName, setStateName] = useState("Telangana");
   const [district, setDistrict] = useState("");
@@ -72,9 +99,13 @@ function ProfileOnboardingContent() {
       });
 
       if (fieldMap.full_name) setFullName(fieldMap.full_name);
+      if (fieldMap.father_name) setFatherName(fieldMap.father_name);
+      if (fieldMap.mother_name) setMotherName(fieldMap.mother_name);
       if (fieldMap.date_of_birth) setDob(fieldMap.date_of_birth);
       if (fieldMap.gender) setGender(fieldMap.gender);
-      if (fieldMap.phone_number || fieldMap.mobile) setPhone(fieldMap.phone_number || fieldMap.mobile);
+      if (fieldMap.phone_verified === "true" || fieldMap.phone_verified === "1") {
+        setIsPhoneVerified(true);
+      }
       if (fieldMap.email) setEmail(fieldMap.email);
       if (fieldMap.state) setStateName(fieldMap.state);
       if (fieldMap.district) setDistrict(fieldMap.district);
@@ -101,18 +132,31 @@ function ProfileOnboardingContent() {
         }
         fieldsToSave = {
           full_name: fullName.trim(),
+          father_name: fatherName.trim(),
+          mother_name: motherName.trim(),
           date_of_birth: dob.trim(),
           gender: gender.trim(),
         };
       } else if (currentStep === 2) {
-        if (!phone.trim() || !email.trim()) {
-          toast.error("Please fill in your mobile number and email.");
+        if (!email.trim()) {
+          toast.error("Please enter a valid email address.");
+          setIsSubmitting(false);
+          return;
+        }
+        if (!phone.trim()) {
+          toast.error("Please enter your mobile number.");
+          setIsSubmitting(false);
+          return;
+        }
+        if (!isPhoneVerified) {
+          toast.error("Please complete mobile OTP verification before continuing.");
           setIsSubmitting(false);
           return;
         }
         fieldsToSave = {
           phone_number: phone.trim(),
           mobile: phone.trim(),
+          phone_verified: "true",
           email: email.trim().toLowerCase(),
         };
       } else if (currentStep === 3) {
@@ -137,15 +181,30 @@ function ProfileOnboardingContent() {
           occupation: occupation.trim(),
           education_degree: education.trim(),
           caste_category: category.trim(),
+          profile_completed: "true",
         };
       }
 
       await batchUpdateProfileFields(fieldsToSave);
 
       if (nextStep > 4) {
+        if (!isPhoneVerified) {
+          toast.error("Please complete mobile OTP verification before finishing profile setup.");
+          setCurrentStep(2);
+          router.replace("/onboarding/profile?step=2");
+          setIsSubmitting(false);
+          return;
+        }
         setIsFinished(true);
         toast.success("Profile setup completed successfully!");
       } else {
+        if (nextStep > 2 && !isPhoneVerified) {
+          toast.error("Please complete mobile OTP verification before continuing.");
+          setCurrentStep(2);
+          router.replace("/onboarding/profile?step=2");
+          setIsSubmitting(false);
+          return;
+        }
         setCurrentStep(nextStep);
         router.replace(`/onboarding/profile?step=${nextStep}`);
       }
@@ -298,6 +357,34 @@ function ProfileOnboardingContent() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Father&apos;s / Guardian&apos;s Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={fatherName}
+                    onChange={(e) => setFatherName(e.target.value)}
+                    placeholder="e.g. Ramesh Kumar"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2F27CE] focus:bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Mother&apos;s Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={motherName}
+                    onChange={(e) => setMotherName(e.target.value)}
+                    placeholder="e.g. Lakshmi Devi"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2F27CE] focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
                     Date of Birth *
                   </label>
                   <input
@@ -342,21 +429,8 @@ function ProfileOnboardingContent() {
 
           {/* STEP 2: CONTACT */}
           {currentStep === 2 && (
-            <div className="space-y-4 animate-in fade-in duration-200">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Mobile Number (Aadhaar-linked preferred) *
-                </label>
-                <input
-                  type="tel"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="e.g. 9876543210"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2F27CE] focus:bg-white"
-                />
-              </div>
-
+            <div className="space-y-5 animate-in fade-in duration-200">
+              {/* Email Address */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   Email Address *
@@ -367,7 +441,21 @@ function ProfileOnboardingContent() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2F27CE] focus:bg-white"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-[#2F27CE] focus:bg-white"
+                />
+              </div>
+
+              {/* Real Phone OTP Verification */}
+              <div className="pt-1">
+                <PhoneOtpFlow
+                  mode="onboarding"
+                  initialPhone={phone}
+                  isAlreadyVerified={isPhoneVerified}
+                  onSuccess={(verifiedPhone) => {
+                    setPhone(verifiedPhone);
+                    setIsPhoneVerified(true);
+                    toast.success("Phone verified via Supabase Auth!");
+                  }}
                 />
               </div>
 

@@ -24,6 +24,7 @@ import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { cn, getConfidenceBadgeClass } from "@/lib/utils";
 import { toast } from "sonner";
 import { CANONICAL_PROFILE_FIELDS, PROFILE_CATEGORIES, getProfileCompleteness } from "@/lib/constants/profile";
+import { PhoneVerificationModal } from "@/components/auth/PhoneVerificationModal";
 
 type ProfilePageState = "LOADING" | "READY" | "INCOMPLETE" | "EMPTY" | "ERROR";
 
@@ -49,6 +50,22 @@ export function ProfilePage() {
   const [tempValues, setTempValues] = useState<Record<string, string>>({});
   const [isFullEditModalOpen, setIsFullEditModalOpen] = useState(false);
   const [fullFormData, setFullFormData] = useState<Record<string, string>>({});
+  const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+
+  const checkPhoneVerification = useCallback(async () => {
+    try {
+      const res = await fetch("/api/citizen/phone-verify");
+      if (res.ok) {
+        const data = await res.json();
+        setIsPhoneVerified(Boolean(data.phone_verified));
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    checkPhoneVerification();
+  }, [checkPhoneVerification]);
 
   const fieldDefinitions = CANONICAL_PROFILE_FIELDS;
   const categories = PROFILE_CATEGORIES;
@@ -86,14 +103,11 @@ export function ProfilePage() {
       }
       const data = await res.json();
       if (data.success) {
-        const fields = Array.isArray(data.data) ? data.data : [];
-        if (fields.length === 0 && profileFields.length === 0) {
-          setPageState("EMPTY");
-        } else if (!data.completed && fields.length === 0) {
-          setPageState("INCOMPLETE");
-        } else {
-          setPageState("READY");
+        if (!data.completed) {
+          router.replace("/onboarding/profile");
+          return;
         }
+        setPageState("READY");
       } else {
         if (profileFields && profileFields.length > 0) {
           setPageState("READY");
@@ -443,14 +457,32 @@ export function ProfilePage() {
                         </div>
                       ) : (
                         <div className="flex items-center justify-between group">
-                          <span
-                            className={cn(
-                              "text-xs font-bold",
-                              currentValue ? "text-slate-900" : "text-slate-400 italic"
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={cn(
+                                "text-xs font-bold",
+                                currentValue ? "text-slate-900" : "text-slate-400 italic"
+                              )}
+                            >
+                              {formatDisplayValue(fieldDef.fieldName, currentValue)}
+                            </span>
+
+                            {fieldDef.fieldName === "phone_number" && (
+                              isPhoneVerified ? (
+                                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                  <CheckCircle2 className="w-3 h-3" /> Verified
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setIsPhoneModalOpen(true)}
+                                  className="text-[10px] font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded-full inline-flex items-center gap-1 cursor-pointer transition-colors"
+                                >
+                                  <AlertCircle className="w-3 h-3" /> Verify Phone
+                                </button>
+                              )
                             )}
-                          >
-                            {formatDisplayValue(fieldDef.fieldName, currentValue)}
-                          </span>
+                          </div>
 
                           <button
                             onClick={() => handleStartEdit(fieldDef.fieldName, currentValue)}
@@ -543,6 +575,18 @@ export function ProfilePage() {
           </div>
         </div>
       )}
+
+      {/* Phone Verification Dialog */}
+      <PhoneVerificationModal
+        isOpen={isPhoneModalOpen}
+        onClose={() => setIsPhoneModalOpen(false)}
+        currentPhone={user?.phone || ""}
+        onVerified={() => {
+          setIsPhoneVerified(true);
+          fetchProfile();
+          checkPhoneVerification();
+        }}
+      />
     </div>
   );
 }

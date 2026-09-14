@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient } from "@/lib/supabase/server";
 import { getUserProfileFields, getUserDocuments, getPanApplications, getCitizenSessions } from "@/lib/server/db";
 import { getProfileCompleteness, checkOnboardingStatus } from "@/lib/constants/profile";
 import { getAuthenticatedCitizenUser } from "@/lib/server/auth";
@@ -8,49 +6,8 @@ import { pgQuery, getAuthoritativeDb } from "@/lib/server/pg-db";
 
 export async function GET(request: Request) {
   try {
-    // 1. Authenticate user from server Supabase session
-    const cookieStore = await cookies();
-    const supabase = await createClient(cookieStore);
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    let citizenUser: {
-      id: string;
-      name: string;
-      email: string;
-      phone: string;
-      role: string;
-      avatar: string;
-    } | null = null;
-
-    if (authUser && !authError) {
-      citizenUser = {
-        id: authUser.id,
-        name:
-          authUser.user_metadata?.full_name ||
-          authUser.user_metadata?.name ||
-          authUser.email?.split("@")[0] ||
-          "Citizen",
-        email: authUser.email || "",
-        phone: authUser.user_metadata?.phone || authUser.phone || "",
-        role: "Applicant / Citizen",
-        avatar: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || "",
-      };
-    } else {
-      const fallbackUser = await getAuthenticatedCitizenUser(request);
-      if (fallbackUser) {
-        citizenUser = {
-          id: fallbackUser.id,
-          name: fallbackUser.name,
-          email: fallbackUser.email,
-          phone: fallbackUser.phone || "",
-          role: fallbackUser.role,
-          avatar: (fallbackUser as any).avatar || "",
-        };
-      }
-    }
+    // 1. Authenticate user from authoritative session (Supabase Auth / SSR)
+    const citizenUser = await getAuthenticatedCitizenUser(request);
 
     if (!citizenUser) {
       return NextResponse.json(
@@ -123,6 +80,7 @@ export async function GET(request: Request) {
         firstName,
         email: citizenUser.email,
         phone: citizenUser.phone || "",
+        phone_verified: Boolean((citizenUser as any).phoneVerified || (citizenUser as any).phone_verified),
         role: citizenUser.role,
         avatar: citizenUser.avatar || "",
       },

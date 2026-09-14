@@ -92,7 +92,10 @@ export function getProfileCompleteness(profileFields: ProfileField[]) {
   };
 }
 
-export function checkOnboardingStatus(fields: ProfileField[], user?: { email?: string; phone?: string }) {
+export function checkOnboardingStatus(
+  fields: ProfileField[],
+  user?: { email?: string; phone?: string; phoneVerified?: boolean; phone_verified?: boolean }
+) {
   const map: Record<string, string> = {};
   if (Array.isArray(fields)) {
     for (const f of fields) {
@@ -104,6 +107,12 @@ export function checkOnboardingStatus(fields: ProfileField[], user?: { email?: s
 
   const effectivePhone = map.phone_number || map.mobile || user?.phone;
   const effectiveEmail = map.email || user?.email;
+  const isPhoneVerified = Boolean(
+    map.phone_verified === "true" ||
+    map.phone_verified === "1" ||
+    user?.phoneVerified ||
+    user?.phone_verified
+  );
 
   const isStep1 = Boolean(map.full_name && map.date_of_birth && map.gender);
   const isStep2 = Boolean(effectivePhone && effectiveEmail);
@@ -121,14 +130,20 @@ export function checkOnboardingStatus(fields: ProfileField[], user?: { email?: s
   else if (!isStep4) currentStep = 4;
   else currentStep = 4;
 
-  const isComplete = isStep1 && isStep2 && isStep3 && isStep4;
+  const isComplete = Boolean(
+    (isStep1 && isStep2 && isStep3 && isStep4) ||
+    map.profile_completed === "true" ||
+    (user as any)?.profile_completed === true ||
+    (user as any)?.profileCompleted === true
+  );
   return {
     isStep1,
     isStep2,
     isStep3,
     isStep4,
-    currentStep,
+    currentStep: isComplete ? 4 : currentStep,
     isComplete,
+    isPhoneVerified,
     profileMap: map,
   };
 }

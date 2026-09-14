@@ -69,6 +69,8 @@ export async function POST(request: Request) {
     const response = NextResponse.json({
       success: true,
       message: "Account created successfully",
+      completed: false,
+      redirectTo: "/onboarding/profile",
       user: {
         id: userId || "",
         name: name.trim(),

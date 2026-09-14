@@ -15,7 +15,8 @@ export async function GET(request: Request) {
   // Determine origin and secure protocol safely for local dev, Vercel preview, and production domains
   const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || requestUrl.host;
   const rawProto = request.headers.get("x-forwarded-proto");
-  const proto = rawProto ? rawProto.split(",")[0].trim() : (host.includes("localhost") || host.includes("127.0.0.1") ? "http" : "https");
+  const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
+  const proto = isLocal ? "http" : (rawProto ? rawProto.split(",")[0].trim() : "https");
   const origin = `${proto}://${host}`;
   const isSecure = proto === "https";
 
@@ -130,7 +131,9 @@ export async function GET(request: Request) {
                gender = COALESCE(NULLIF(profiles.gender, ''), old_p.gender),
                occupation = COALESCE(NULLIF(profiles.occupation, ''), old_p.occupation),
                education = COALESCE(NULLIF(profiles.education, ''), old_p.education),
-               avatar_url = COALESCE(NULLIF(profiles.avatar_url, ''), old_p.avatar_url)
+               avatar_url = COALESCE(NULLIF(profiles.avatar_url, ''), old_p.avatar_url),
+               phone_verified = (COALESCE(profiles.phone_verified, false) OR COALESCE(old_p.phone_verified, false)),
+               phone_verified_at = COALESCE(profiles.phone_verified_at, old_p.phone_verified_at)
              FROM (SELECT * FROM profiles WHERE id = $2 OR user_id = $2) AS old_p
              WHERE profiles.id = $1 OR profiles.user_id = $1`,
             [user.id, oldId]
@@ -182,8 +185,10 @@ export async function GET(request: Request) {
 
     console.log(`[AUTH CALLBACK] profile_exists=${profileExists} is_complete=${isComplete}`);
 
-    // Destination: Always direct authenticated citizen to /dashboard
-    const destination = "/dashboard";
+    // Destination: Direct uncompleted profiles to /onboarding/profile, completed to /dashboard (or requested 'next')
+    const nextParam = requestUrl.searchParams.get("next");
+    const safeNext = nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : null;
+    const destination = isComplete ? (safeNext || "/dashboard") : "/onboarding/profile";
 
     console.log(`[AUTH CALLBACK] redirect=${destination}`);
 

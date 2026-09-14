@@ -33,79 +33,12 @@
     }
   }
 
-  // Fallback default profile if not yet synced from web app
-  const DEFAULT_CITIZEN_PROFILE = {
-    user: {
-      id: "u0000000-0000-0000-0000-000000000001",
-      name: "Sai Sankeerth",
-      email: "user@gmail.com",
-      phone: "9876543210",
-    },
-    profileMap: {
-      full_name: "Sai Sankeerth",
-      first_name: "Sai",
-      last_name: "Sankeerth",
-      surname: "Sankeerth",
-      middle_name: "",
-      name: "Sai Sankeerth",
-      date_of_birth: "2001-08-15",
-      dob: "15/08/2001",
-      dob_formatted: "15/08/2001",
-      dob_day: "15",
-      dob_month: "08",
-      dob_year: "2001",
-      gender: "Male",
-      mobile: "9876543210",
-      phone_number: "9876543210",
-      phone: "9876543210",
-      email: "user@gmail.com",
-      aadhaar_number: "5492 8173 9012",
-      aadhaar: "5492 8173 9012",
-      aadhaar_clean: "549281739012",
-      uid1: "5492",
-      uid2: "8173",
-      uid3: "9012",
-      father_name: "Suresh Kumar",
-      father_first_name: "Suresh",
-      father_last_name: "Kumar",
-      mother_name: "Laxmi Devi",
-      mother_first_name: "Laxmi",
-      mother_last_name: "Devi",
-      permanent_address: "H.No 4-52/1, Green Hills Colony, Gachibowli, Hyderabad, Telangana - 500032",
-      address: "H.No 4-52/1, Green Hills Colony, Gachibowli, Hyderabad, Telangana - 500032",
-      pincode: "500032",
-      pin_code: "500032",
-      district: "Ranga Reddy",
-      mandal: "Serilingampally",
-      location: "Hyderabad, Telangana",
-      city: "Hyderabad, Telangana",
-      annual_income: "180000",
-      income: "180000",
-      caste_category: "OBC",
-      category: "OBC",
-      college_name: "National Institute of Technology",
-      education_degree: "B.Tech Computer Science and Engineering",
-      roll_number: "22071A0589",
-      current_year: "3rd Year / 5th Sem",
-      tenth_percentage: "94.2%",
-      twelfth_percentage: "88.4%",
-      bank_name: "State Bank of India",
-      bank_account_no: "38920194821",
-      bank_ifsc: "SBIN0020184",
-      account_holder_name: "Sai Sankeerth",
-      dbt_seeding_status: "Seeded (Active)",
-      app_type: "49A",
-      cat_type: "INDIVIDUAL",
-      title: "SHRI",
-      consent: "yes",
-    },
-  };
   const CONFIG = {
     apiEndpoints: [
-      "https://seva-saarthi.vercel.app/api/agent/autofill",
-      "https://sevasaarthi.vercel.app/api/agent/autofill",
       "http://localhost:3000/api/agent/autofill",
       "http://127.0.0.1:3000/api/agent/autofill",
+      "https://seva-saarthi.vercel.app/api/agent/autofill",
+      "https://sevasaarthi.vercel.app/api/agent/autofill",
     ],
   };
 
@@ -123,15 +56,21 @@
     for (const url of urls) {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 2000);
-        const res = await fetch(url, { signal: controller.signal });
+        const timeout = setTimeout(() => controller.abort(), 3000);
+        const res = await fetch(url, { signal: controller.signal, credentials: "include" });
         clearTimeout(timeout);
         if (res.ok) {
           const json = await res.json();
           const canonical = json?.data?.canonicalFields || json?.canonicalFields || json?.safeData;
           if (canonical && Object.keys(canonical).length > 0) {
+            const userName = json.data?.applicant?.fullName || json.citizenProfile?.fullName || canonical.full_name || (canonical.first_name ? `${canonical.first_name} ${canonical.last_name || ""}`.trim() : "Citizen");
             return {
-              user: { name: json.data?.applicant?.fullName || json.citizenProfile?.fullName || canonical.full_name || "Sai Sankeerth" },
+              user: {
+                id: json.citizenProfile?.userId || null,
+                name: userName,
+                email: canonical.email || json.citizenProfile?.email || "",
+                phone: canonical.mobile || canonical.phone || json.citizenProfile?.phone || "",
+              },
               profileMap: canonical,
               source: url,
             };
@@ -162,13 +101,17 @@
         }
 
         if (!profile || !profile.profileMap || Object.keys(profile.profileMap).length === 0) {
-          profile = DEFAULT_CITIZEN_PROFILE;
+          currentProfile = null;
+          if (ui("profile-name")) ui("profile-name").textContent = "Not Logged In";
+          if (ui("profile-status")) ui("profile-status").textContent = "Log in to Seva Saarthi web app";
+          resolve(null);
+          return;
         }
 
         currentProfile = profile;
 
         const count = Object.keys(profile.profileMap || {}).length;
-        const name = profile.user?.name || profile.profileMap?.full_name || "Sai Sankeerth";
+        const name = profile.user?.name || profile.profileMap?.full_name || "Citizen";
         if (ui("profile-name")) ui("profile-name").textContent = name;
         if (ui("profile-status")) ui("profile-status").textContent = `${count} verified records ready`;
 

@@ -545,8 +545,9 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
       await loadUserData(data.user);
       toast.success(`Welcome back, ${data.user.name}!`);
 
-      window.location.href = "/dashboard";
-      return { success: true };
+      const target = data.redirectTo || (data.completed ? "/dashboard" : "/onboarding/profile");
+      window.location.href = target;
+      return { success: true, redirectTo: target };
     } catch (err: any) {
       const msg = err.message || "Network error while signing in.";
       const displayMsg =
@@ -577,7 +578,8 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
       localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(data.user));
       await loadUserData(data.user);
       toast.success(`Account created successfully! Welcome to Seva Saarthi, ${data.user.name}.`);
-      window.location.href = "/dashboard";
+      const target = data.redirectTo || "/onboarding/profile";
+      window.location.href = target;
       return true;
     } catch (err: any) {
       const msg = err.message || "Network error while signing up.";
@@ -596,13 +598,23 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
       await fetch("/api/auth/logout", { method: "POST" });
     } catch {}
 
+    const oldUserId = user?.id;
     localStorage.removeItem(STORAGE_SESSION_KEY);
     localStorage.removeItem("seva_saarthi_active_profile");
+    if (oldUserId) {
+      localStorage.removeItem(`seva_saarthi_data_${oldUserId}`);
+    }
     setUser(null);
     setDocuments([]);
     setExtractedFields([]);
     setProfileFields([]);
     setRequirementStatuses([]);
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("SEVA_SAARTHI_LOGOUT"));
+      document.dispatchEvent(new CustomEvent("SEVA_SAARTHI_LOGOUT"));
+    }
+
     toast.info("You have signed out.");
     window.location.href = "/login";
   };

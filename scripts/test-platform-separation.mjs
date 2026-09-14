@@ -62,9 +62,11 @@ async function runPlatformSeparationTests() {
   assert(citizenPort === 3000, "Citizen Platform assigned to port 3000 (http://localhost:3000)");
   assert(govPort === 3001, "Government Platform assigned to port 3001 (http://localhost:3001)");
 
-  // Read middleware source to verify port detection and isolation logic
+  // Read middleware/proxy source to verify port detection and isolation logic
+  const proxyPath = path.resolve(process.cwd(), "src/proxy.ts");
   const middlewarePath = path.resolve(process.cwd(), "src/middleware.ts");
-  const middlewareSrc = fs.readFileSync(middlewarePath, "utf-8");
+  const targetPath = fs.existsSync(proxyPath) ? proxyPath : middlewarePath;
+  const middlewareSrc = fs.readFileSync(targetPath, "utf-8");
 
   assert(middlewareSrc.includes("3001"), "Middleware enforces port 3001 detection for Government platform");
   assert(middlewareSrc.includes("3000"), "Middleware enforces port 3000 boundary for Citizen platform");

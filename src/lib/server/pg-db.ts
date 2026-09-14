@@ -280,6 +280,10 @@ async function initSchema(db: PGlite) {
     ALTER TABLE profiles ADD COLUMN IF NOT EXISTS occupation text;
     ALTER TABLE profiles ADD COLUMN IF NOT EXISTS education text;
     ALTER TABLE profiles ADD COLUMN IF NOT EXISTS avatar_url text;
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS phone_verified boolean DEFAULT false;
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS phone_verified_at timestamptz;
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS profile_completed boolean DEFAULT false;
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_id ON profiles (id);
   `).catch(() => {});
 
   // 7. Seed initial employees & users for government & citizen

@@ -96,6 +96,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.type === "CLEAR_PROFILE_DATA") {
+    chrome.storage.local.remove(["citizenProfile", "activeProfileMap", "panPreparedDocuments", "activeService"]);
+    try {
+      chrome.storage.session.remove(["citizenProfile", "activeProfileMap", "panPreparedDocuments", "activeService"]);
+    } catch {}
+    sendResponse({ ok: true, clearedAt: new Date().toISOString() });
+    return true;
+  }
+
   if (message.type === "SYNC_PREPARED_DOCUMENTS") {
     const payload = message.payload || {};
     chrome.storage.local.set({ panPreparedDocuments: payload });

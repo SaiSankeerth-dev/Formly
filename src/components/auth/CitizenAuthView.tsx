@@ -21,6 +21,7 @@ import { LotusLogo } from "@/components/ui/LotusLogo";
 import { createClient } from "@/lib/supabase/client";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { getOAuthRedirectUrl, getOAuthDebugInfo } from "@/lib/auth/oauth-url";
+import { PhoneOtpFlow } from "@/components/auth/PhoneOtpFlow";
 
 function GoogleIcon({ className = "w-5 h-5" }: { className?: string }) {
   return (
@@ -68,6 +69,7 @@ export function CitizenAuthView({ initialMode = "login" }: CitizenAuthViewProps)
   const { login, signup, user, isAuthenticated, isLoadingAuth } = useSevaSaarthi();
 
   // Login form state
+  const [loginMethod, setLoginMethod] = useState<"password" | "phone">("password");
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
@@ -103,10 +105,21 @@ export function CitizenAuthView({ initialMode = "login" }: CitizenAuthViewProps)
     }
   }, [searchParams]);
 
-  // If citizen is already authenticated, redirect to /dashboard
+  // If citizen is already authenticated, redirect to /dashboard if complete or /onboarding/profile if incomplete
   useEffect(() => {
     if (!isLoadingAuth && (isAuthenticated || user)) {
-      router.replace("/dashboard");
+      fetch("/api/profile")
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.completed) {
+            router.replace("/dashboard");
+          } else {
+            router.replace("/onboarding/profile");
+          }
+        })
+        .catch(() => {
+          router.replace("/onboarding/profile");
+        });
     }
   }, [isAuthenticated, user, isLoadingAuth, router]);
 
@@ -134,6 +147,8 @@ export function CitizenAuthView({ initialMode = "login" }: CitizenAuthViewProps)
       if (error) {
         setErrorMessage(error.message || "Failed to initiate Google sign-in.");
         setIsGoogleLoading(false);
+      } else if (data?.url) {
+        window.location.href = data.url;
       }
     } catch (err: any) {
       setErrorMessage(err?.message || "An unexpected error occurred during Google sign-in.");
@@ -177,7 +192,7 @@ export function CitizenAuthView({ initialMode = "login" }: CitizenAuthViewProps)
       if (!result.success) {
         setErrorMessage(result.error || "Login failed. Please check your credentials.");
       } else {
-        window.location.href = "/dashboard";
+        window.location.href = result.redirectTo || "/dashboard";
       }
     } catch (err: any) {
       setErrorMessage(err?.message || "Failed to sign in. Please try again.");
@@ -218,7 +233,7 @@ export function CitizenAuthView({ initialMode = "login" }: CitizenAuthViewProps)
       if (!success) {
         setErrorMessage("Registration failed. This email may already be in use.");
       } else {
-        window.location.href = "/dashboard";
+        window.location.href = "/onboarding/profile";
       }
     } catch (err: any) {
       setErrorMessage(err?.message || "Failed to create account. Please try again.");
@@ -418,91 +433,140 @@ export function CitizenAuthView({ initialMode = "login" }: CitizenAuthViewProps)
                 LOGIN FORM
                 ==================================================== */}
             {mode === "login" && (
-              <form onSubmit={handleLoginSubmit} className="space-y-4">
-                {/* Email Address */}
-                <div>
-                  <div className="relative">
-                    <input
-                      id="citizen-email"
-                      name="email"
-                      type="email"
-                      required
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      placeholder="Email Address"
-                      className="w-full pl-10 pr-4 py-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#3B49DF]/20 focus:border-[#3B49DF] focus:bg-white transition-all"
-                    />
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  </div>
-                </div>
-
-                {/* Password */}
-                <div>
-                  <div className="relative">
-                    <input
-                      id="citizen-password"
-                      name="password"
-                      type={showPassword ? "text" : "password"}
-                      required
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      placeholder="Password"
-                      className="w-full pl-10 pr-11 py-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#3B49DF]/20 focus:border-[#3B49DF] focus:bg-white transition-all"
-                    />
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-                      aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Remember Me & Forgot Password */}
-                <div className="flex items-center justify-between text-xs pt-0.5">
-                  <label className="flex items-center gap-2 text-slate-600 font-semibold cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 rounded-sm text-[#3B49DF] focus:ring-[#3B49DF] border-slate-300"
-                    />
-                    <span>Remember me</span>
-                  </label>
-
-                  <a
-                    href="#forgot-password"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      alert("Password reset instructions have been dispatched to your email if registered.");
+              <div className="space-y-4">
+                {/* Login Method Tabs */}
+                <div className="flex rounded-xl bg-slate-100 p-1 mb-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setErrorMessage("");
+                      setLoginMethod("password");
                     }}
-                    className="font-bold text-[#3B49DF] hover:underline"
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      loginMethod === "password"
+                        ? "bg-white text-[#3B49DF] shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
                   >
-                    Forgot password?
-                  </a>
+                    Email &amp; Password
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setErrorMessage("");
+                      setLoginMethod("phone");
+                    }}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      loginMethod === "phone"
+                        ? "bg-white text-[#3B49DF] shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    Phone OTP
+                  </button>
                 </div>
 
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  id="citizen-login-submit"
-                  onClick={handleLoginSubmit}
-                  disabled={isSubmitting || isGoogleLoading}
-                  className="w-full py-3.5 px-4 bg-[#3B49DF] hover:bg-[#2F27CE] active:scale-[0.99] text-white rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 mt-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Signing In...</span>
-                    </>
-                  ) : (
-                    <span>Sign In</span>
-                  )}
-                </button>
-              </form>
+                {/* Option 1: Email & Password */}
+                {loginMethod === "password" && (
+                  <form onSubmit={handleLoginSubmit} className="space-y-4">
+                    {/* Email Address */}
+                    <div>
+                      <div className="relative">
+                        <input
+                          id="citizen-email"
+                          name="email"
+                          type="email"
+                          required
+                          value={loginEmail}
+                          onChange={(e) => setLoginEmail(e.target.value)}
+                          placeholder="Email Address"
+                          className="w-full pl-10 pr-4 py-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#3B49DF]/20 focus:border-[#3B49DF] focus:bg-white transition-all"
+                        />
+                        <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      </div>
+                    </div>
+
+                    {/* Password */}
+                    <div>
+                      <div className="relative">
+                        <input
+                          id="citizen-password"
+                          name="password"
+                          type={showPassword ? "text" : "password"}
+                          required
+                          value={loginPassword}
+                          onChange={(e) => setLoginPassword(e.target.value)}
+                          placeholder="Password"
+                          className="w-full pl-10 pr-11 py-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#3B49DF]/20 focus:border-[#3B49DF] focus:bg-white transition-all"
+                        />
+                        <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Remember Me & Forgot Password */}
+                    <div className="flex items-center justify-between text-xs pt-0.5">
+                      <label className="flex items-center gap-2 text-slate-600 font-semibold cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={rememberMe}
+                          onChange={(e) => setRememberMe(e.target.checked)}
+                          className="w-4 h-4 rounded-sm text-[#3B49DF] focus:ring-[#3B49DF] border-slate-300"
+                        />
+                        <span>Remember me</span>
+                      </label>
+
+                      <a
+                        href="#forgot-password"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          alert("Password reset instructions have been dispatched to your email if registered.");
+                        }}
+                        className="font-bold text-[#3B49DF] hover:underline"
+                      >
+                        Forgot password?
+                      </a>
+                    </div>
+
+                    {/* Submit Button */}
+                    <button
+                      type="submit"
+                      id="citizen-login-submit"
+                      onClick={handleLoginSubmit}
+                      disabled={isSubmitting || isGoogleLoading}
+                      className="w-full py-3.5 px-4 bg-[#3B49DF] hover:bg-[#2F27CE] active:scale-[0.99] text-white rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 mt-2"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Signing In...</span>
+                        </>
+                      ) : (
+                        <span>Sign In</span>
+                      )}
+                    </button>
+                  </form>
+                )}
+
+                {/* Option 2: Real Supabase Phone OTP */}
+                {loginMethod === "phone" && (
+                  <div className="pt-1">
+                    <PhoneOtpFlow
+                      mode="login"
+                      onSuccess={() => {
+                        window.location.href = "/dashboard";
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
             )}
 
             {/* ====================================================

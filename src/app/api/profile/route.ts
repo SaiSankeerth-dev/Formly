@@ -27,6 +27,7 @@ export async function GET(request: Request) {
       firstName: user.name ? user.name.split(" ")[0] : "Citizen",
       email: user.email,
       phone: user.phone,
+      phone_verified: Boolean((user as any).phoneVerified),
     },
   });
 }
@@ -57,6 +58,14 @@ async function syncProfileToSupabase(userId: string, fields: Record<string, any>
     if (fields.gender) updateObj.gender = String(fields.gender);
     if (fields.occupation) updateObj.occupation = String(fields.occupation);
     if (fields.education || fields.education_degree) updateObj.education = String(fields.education || fields.education_degree);
+    if (fields.phone_verified === true || fields.phone_verified === "true") {
+      updateObj.phone_verified = true;
+      updateObj.phone_verified_at = new Date().toISOString();
+    }
+    if (fields.profile_completed === true || fields.profile_completed === "true") {
+      updateObj.profile_completed = true;
+      updateObj.profile_status = "READY";
+    }
 
     if (Object.keys(updateObj).length > 1) {
       await supabase
@@ -89,6 +98,10 @@ async function handleProfileUpdate(request: Request) {
 
       const allFields = await getUserProfileFields(user.id);
       const { isComplete, currentStep, profileMap } = checkOnboardingStatus(allFields, user);
+      if (isComplete) {
+        await updateUserProfileField(user.id, "profile_completed", "true");
+        await syncProfileToSupabase(user.id, { profile_completed: true });
+      }
       const score = computeProfileStrength(allFields);
 
       return NextResponse.json({
@@ -96,7 +109,7 @@ async function handleProfileUpdate(request: Request) {
         message: `${updatedFields.length} profile fields updated successfully`,
         data: allFields,
         completed: isComplete,
-        currentStep,
+        currentStep: isComplete ? 4 : currentStep,
         completionScore: score,
         profileMap,
       });

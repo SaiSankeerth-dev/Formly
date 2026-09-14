@@ -30,6 +30,7 @@
     "test:real": "npx tsx scripts/test-autofill-suite.mjs",
     "test:oauth": "npx tsx scripts/test-oauth-redirect-url.mjs",
     "test:browser": "node scripts/test-clean-browser-oauth-suite.mjs",
+    "test:profile-flow": "npx tsx scripts/test-profile-autofill-flow.mjs",
     "extension:pack": "node scripts/pack-extension.mjs"
   },
   "dependencies": {

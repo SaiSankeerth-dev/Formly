@@ -36,6 +36,7 @@ export interface UserRecord {
   name: string;
   email: string;
   phone?: string;
+  phoneVerified?: boolean;
   passwordHash: string;
   salt: string;
   role: string;
@@ -602,6 +603,9 @@ export async function getUserProfileFields(userId: string): Promise<ProfileField
       addIfMissing("gender", p.gender);
       addIfMissing("occupation", p.occupation);
       addIfMissing("education_degree", p.education);
+      if (p.profile_completed) {
+        addIfMissing("profile_completed", "true");
+      }
     }
 
     const addrRows = await pgQuery(
@@ -698,6 +702,11 @@ export async function updateUserProfileField(
       } else if (fieldName === "education" || fieldName === "education_degree") {
         await pgQuery(`UPDATE profiles SET education = $2, updated_at = NOW() WHERE id = $1 OR user_id = $1`, [actorUuid, trimmedVal]).catch(() => {});
       }
+    }
+
+    if (fieldName === "profile_completed") {
+      const isComp = trimmedVal === "true" || trimmedVal === "1";
+      await pgQuery(`UPDATE profiles SET profile_completed = $2, profile_status = $3, updated_at = NOW() WHERE id = $1 OR user_id = $1`, [actorUuid, isComp, isComp ? 'READY' : 'INCOMPLETE']).catch(() => {});
     }
 
     if (["state", "district", "mandal", "village", "permanent_address", "address", "address_line", "pincode", "location"].includes(fieldName)) {

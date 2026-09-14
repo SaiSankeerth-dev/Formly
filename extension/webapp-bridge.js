@@ -32,6 +32,13 @@
     }
   };
 
+  // 2c. Listen for SEVA_SAARTHI_LOGOUT event to purge cached profile data
+  const handleLogout = () => {
+    chrome.runtime.sendMessage({
+      type: "CLEAR_PROFILE_DATA",
+    });
+  };
+
   window.addEventListener("SEVA_SAARTHI_ACTIVATE_SERVICE", handleActivateService);
   document.addEventListener("SEVA_SAARTHI_ACTIVATE_SERVICE", handleActivateService);
   window.addEventListener("SEVA_SAARTHI_LAUNCH_SERVICE", handleActivateService);
@@ -43,6 +50,9 @@
   window.addEventListener("SEVA_SAARTHI_PREPARED_DOCUMENTS", handlePreparedDocuments);
   document.addEventListener("SEVA_SAARTHI_PREPARED_DOCUMENTS", handlePreparedDocuments);
 
+  window.addEventListener("SEVA_SAARTHI_LOGOUT", handleLogout);
+  document.addEventListener("SEVA_SAARTHI_LOGOUT", handleLogout);
+
   window.addEventListener("message", (e) => {
     if (e.data && (e.data.type === "SEVA_SAARTHI_ACTIVATE_SERVICE" || e.data.type === "SEVA_SAARTHI_LAUNCH_SERVICE")) {
       handleActivateService(e);
@@ -52,6 +62,9 @@
     }
     if (e.data && e.data.type === "SEVA_SAARTHI_PREPARED_DOCUMENTS") {
       handlePreparedDocuments(e);
+    }
+    if (e.data && e.data.type === "SEVA_SAARTHI_LOGOUT") {
+      handleLogout();
     }
   });
 
