@@ -24,7 +24,6 @@ import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { cn, getConfidenceBadgeClass } from "@/lib/utils";
 import { toast } from "sonner";
 import { CANONICAL_PROFILE_FIELDS, PROFILE_CATEGORIES, getProfileCompleteness } from "@/lib/constants/profile";
-import { PhoneVerificationModal } from "@/components/auth/PhoneVerificationModal";
 
 type ProfilePageState = "LOADING" | "READY" | "INCOMPLETE" | "EMPTY" | "ERROR";
 
@@ -53,7 +52,6 @@ export function ProfilePage() {
   const [tempValues, setTempValues] = useState<Record<string, string>>({});
   const [isFullEditModalOpen, setIsFullEditModalOpen] = useState(false);
   const [fullFormData, setFullFormData] = useState<Record<string, string>>({});
-  const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
 
   const checkPhoneVerification = useCallback(async () => {
@@ -82,8 +80,8 @@ export function ProfilePage() {
     try {
       const res = await fetch("/api/profile");
       if (res.status === 401) {
-        // Unauthenticated access must redirect to /login per Requirement 2
-        router.replace("/login");
+        // Unauthenticated access must redirect to /login?from=/profile
+        router.replace("/login?from=/profile");
         return;
       }
       if (!res.ok) {
@@ -460,20 +458,10 @@ export function ProfilePage() {
                               {formatDisplayValue(fieldDef.fieldName, currentValue)}
                             </span>
 
-                            {fieldDef.fieldName === "phone_number" && (
-                              isPhoneVerified ? (
-                                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                                  <CheckCircle2 className="w-3 h-3" /> Verified
-                                </span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => setIsPhoneModalOpen(true)}
-                                  className="text-[10px] font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded-full inline-flex items-center gap-1 cursor-pointer transition-colors"
-                                >
-                                  <AlertCircle className="w-3 h-3" /> Verify Phone
-                                </button>
-                              )
+                            {fieldDef.fieldName === "phone_number" && (isPhoneVerified || user?.phone) && (
+                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3" /> Verified
+                              </span>
                             )}
                           </div>
 
@@ -569,17 +557,6 @@ export function ProfilePage() {
         </div>
       )}
 
-      {/* Phone Verification Dialog */}
-      <PhoneVerificationModal
-        isOpen={isPhoneModalOpen}
-        onClose={() => setIsPhoneModalOpen(false)}
-        currentPhone={user?.phone || ""}
-        onVerified={() => {
-          setIsPhoneVerified(true);
-          fetchProfile();
-          checkPhoneVerification();
-        }}
-      />
     </div>
   );
 }

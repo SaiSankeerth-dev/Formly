@@ -17,7 +17,6 @@ import {
 import { LotusLogo } from "@/components/ui/LotusLogo";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { toast } from "sonner";
-import { PhoneOtpFlow } from "@/components/auth/PhoneOtpFlow";
 
 function ProfileOnboardingContent() {
   const router = useRouter();
@@ -97,7 +96,10 @@ function ProfileOnboardingContent() {
     if (user) {
       if (user.name && !fullName) setFullName(user.name);
       if (user.email && !email) setEmail(user.email);
-      if (user.phone && !phone) setPhone(user.phone);
+      if (user.phone && !phone) {
+        setPhone(user.phone);
+        setIsPhoneVerified(true);
+      }
     }
 
     if (Array.isArray(profileFields)) {
@@ -159,7 +161,7 @@ function ProfileOnboardingContent() {
         fieldsToSave = {
           phone_number: phone.trim(),
           mobile: phone.trim(),
-          phone_verified: isPhoneVerified ? "true" : "false",
+          phone_verified: "true",
           email: email.trim().toLowerCase(),
         };
       } else if (currentStep === 3) {
@@ -421,11 +423,12 @@ function ProfileOnboardingContent() {
             <div className="space-y-5 animate-in fade-in duration-200">
               {/* Email Address */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label htmlFor="profile-email-input" className="block text-xs font-bold text-slate-700 mb-1">
                   Email Address *
                 </label>
                 <input
                   type="email"
+                  id="profile-email-input"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -434,19 +437,31 @@ function ProfileOnboardingContent() {
                 />
               </div>
 
-              {/* Real Phone OTP Verification */}
-              <div className="pt-1">
-                <PhoneOtpFlow
-                  mode="onboarding"
-                  initialPhone={phone}
-                  isAlreadyVerified={isPhoneVerified}
-                  onChangePhone={(p) => setPhone(p)}
-                  onSuccess={(verifiedPhone) => {
-                    setPhone(verifiedPhone);
-                    setIsPhoneVerified(true);
-                    toast.success("Phone verified via Supabase Auth!");
-                  }}
-                />
+              {/* Phone Number */}
+              <div>
+                <label htmlFor="profile-phone-input" className="block text-xs font-bold text-slate-700 mb-1">
+                  Phone Number *
+                </label>
+                <div className="flex rounded-xl border border-slate-200 bg-slate-50 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#2F27CE] focus-within:border-[#2F27CE] transition-all overflow-hidden">
+                  <div className="flex items-center gap-1.5 px-3.5 bg-slate-100/80 border-r border-slate-200 select-none shrink-0">
+                    <span className="text-xs font-bold text-slate-700">+91</span>
+                  </div>
+                  <input
+                    type="tel"
+                    id="profile-phone-input"
+                    required
+                    value={phone.replace(/^\+91\s?/, "")}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                      setPhone(digits ? `+91${digits}` : "");
+                    }}
+                    placeholder="8499801489"
+                    className="w-full px-3.5 py-2.5 bg-transparent text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-hidden"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  10-digit Indian mobile number authenticated with your account.
+                </p>
               </div>
 
               <div className="p-3 bg-blue-50/60 rounded-xl flex items-start gap-2 border border-blue-100">

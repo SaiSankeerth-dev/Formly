@@ -5,6 +5,7 @@ import { type CookieOptions } from "@supabase/ssr";
 import { pgQuery, getAuthoritativeDb } from "@/lib/server/pg-db";
 import { getUserProfileFields, signSessionToken } from "@/lib/server/db";
 import { checkOnboardingStatus } from "@/lib/constants/profile";
+import { resolvePostAuthDestination } from "@/lib/auth/routing";
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -185,10 +186,14 @@ export async function GET(request: Request) {
 
     console.log(`[AUTH CALLBACK] profile_exists=${profileExists} is_complete=${isComplete}`);
 
-    // Destination: Direct uncompleted profiles to /onboarding/profile, completed to /dashboard (or requested 'next')
+    // Destination: Deterministically resolve safe destination via resolvePostAuthDestination
     const nextParam = requestUrl.searchParams.get("next");
-    const safeNext = nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : null;
-    const destination = isComplete ? (safeNext || "/dashboard") : "/onboarding/profile";
+    const fromParam = requestUrl.searchParams.get("from");
+    const destination = resolvePostAuthDestination(user, {
+      fromParam,
+      nextParam,
+      isComplete,
+    });
 
     console.log(`[AUTH CALLBACK] redirect=${destination}`);
 

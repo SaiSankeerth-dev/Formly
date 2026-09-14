@@ -128,8 +128,8 @@ export default function AuditCenterPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
-              {filteredLogs.map((log) => {
-                const uniqueKey = log.uuid || log.id;
+              {filteredLogs.map((log, index) => {
+                const uniqueKey = log.uuid ? `${log.uuid}-${index}` : `${log.id}-${index}`;
                 const isExpanded = expandedLogId === uniqueKey;
 
                 return (

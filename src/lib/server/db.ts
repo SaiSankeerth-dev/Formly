@@ -96,7 +96,7 @@ function getSessionSecret(): string {
 export interface SessionTokenPayload {
   userId: string;
   name: string;
-  email: string;
+  email?: string;
   phone?: string;
   role: string;
   exp: number;
@@ -106,7 +106,7 @@ export interface SessionTokenPayload {
 export function signSessionToken(payload: {
   userId: string;
   name: string;
-  email: string;
+  email?: string;
   phone?: string;
   role: string;
 }): string {
@@ -429,7 +429,7 @@ export async function authenticateSession(
     const recoveredUser: UserRecord = {
       id: hmacPayload.userId,
       name: hmacPayload.name || "Citizen",
-      email: hmacPayload.email.trim().toLowerCase(),
+      email: (hmacPayload.email || "").trim().toLowerCase(),
       phone: hmacPayload.phone || "",
       passwordHash: "hmac_session_auth",
       salt: "hmac_session_auth",

@@ -48,7 +48,20 @@ interface SevaSaarthiContextType {
   user: UserSession | null;
   isAuthenticated: boolean;
   isLoadingAuth: boolean;
-  login: (email: string, password: string, rememberMe?: boolean) => Promise<{ success: boolean; isGovernment?: boolean; error?: string; redirectTo?: string }>;
+  login: (
+    email: string,
+    password: string,
+    rememberMe?: boolean,
+    redirectOverride?: string
+  ) => Promise<{
+    success: boolean;
+    isGovernment?: boolean;
+    error?: string;
+    redirectTo?: string;
+    requires2Fa?: boolean;
+    phone?: string;
+    maskedPhone?: string;
+  }>;
   signup: (name: string, email: string, password: string, phone?: string) => Promise<boolean>;
   logout: () => Promise<void>;
 
@@ -518,8 +531,17 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
   const login = async (
     email: string,
     password: string,
-    rememberMe: boolean = true
-  ): Promise<{ success: boolean; isGovernment?: boolean; error?: string; redirectTo?: string }> => {
+    rememberMe: boolean = true,
+    redirectOverride?: string
+  ): Promise<{
+    success: boolean;
+    isGovernment?: boolean;
+    error?: string;
+    redirectTo?: string;
+    requires2Fa?: boolean;
+    phone?: string;
+    maskedPhone?: string;
+  }> => {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -540,12 +562,24 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
         };
       }
 
+      if (data.requires2Fa) {
+        return {
+          success: true,
+          requires2Fa: true,
+          phone: data.phone,
+          maskedPhone: data.maskedPhone,
+        };
+      }
+
       setUser(data.user);
       localStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(data.user));
       await loadUserData(data.user);
       toast.success(`Welcome back, ${data.user.name}!`);
 
-      const target = data.redirectTo || (data.completed ? "/dashboard" : "/onboarding/profile");
+      const target =
+        redirectOverride ||
+        data.redirectTo ||
+        (data.completed ? "/dashboard" : "/onboarding/profile");
       window.location.href = target;
       return { success: true, redirectTo: target };
     } catch (err: any) {

@@ -667,8 +667,8 @@ export default function PanApplicationWorkspacePage() {
             </div>
 
             <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-              {auditLogs.map((log) => (
-                <div key={log.uuid || log.id} className="text-xs border-b border-slate-50 pb-2.5 last:border-0">
+              {auditLogs.map((log, idx) => (
+                <div key={`${log.uuid || log.id}-${idx}`} className="text-xs border-b border-slate-50 pb-2.5 last:border-0">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-slate-800 text-[11px]">{log.action.replace(/_/g, " ")}</span>
                     <span className="text-[10px] text-slate-400">

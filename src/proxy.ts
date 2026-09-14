@@ -312,6 +312,9 @@ export async function proxy(request: NextRequest) {
 
   if (!isCitizenAuthenticated && isProtectedCitizenRoute) {
     const loginUrl = new URL("/login", request.url);
+    if (pathname !== "/") {
+      loginUrl.searchParams.set("from", pathname);
+    }
     const redirectRes = NextResponse.redirect(loginUrl);
     supabaseResponse.cookies.getAll().forEach((c) => {
       redirectRes.cookies.set(c.name, c.value, { ...c, path: "/" });
