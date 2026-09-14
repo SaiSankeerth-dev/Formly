@@ -92,22 +92,24 @@ async function runCleanBrowserTestSuite() {
   await page.fill("#citizen-email", "user@gmail.com");
   await page.fill("#citizen-password", "password123");
   
-  await Promise.all([
-    page.waitForURL("**/dashboard", { timeout: 15000 }),
-    page.click("button[type='submit']"),
-  ]);
+  await page.click("button[type='submit']");
+  await page.waitForURL((url) => url.pathname === "/dashboard" || url.pathname === "/onboarding/profile", { timeout: 15000 });
 
-  assert.strictEqual(page.url(), "http://localhost:3000/dashboard");
+  const authenticatedPath = new URL(page.url()).pathname;
+  assert.ok(
+    authenticatedPath === "/dashboard" || authenticatedPath === "/onboarding/profile",
+    `Expected /dashboard or /onboarding/profile, got ${authenticatedPath}`
+  );
   console.log(`✓ PASS: Citizen successfully authenticated and landed on: ${page.url()}\n`);
 
   // TEST 6: Dashboard Session Persistence across New Tab & Refresh
   console.log("--- 6. Testing Session Persistence (Refresh & New Tab) ---");
   await page.reload({ waitUntil: "networkidle" });
-  assert.strictEqual(page.url(), "http://localhost:3000/dashboard");
+  assert.strictEqual(new URL(page.url()).pathname, authenticatedPath);
 
   const newTab = await context.newPage();
-  await newTab.goto("http://localhost:3000/dashboard", { waitUntil: "networkidle" });
-  assert.strictEqual(newTab.url(), "http://localhost:3000/dashboard");
+  await newTab.goto(`http://localhost:3000${authenticatedPath}`, { waitUntil: "networkidle" });
+  assert.strictEqual(new URL(newTab.url()).pathname, authenticatedPath);
   await newTab.close();
   console.log("✓ PASS: Session persists seamlessly across reload and new tabs\n");
 

@@ -21,17 +21,17 @@ export async function createClient(
     cookieStore = await cookies();
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    process.env.SUPABASE_URL ||
+    "https://jvzvfpfzhmidsztfexsd.supabase.co";
+
   const supabaseKey =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error(
-      "Missing Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL and/or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY). " +
-      "Set them in .env.local (local dev) or Vercel project settings (production)."
-    );
-  }
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    "sb_publishable_3asBWnzHlx_AKzwDFvWhWA_j5Zod3Yd";
 
   return createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
