@@ -37,6 +37,7 @@ export interface PhoneOtpFlowProps {
   onSuccess?: (phone: string, session?: any) => void;
   onCancel?: () => void;
   isAlreadyVerified?: boolean;
+  onChangePhone?: (phone: string) => void;
 }
 
 export function PhoneOtpFlow({
@@ -45,6 +46,7 @@ export function PhoneOtpFlow({
   onSuccess,
   onCancel,
   isAlreadyVerified = false,
+  onChangePhone,
 }: PhoneOtpFlowProps) {
   // Step 1: Phone input; Step 2: 6-digit OTP entry
   const [step, setStep] = useState<1 | 2>(1);
@@ -96,8 +98,9 @@ export function PhoneOtpFlow({
   useEffect(() => {
     if (initialPhone && !rawPhone) {
       setRawPhone(initialPhone);
+      if (onChangePhone) onChangePhone(initialPhone);
     }
-  }, [initialPhone, rawPhone]);
+  }, [initialPhone, rawPhone, onChangePhone]);
 
   // Focus first OTP box on entering Step 2
   useEffect(() => {
@@ -395,6 +398,7 @@ export function PhoneOtpFlow({
                 value={rawPhone.replace(/\D/g, "").slice(-10)}
                 onChange={(e) => {
                   setRawPhone(e.target.value);
+                  if (onChangePhone) onChangePhone(e.target.value);
                   if (statusMessage) setStatusMessage("");
                 }}
                 placeholder="98765 43210"

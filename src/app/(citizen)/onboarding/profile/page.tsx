@@ -32,18 +32,26 @@ function ProfileOnboardingContent() {
 
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
 
-  // Synchronize wizard step with URL query parameter, strictly preventing jump past step 2 if unverified
+  // Redirect to /dashboard if profile is already complete (unless explicitly editing)
+  useEffect(() => {
+    if (searchParams.get("edit") === "true") return;
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success && data.completed) {
+          router.replace("/dashboard");
+        }
+      })
+      .catch(() => {});
+  }, [router, searchParams]);
+
+  // Synchronize wizard step with URL query parameter
   useEffect(() => {
     const raw = Number(searchParams.get("step"));
     if (raw >= 1 && raw <= 4) {
-      if (raw > 2 && !isPhoneVerified) {
-        setCurrentStep(2);
-        router.replace("/onboarding/profile?step=2");
-        return;
-      }
       setCurrentStep(raw);
     }
-  }, [searchParams, isPhoneVerified, router]);
+  }, [searchParams]);
 
   // Form State
   const [fullName, setFullName] = useState("");
@@ -148,15 +156,10 @@ function ProfileOnboardingContent() {
           setIsSubmitting(false);
           return;
         }
-        if (!isPhoneVerified) {
-          toast.error("Please complete mobile OTP verification before continuing.");
-          setIsSubmitting(false);
-          return;
-        }
         fieldsToSave = {
           phone_number: phone.trim(),
           mobile: phone.trim(),
-          phone_verified: "true",
+          phone_verified: isPhoneVerified ? "true" : "false",
           email: email.trim().toLowerCase(),
         };
       } else if (currentStep === 3) {
@@ -188,23 +191,9 @@ function ProfileOnboardingContent() {
       await batchUpdateProfileFields(fieldsToSave);
 
       if (nextStep > 4) {
-        if (!isPhoneVerified) {
-          toast.error("Please complete mobile OTP verification before finishing profile setup.");
-          setCurrentStep(2);
-          router.replace("/onboarding/profile?step=2");
-          setIsSubmitting(false);
-          return;
-        }
         setIsFinished(true);
         toast.success("Profile setup completed successfully!");
       } else {
-        if (nextStep > 2 && !isPhoneVerified) {
-          toast.error("Please complete mobile OTP verification before continuing.");
-          setCurrentStep(2);
-          router.replace("/onboarding/profile?step=2");
-          setIsSubmitting(false);
-          return;
-        }
         setCurrentStep(nextStep);
         router.replace(`/onboarding/profile?step=${nextStep}`);
       }
@@ -451,6 +440,7 @@ function ProfileOnboardingContent() {
                   mode="onboarding"
                   initialPhone={phone}
                   isAlreadyVerified={isPhoneVerified}
+                  onChangePhone={(p) => setPhone(p)}
                   onSuccess={(verifiedPhone) => {
                     setPhone(verifiedPhone);
                     setIsPhoneVerified(true);

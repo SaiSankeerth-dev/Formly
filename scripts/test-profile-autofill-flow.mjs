@@ -336,6 +336,133 @@ assert.equal(mappedValuesB.district, "Bengaluru Urban");
 assert.equal(mappedValuesB.pincode, "560034");
 console.log("✓ MAP_FIELDS correctly returned User B's values for User B's session");
 
+// ----------------------------------------------------------------------------
+// 8. Anti-Spoofing & Server-Authoritative Ownership Security Check
+// ----------------------------------------------------------------------------
+console.log("\n--- 8. Testing Ownership & Anti-Spoofing Protections ---");
+
+// User A attempts to pass userId of User B in query parameter
+const spoofReq = new Request(`http://localhost:3000/api/profile?userId=${userB.id}`, {
+  headers: {
+    Authorization: `Bearer ${tokenA}`,
+    Cookie: `FORMLY_CITIZEN_SESSION=${tokenA}`,
+  },
+});
+const spoofRes = await profileGET(spoofReq);
+assert.equal(spoofRes.status, 200);
+const spoofData = await spoofRes.json();
+assert.equal(spoofData.user.id, userA.id, "Profile API must strictly resolve User A ID from server session");
+assert.notEqual(spoofData.user.id, userB.id, "User A cannot spoof User B by passing query parameter");
+console.log("✓ /api/profile strictly derives identity from verified server session (spoofing blocked)");
+
+// User A attempts to request User B data in autofill POST
+const spoofAutofillReq = new Request("http://localhost:3000/api/agent/autofill", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${tokenA}`,
+    Cookie: `FORMLY_CITIZEN_SESSION=${tokenA}`,
+  },
+  body: JSON.stringify({
+    action: "GET_AUTOFILL_DATA",
+    userId: userB.id,
+    email: userB.email,
+  }),
+});
+const spoofAutofillRes = await autofillPOST(spoofAutofillReq);
+assert.equal(spoofAutofillRes.status, 200);
+const spoofAutofillData = await spoofAutofillRes.json();
+assert.equal(spoofAutofillData.payload.canonicalFields.full_name, "Aarav Sharma", "Autofill API must ignore client-supplied userId/email");
+console.log("✓ /api/agent/autofill ignores client-supplied userId/email (spoofing blocked)");
+
+// ----------------------------------------------------------------------------
+// 9. Onboarding Progression with Unverified Phone (Graceful SMS offline/disabled)
+// ----------------------------------------------------------------------------
+console.log("\n--- 9. Verifying Onboarding Completion with Unverified Phone ---");
+
+const timestampC = Date.now() + 1;
+const regC = await registerUser(
+  "Devika Nair",
+  `devika_${timestampC}@test.gov.in`,
+  "Password123!",
+  "9822334455"
+);
+const tokenC = regC.token;
+
+// Step 1: Personal
+await profilePATCH(new Request("http://localhost:3000/api/profile", {
+  method: "PATCH",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${tokenC}`,
+    Cookie: `FORMLY_CITIZEN_SESSION=${tokenC}`,
+  },
+  body: JSON.stringify({
+    fields: {
+      full_name: "Devika Nair",
+      date_of_birth: "2001-07-22",
+      gender: "Female",
+    },
+  }),
+}));
+
+// Step 2: Contact with phone_verified: "false" (e.g. SMS provider not configured)
+await profilePATCH(new Request("http://localhost:3000/api/profile", {
+  method: "PATCH",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${tokenC}`,
+    Cookie: `FORMLY_CITIZEN_SESSION=${tokenC}`,
+  },
+  body: JSON.stringify({
+    fields: {
+      phone_number: "9822334455",
+      mobile: "9822334455",
+      phone_verified: "false",
+      email: `devika_${timestampC}@test.gov.in`,
+    },
+  }),
+}));
+
+// Step 3: Address
+await profilePATCH(new Request("http://localhost:3000/api/profile", {
+  method: "PATCH",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${tokenC}`,
+    Cookie: `FORMLY_CITIZEN_SESSION=${tokenC}`,
+  },
+  body: JSON.stringify({
+    fields: {
+      state: "Kerala",
+      district: "Ernakulam",
+      permanent_address: "12/4 Marine Drive, Kochi",
+      pincode: "682031",
+    },
+  }),
+}));
+
+// Step 4: Additional Info & Complete
+const step4ResC = await profilePATCH(new Request("http://localhost:3000/api/profile", {
+  method: "PATCH",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${tokenC}`,
+    Cookie: `FORMLY_CITIZEN_SESSION=${tokenC}`,
+  },
+  body: JSON.stringify({
+    fields: {
+      occupation: "Research Scholar",
+      education_degree: "M.Sc Physics",
+      caste_category: "General",
+      profile_completed: "true",
+    },
+  }),
+}));
+const step4DataC = await step4ResC.json();
+assert.equal(step4DataC.completed, true, "User C must complete onboarding even if phone is unverified");
+console.log("✓ User C onboarding completed successfully with unverified phone (graceful offline progression)");
+
 console.log("\n===============================================================");
 console.log("   🎉 ALL PROFILE, ONBOARDING & AUTOFILL TESTS PASSED (100%)");
 console.log("===============================================================");

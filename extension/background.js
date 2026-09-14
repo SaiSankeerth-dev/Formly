@@ -87,21 +87,34 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === "SYNC_PROFILE_DATA") {
     const payload = message.payload || {};
-    chrome.storage.local.set({ citizenProfile: payload });
-    chrome.storage.session.set({ citizenProfile: payload });
-    if (payload.profileMap) {
-      chrome.storage.local.set({ activeProfileMap: payload.profileMap });
-    }
-    sendResponse({ ok: true, syncedAt: new Date().toISOString() });
+    const userId = payload.user?.id || payload.userId || "active";
+    const userProfileKey = `profile:${userId}`;
+    const toSave = {
+      currentUserId: userId,
+      [userProfileKey]: payload,
+      citizenProfile: payload,
+      activeProfileMap: payload.profileMap || {},
+    };
+    chrome.storage.local.set(toSave);
+    try {
+      chrome.storage.session.set(toSave);
+    } catch {}
+    sendResponse({ ok: true, userId, syncedAt: new Date().toISOString() });
     return true;
   }
 
   if (message.type === "CLEAR_PROFILE_DATA") {
-    chrome.storage.local.remove(["citizenProfile", "activeProfileMap", "panPreparedDocuments", "activeService"]);
-    try {
-      chrome.storage.session.remove(["citizenProfile", "activeProfileMap", "panPreparedDocuments", "activeService"]);
-    } catch {}
-    sendResponse({ ok: true, clearedAt: new Date().toISOString() });
+    chrome.storage.local.get(null, (all) => {
+      const keysToRemove = ["citizenProfile", "activeProfileMap", "panPreparedDocuments", "activeService", "currentUserId"];
+      Object.keys(all || {}).forEach((k) => {
+        if (k.startsWith("profile:")) keysToRemove.push(k);
+      });
+      chrome.storage.local.remove(keysToRemove);
+      try {
+        chrome.storage.session.remove(keysToRemove);
+      } catch {}
+      sendResponse({ ok: true, clearedAt: new Date().toISOString() });
+    });
     return true;
   }
 

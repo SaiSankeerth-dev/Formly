@@ -52,6 +52,7 @@
     });
 
     const urls = customUrl ? [customUrl, ...CONFIG.apiEndpoints] : CONFIG.apiEndpoints;
+    let saw401 = false;
 
     for (const url of urls) {
       try {
@@ -59,6 +60,10 @@
         const timeout = setTimeout(() => controller.abort(), 3000);
         const res = await fetch(url, { signal: controller.signal, credentials: "include" });
         clearTimeout(timeout);
+        if (res.status === 401) {
+          saw401 = true;
+          continue;
+        }
         if (res.ok) {
           const json = await res.json();
           const canonical = json?.data?.canonicalFields || json?.canonicalFields || json?.safeData;
@@ -80,24 +85,44 @@
         // Continue to next endpoint
       }
     }
+    if (saw401) {
+      return { unauthenticated: true };
+    }
     return null;
   }
 
   async function loadProfile() {
+    // 1. ALWAYS query backend for authoritative live citizen session
+    const remote = await fetchRemoteProfile();
+
+    if (remote && remote.unauthenticated) {
+      // User is logged out or unauthenticated on backend: clear any stale profile cache
+      currentProfile = null;
+      chrome.runtime.sendMessage({ type: "CLEAR_PROFILE_DATA" });
+      if (ui("profile-name")) ui("profile-name").textContent = "Not Logged In";
+      if (ui("profile-status")) ui("profile-status").textContent = "Log in to Seva Saarthi web app";
+      return null;
+    }
+
+    if (remote && remote.profileMap && Object.keys(remote.profileMap).length > 0) {
+      // Authenticated citizen profile found: sync to extension storage
+      currentProfile = remote;
+      chrome.runtime.sendMessage({ type: "SYNC_PROFILE_DATA", payload: remote });
+
+      const count = Object.keys(remote.profileMap || {}).length;
+      const name = remote.user?.name || remote.profileMap?.full_name || "Citizen";
+      if (ui("profile-name")) ui("profile-name").textContent = name;
+      if (ui("profile-status")) ui("profile-status").textContent = `${count} verified records ready`;
+      return remote;
+    }
+
+    // 2. Offline fallback to local storage only if remote endpoints were unreachable
     return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ type: "GET_CITIZEN_PROFILE" }, async (response) => {
+      chrome.runtime.sendMessage({ type: "GET_CITIZEN_PROFILE" }, (response) => {
         let profile = response?.profile;
         if (response?.profileMap) {
           if (!profile) profile = {};
           profile.profileMap = response.profileMap;
-        }
-
-        if (!profile || !profile.profileMap || Object.keys(profile.profileMap).length === 0) {
-          const fetched = await fetchRemoteProfile();
-          if (fetched) {
-            profile = fetched;
-            chrome.runtime.sendMessage({ type: "SYNC_PROFILE_DATA", payload: profile });
-          }
         }
 
         if (!profile || !profile.profileMap || Object.keys(profile.profileMap).length === 0) {
@@ -109,12 +134,10 @@
         }
 
         currentProfile = profile;
-
         const count = Object.keys(profile.profileMap || {}).length;
         const name = profile.user?.name || profile.profileMap?.full_name || "Citizen";
         if (ui("profile-name")) ui("profile-name").textContent = name;
         if (ui("profile-status")) ui("profile-status").textContent = `${count} verified records ready`;
-
         resolve(profile);
       });
     });

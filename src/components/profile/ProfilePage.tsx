@@ -41,6 +41,9 @@ export function ProfilePage() {
     logout,
   } = useSevaSaarthi();
 
+  const [localFields, setLocalFields] = useState<any[] | null>(null);
+  const activeFields = localFields || profileFields;
+
   const [pageState, setPageState] = useState<ProfilePageState>(() => {
     if (profileFields && profileFields.length > 0) return "READY";
     return "LOADING";
@@ -79,21 +82,12 @@ export function ProfilePage() {
     try {
       const res = await fetch("/api/profile");
       if (res.status === 401) {
-        // Only redirect to /login if user is genuinely logged out
-        // Never bounce to /login when user is authenticated (which triggers /login -> /dashboard redirect loop)
-        if (!user && !isLoadingAuth) {
-          router.push("/login");
-          return;
-        }
-        if (profileFields && profileFields.length > 0) {
-          setPageState("READY");
-        } else {
-          setPageState("EMPTY");
-        }
+        // Unauthenticated access must redirect to /login per Requirement 2
+        router.replace("/login");
         return;
       }
       if (!res.ok) {
-        if (profileFields && profileFields.length > 0) {
+        if (activeFields && activeFields.length > 0) {
           setPageState("READY");
         } else {
           setPageState("ERROR");
@@ -107,9 +101,12 @@ export function ProfilePage() {
           router.replace("/onboarding/profile");
           return;
         }
+        if (Array.isArray(data.data)) {
+          setLocalFields(data.data);
+        }
         setPageState("READY");
       } else {
-        if (profileFields && profileFields.length > 0) {
+        if (activeFields && activeFields.length > 0) {
           setPageState("READY");
         } else {
           setPageState("ERROR");
@@ -118,20 +115,20 @@ export function ProfilePage() {
       }
     } catch (err: any) {
       console.warn("[ProfilePage] Failed to fetch /api/profile", err);
-      if (profileFields && profileFields.length > 0) {
+      if (activeFields && activeFields.length > 0) {
         setPageState("READY");
       } else {
         setPageState("ERROR");
         setErrorMessage("Your profile couldn't be loaded right now.");
       }
     }
-  }, [router, user, isLoadingAuth, profileFields, pageState]);
+  }, [router, activeFields, pageState]);
 
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
 
-  const completeness = getProfileCompleteness(profileFields);
+  const completeness = getProfileCompleteness(activeFields);
   const emptyFieldsCount = completeness.emptyCount;
 
   const handleStartEdit = (fieldName: string, currentValue: string) => {
@@ -149,7 +146,7 @@ export function ProfilePage() {
   const handleOpenFullModal = () => {
     const initialValues: Record<string, string> = {};
     fieldDefinitions.forEach((fd) => {
-      const existing = profileFields.find((pf) => pf.field_name === fd.fieldName);
+      const existing = activeFields.find((pf) => pf.field_name === fd.fieldName);
       if (existing?.value) {
         initialValues[fd.fieldName] = existing.value;
       } else if (fd.fieldName === "full_name" && user?.name) {
@@ -324,7 +321,7 @@ export function ProfilePage() {
                 Profile Strength: <span className="text-emerald-600">{profileStrength}%</span>
               </div>
               <div className="text-[10px] text-slate-400">
-                {profileFields.filter((pf) => pf.verified && pf.value.trim().length > 0).length} verified fields
+                {activeFields.filter((pf) => pf.verified && pf.value.trim().length > 0).length} verified fields
               </div>
             </div>
           </div>
@@ -383,7 +380,7 @@ export function ProfilePage() {
               {/* Fields */}
               <div className="space-y-4">
                 {catFields.map((fieldDef) => {
-                  const storedField = profileFields.find((pf) => pf.field_name === fieldDef.fieldName);
+                  const storedField = activeFields.find((pf) => pf.field_name === fieldDef.fieldName);
                   const isEditing = editingField === fieldDef.fieldName;
                   const currentValue = storedField?.value || "";
                   const sourceBadge = getSourceBadge(storedField?.source_document_id || null, storedField?.confidence ?? null);

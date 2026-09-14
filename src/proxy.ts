@@ -229,14 +229,52 @@ export async function proxy(request: NextRequest) {
   // =============================================================
   // BOUNDARY 2: CITIZEN PLATFORM (Supabase SSR Single Source of Truth)
   // =============================================================
-  const { supabaseResponse, user: citizenUser } = await updateSession(request);
+  const { supabaseResponse, user: citizenUser, supabase } = await updateSession(request);
 
-  // Authenticated if Supabase user is returned or legacy citizen session exists
-  const isCitizenAuthenticated = Boolean(citizenUser || citizenSession);
+  function isValidCitizenSession(token?: string): boolean {
+    if (!token) return false;
+    try {
+      const parts = token.split(".");
+      if (parts.length !== 2) return false;
+      const [payloadB64] = parts;
+      const jsonStr = Buffer.from(payloadB64, "base64").toString("utf-8");
+      const payload = JSON.parse(jsonStr);
+      if (!payload?.userId || !payload?.expiresAt) return false;
+      if (new Date(payload.expiresAt).getTime() < Date.now()) return false;
+      return true;
+    } catch {
+      return false;
+    }
+  }
 
-  // 1. If citizen is already authenticated and visits /login or /signup, redirect to /dashboard
+  // Clear stale/expired token if present
+  if (citizenSession && !citizenUser && !isValidCitizenSession(citizenSession)) {
+    supabaseResponse.cookies.delete("FORMLY_CITIZEN_SESSION");
+    supabaseResponse.cookies.delete("formly_citizen_session");
+    supabaseResponse.cookies.delete("seva_saarthi_session");
+  }
+
+  // Authenticated if Supabase user is returned or verified stateless citizen session exists
+  const isCitizenAuthenticated = Boolean(citizenUser || (citizenSession && isValidCitizenSession(citizenSession)));
+
+  // 1. If citizen is already authenticated and visits /login or /signup, redirect to /dashboard (if complete) or /onboarding/profile (if incomplete)
   if (isCitizenAuthenticated && (pathname === "/login" || pathname === "/signup")) {
-    const redirectRes = NextResponse.redirect(new URL("/dashboard", request.url));
+    let target = "/dashboard";
+    if (citizenUser && supabase) {
+      try {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("profile_completed")
+          .or(`id.eq.${citizenUser.id},user_id.eq.${citizenUser.id}`)
+          .maybeSingle();
+        if (!prof || !prof.profile_completed) {
+          target = "/onboarding/profile";
+        }
+      } catch {
+        target = "/onboarding/profile";
+      }
+    }
+    const redirectRes = NextResponse.redirect(new URL(target, request.url));
     supabaseResponse.cookies.getAll().forEach((c) => {
       redirectRes.cookies.set(c.name, c.value, { ...c, path: "/" });
     });
