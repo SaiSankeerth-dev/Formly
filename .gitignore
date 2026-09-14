@@ -68,3 +68,6 @@ skills-lock.json
 # Supabase temporary files
 supabase/.temp/
 
+# OCR models
+*.traineddata
+

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const host = request.headers.get("host") || "";
@@ -120,7 +120,7 @@ export async function middleware(request: NextRequest) {
   // PORT ISOLATION: CITIZEN PLATFORM (PORT 3000)
   // =============================================================
   if (isCitizenPlatform) {
-    if (pathname.startsWith("/api/gov")) {
+    if (pathname.startsWith("/api/gov") && !pathname.startsWith("/api/gov/auth")) {
       return NextResponse.json(
         { error: "Platform Isolation Violation: Government APIs are isolated to Government Platform (port 3001)." },
         { status: 403 }
@@ -275,6 +275,8 @@ export async function middleware(request: NextRequest) {
 
   return supabaseResponse;
 }
+
+export default proxy;
 
 export const config = {
   matcher: [
