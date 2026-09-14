@@ -46,7 +46,7 @@ async function testVercelProduction() {
   // 3. Test Navigation to Profile (CRITICAL VERIFICATION: MUST STAY ON /profile)
   console.log("\n3. Testing Citizen Profile page...");
   await page.goto(`${PROD_URL}/profile`, { waitUntil: "domcontentloaded" });
-  await page.waitForTimeout(1000);
+  await page.waitForSelector("text=My Profile", { timeout: 15000 });
   console.log("   Landed on:", page.url());
   assert.strictEqual(page.url(), `${PROD_URL}/profile`, "Must stay on /profile and NOT redirect to /dashboard");
   const profileHeading = await page.textContent("body");
