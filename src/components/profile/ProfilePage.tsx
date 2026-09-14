@@ -97,10 +97,6 @@ export function ProfilePage() {
       }
       const data = await res.json();
       if (data.success) {
-        if (!data.completed) {
-          router.replace("/onboarding/profile");
-          return;
-        }
         if (Array.isArray(data.data)) {
           setLocalFields(data.data);
         }

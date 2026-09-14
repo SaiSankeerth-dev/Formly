@@ -539,7 +539,6 @@ export function CitizenAuthView({ initialMode = "login" }: CitizenAuthViewProps)
                     <button
                       type="submit"
                       id="citizen-login-submit"
-                      onClick={handleLoginSubmit}
                       disabled={isSubmitting || isGoogleLoading}
                       className="w-full py-3.5 px-4 bg-[#3B49DF] hover:bg-[#2F27CE] active:scale-[0.99] text-white rounded-xl text-xs sm:text-sm font-bold shadow-md shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 mt-2"
                     >

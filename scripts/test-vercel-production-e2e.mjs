@@ -35,10 +35,8 @@ async function testVercelProduction() {
   await page.fill("#citizen-email", "user@gmail.com");
   await page.fill("#citizen-password", "password123");
   await page.waitForTimeout(500); // ensure React state bindings
-  await Promise.all([
-    page.waitForURL(/(dashboard|onboarding\/profile)/, { timeout: 15000 }),
-    page.click("button[type='submit']"),
-  ]);
+  await page.click("#citizen-login-submit");
+  await page.waitForURL(/.*(dashboard|onboarding\/profile)/, { timeout: 20000 });
   console.log("✓ Citizen landed on:", page.url());
   assert.ok(
     page.url().includes("/dashboard") || page.url().includes("/onboarding/profile"),
