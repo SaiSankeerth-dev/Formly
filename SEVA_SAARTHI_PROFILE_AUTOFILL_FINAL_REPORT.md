@@ -197,6 +197,13 @@ DIRECT ROUTE TO /dashboard
 
 ## 5. Production Deployment Status
 
-- **Repository Branch:** `origin/main`
-- **Build Status:** Ready for deployment push
-- **Production URL:** [https://seva-saarthi.vercel.app](https://seva-saarthi.vercel.app)
+- **Repository Branch:** `origin/main` & `sih/main` (Latest commit: `7208612`)
+- **Live Vercel Production Links:**
+  - **Live Production URL:** [https://seva-saarthi-five.vercel.app](https://seva-saarthi-five.vercel.app)
+  - **Custom Production Domain:** [https://seva-saarthi.vercel.app](https://seva-saarthi.vercel.app)
+- **Live Runtime Playwright Verification:** **PASS (100% clean, 0 console errors)**
+  - Unauthenticated root (`/`) &rarr; `/login` verified.
+  - Citizen login (`user@gmail.com` / `password123`) &rarr; `/onboarding/profile` verified.
+  - Direct navigation to `/profile` loads citizen profile and stays on `/profile` without redirecting.
+  - Documents page (`/documents`) & Settings page (`/settings`) verified.
+  - Government Officer flow (`officer@gmail.com` / `1234567890`) &rarr; `/gov/dashboard`, `/gov/queue`, `/gov/settings` verified.
