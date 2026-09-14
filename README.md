@@ -17,6 +17,7 @@
   <b>semantic data mapping across state & central registries</b>, and <b>immutable cryptographic audit trails</b>.
 </p>
 
+[Demo Video](#-live-demo-walkthrough) •
 [System Topology](#-system-topology) •
 [Dual-Platform Architecture](#-dual-platform-architecture) •
 [12-Stage State Machine](#-12-stage-orchestration-state-machine) •
@@ -25,6 +26,28 @@
 [Test Credentials](#-demo-accounts--test-credentials) •
 [Quick Start](#-quick-start) •
 [Verification Matrix](#-automated-verification-matrix)
+
+</div>
+
+---
+
+## 🎬 Live Demo Walkthrough
+
+https://github.com/SaiSankeerth-dev/SIH-26129/raw/main/SIH-Demo.mp4
+
+<div align="center">
+
+<video src="https://github.com/SaiSankeerth-dev/SIH-26129/raw/main/SIH-Demo.mp4" controls="controls" width="100%" poster="docs/images/sih-demo-thumbnail.png">
+  <a href="https://github.com/SaiSankeerth-dev/SIH-26129/raw/main/SIH-Demo.mp4">
+    <img src="docs/images/sih-demo-thumbnail.png" alt="Watch SIH Demo Walkthrough" width="100%" style="border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15);" />
+  </a>
+</video>
+
+<br/><br/>
+
+[![Watch Demo](https://img.shields.io/badge/▶_Watch_Demo_Video-SIH--Demo.mp4-E50914?style=for-the-badge&logo=youtube&logoColor=white)](https://github.com/SaiSankeerth-dev/SIH-26129/raw/main/SIH-Demo.mp4)
+&nbsp;
+[![Direct Download](https://img.shields.io/badge/⬇_Download_Demo_Video-1080p_MP4-1f6feb?style=for-the-badge&logo=google-drive&logoColor=white)](https://github.com/SaiSankeerth-dev/SIH-26129/raw/main/SIH-Demo.mp4)
 
 </div>
 
