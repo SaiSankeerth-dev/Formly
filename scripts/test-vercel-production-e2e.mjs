@@ -36,11 +36,14 @@ async function testVercelProduction() {
   await page.fill("#citizen-password", "password123");
   await page.waitForTimeout(500); // ensure React state bindings
   await Promise.all([
-    page.waitForURL("**/dashboard", { timeout: 15000 }),
+    page.waitForURL(/(dashboard|onboarding\/profile)/, { timeout: 15000 }),
     page.click("button[type='submit']"),
   ]);
   console.log("✓ Citizen landed on:", page.url());
-  assert.ok(page.url().includes("/dashboard"), "Should be on /dashboard");
+  assert.ok(
+    page.url().includes("/dashboard") || page.url().includes("/onboarding/profile"),
+    "Should be on /dashboard or /onboarding/profile based on profile completion"
+  );
 
   // 3. Test Navigation to Profile (CRITICAL VERIFICATION: MUST STAY ON /profile)
   console.log("\n3. Testing Citizen Profile page...");

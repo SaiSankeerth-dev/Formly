@@ -232,15 +232,18 @@ export async function proxy(request: NextRequest) {
   const { supabaseResponse, user: citizenUser, supabase } = await updateSession(request);
 
   function isValidCitizenSession(token?: string): boolean {
-    if (!token) return false;
+    if (!token || typeof token !== "string") return false;
     try {
-      const parts = token.split(".");
-      if (parts.length !== 2) return false;
-      const [payloadB64] = parts;
-      const jsonStr = Buffer.from(payloadB64, "base64").toString("utf-8");
+      const raw = token.startsWith("formly_") ? token.substring(7) : token;
+      const dotIndex = raw.lastIndexOf(".");
+      if (dotIndex === -1) return false;
+      const base64Payload = raw.substring(0, dotIndex);
+      const jsonStr = Buffer.from(base64Payload, "base64url").toString("utf-8");
       const payload = JSON.parse(jsonStr);
-      if (!payload?.userId || !payload?.expiresAt) return false;
-      if (new Date(payload.expiresAt).getTime() < Date.now()) return false;
+      if (!payload?.userId) return false;
+      const nowSec = Math.floor(Date.now() / 1000);
+      if (payload.exp && typeof payload.exp === "number" && payload.exp < nowSec) return false;
+      if (payload.expiresAt && new Date(payload.expiresAt).getTime() < Date.now()) return false;
       return true;
     } catch {
       return false;
