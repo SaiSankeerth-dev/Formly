@@ -34,7 +34,7 @@ export function ApplyPanModal({ isOpen, onClose }: ApplyPanModalProps) {
   };
 
   const fullName = user?.name || "Sai Sankeerth";
-  const email = user?.email || "sankeerths615@gmail.com";
+  const email = user?.email || "user@gmail.com";
   const phone = user?.phone || getProfileValue("phone_number", "1234567890");
   const dob = getProfileValue("date_of_birth", "2004-07-23");
   const gender = getProfileValue("gender", "Male");

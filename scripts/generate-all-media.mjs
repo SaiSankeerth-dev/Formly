@@ -37,11 +37,11 @@ async function generateMedia() {
   console.log("=== FORMLY MEDIA GENERATION (SCREENSHOTS + VIDEO WALKTHROUGH) ===");
 
   // 1. Authenticate Citizen API
-  console.log("Authenticating Citizen (sankeerths615@gmail.com)...");
+  console.log("Authenticating Citizen (user@gmail.com)...");
   const citLoginRes = await fetch("http://localhost:3000/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "sankeerths615@gmail.com", password: "1234567890" }),
+    body: JSON.stringify({ email: "user@gmail.com", password: "1234567890" }),
   });
   const citData = await citLoginRes.json();
   if (!citData.token) throw new Error("Citizen auth failed: " + JSON.stringify(citData));
@@ -49,11 +49,11 @@ async function generateMedia() {
   console.log("Citizen authenticated successfully. Token:", citToken.slice(0, 12) + "...");
 
   // 2. Authenticate Government Officer API
-  console.log("Authenticating Government Officer (sankeerthvss@gmail.com)...");
+  console.log("Authenticating Government Officer (officer@gmail.com)...");
   const govLoginRes = await fetch("http://localhost:3001/api/gov/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "sankeerthvss@gmail.com", password: "1234567890" }),
+    body: JSON.stringify({ email: "officer@gmail.com", password: "1234567890" }),
   });
   const govData = await govLoginRes.json();
   if (!govData.token) throw new Error("Government auth failed: " + JSON.stringify(govData));

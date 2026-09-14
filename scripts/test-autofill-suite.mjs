@@ -55,7 +55,7 @@ console.log("✓ Security Check: Unauthenticated GET /api/agent/autofill correct
 const testCitizenToken = signSessionToken({
   userId: "u_0bc5a3b6-f059-4ab2-9870-46a9c25178b7",
   name: "Sai Sankeerth",
-  email: "sankeerths615@gmail.com",
+  email: "user@gmail.com",
   phone: "9876543210",
   role: "Applicant / Citizen",
 });

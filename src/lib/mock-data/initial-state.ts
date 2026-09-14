@@ -9,7 +9,7 @@ import {
 
 export const DEFAULT_USER = {
   id: 'u0000000-0000-0000-0000-000000000001',
-  email: 'sankeerths615@gmail.com',
+  email: 'user@gmail.com',
   name: 'Sai Sankeerth',
   role: 'Applicant / Student',
   phone: '9876543210',
@@ -326,7 +326,7 @@ export const INITIAL_PROFILE_FIELDS: ProfileField[] = [
     id: 'pf_04',
     user_id: DEFAULT_USER.id,
     field_name: 'email',
-    value: 'sankeerths615@gmail.com',
+    value: 'user@gmail.com',
     source_document_id: null,
     confidence: null,
     verified: true,

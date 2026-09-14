@@ -10,7 +10,7 @@ async function runComprehensiveAudit() {
   const loginRes = await fetch(BASE + '/api/gov/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ employeeId: 'sankeerthvss@gmail.com', password: 'password123' })
+    body: JSON.stringify({ employeeId: 'officer@gmail.com', password: 'password123' })
   });
   const loginData = await loginRes.json();
   if (!loginData.success || !loginData.token) {
@@ -111,7 +111,7 @@ async function runComprehensiveAudit() {
   const citizenLoginRes = await fetch(BASE + '/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: 'sankeerths615@gmail.com', password: 'password123' })
+    body: JSON.stringify({ email: 'user@gmail.com', password: 'password123' })
   });
   const citizenLoginData = await citizenLoginRes.json();
   const citizenCookie = 'FORMLY_CITIZEN_SESSION=' + citizenLoginData.token;

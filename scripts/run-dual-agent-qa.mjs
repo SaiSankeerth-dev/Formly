@@ -60,7 +60,7 @@ async function runDualAgentQA() {
 
     // Perform login
     await citizenPage.click('#citizen-email');
-    await citizenPage.keyboard.type("sankeerths615@gmail.com");
+    await citizenPage.keyboard.type("user@gmail.com");
     await citizenPage.click('#citizen-password');
     await citizenPage.keyboard.type("password123");
     await citizenPage.click('button[type="submit"]');
@@ -87,7 +87,7 @@ async function runDualAgentQA() {
     record("gov", "Login Page Render", govLoginTitle.length > 0, "Loaded government operations login page");
 
     await govPage.click('#employeeId');
-    await govPage.keyboard.type("sankeerthvss@gmail.com");
+    await govPage.keyboard.type("officer@gmail.com");
     await govPage.click('#password');
     await govPage.keyboard.type("password123");
     await govPage.click('button[type="submit"]');
@@ -120,7 +120,7 @@ async function runDualAgentQA() {
       body: JSON.stringify({
         serviceId: "SCHOLARSHIP_01",
         applicantName: "Sai Sankeerth",
-        applicantEmail: "sankeerths615@gmail.com",
+        applicantEmail: "user@gmail.com",
         applicantPhone: "9876543210",
         citizenData: {
           fullName: "Sai Sankeerth",

@@ -23,7 +23,7 @@ async function main() {
   if (emailField) {
     console.log("Entering Citizen Credentials for Sai Sankeerth");
     await page.click("#citizen-email");
-    await page.keyboard.type("sankeerths615@gmail.com", { delay: 25 });
+    await page.keyboard.type("user@gmail.com", { delay: 25 });
     await page.click("#citizen-password");
     await page.keyboard.type("password123", { delay: 25 });
     await page.waitForTimeout(400);
@@ -75,7 +75,7 @@ async function main() {
   if (empField) {
     console.log("Entering Government Officer Credentials");
     await page.click("#employeeId");
-    await page.keyboard.type("sankeerthvss@gmail.com", { delay: 25 });
+    await page.keyboard.type("officer@gmail.com", { delay: 25 });
     await page.click("#password");
     await page.keyboard.type("password123", { delay: 25 });
     await page.waitForTimeout(400);

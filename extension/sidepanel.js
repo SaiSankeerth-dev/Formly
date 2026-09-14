@@ -38,7 +38,7 @@
     user: {
       id: "u0000000-0000-0000-0000-000000000001",
       name: "Sai Sankeerth",
-      email: "sankeerths615@gmail.com",
+      email: "user@gmail.com",
       phone: "9876543210",
     },
     profileMap: {
@@ -58,7 +58,7 @@
       mobile: "9876543210",
       phone_number: "9876543210",
       phone: "9876543210",
-      email: "sankeerths615@gmail.com",
+      email: "user@gmail.com",
       aadhaar_number: "5492 8173 9012",
       aadhaar: "5492 8173 9012",
       aadhaar_clean: "549281739012",

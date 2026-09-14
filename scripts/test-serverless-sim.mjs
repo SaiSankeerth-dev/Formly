@@ -29,25 +29,25 @@ async function testServerless() {
   console.log(`Users table exists, count:`, users.rows[0]);
 
   console.log("\nAttempting loginUser on simulated Vercel serverless...");
-  const citizenLogin = await loginUser("sankeerths615@gmail.com", "1234567890");
+  const citizenLogin = await loginUser("user@gmail.com", "1234567890");
   console.log("Citizen login result:", citizenLogin.user.name, citizenLogin.user.email);
 
-  const officerLogin = await loginUser("sankeerthvss@gmail.com", "1234567890");
+  const officerLogin = await loginUser("officer@gmail.com", "1234567890");
   console.log("Officer login result:", officerLogin.user.name, officerLogin.user.email);
 
   console.log("\n--- Testing Concurrent Cold-Start Login Requests (10 parallel promises) ---");
   await resetAuthoritativeDb();
   const concurrentLogins = await Promise.all([
-    loginUser("sankeerths615@gmail.com", "1234567890"),
-    loginUser("sankeerthvss@gmail.com", "1234567890"),
-    loginUser("sankeerths615@gmail.com", "1234567890"),
-    loginUser("sankeerthvss@gmail.com", "1234567890"),
+    loginUser("user@gmail.com", "1234567890"),
+    loginUser("officer@gmail.com", "1234567890"),
+    loginUser("user@gmail.com", "1234567890"),
+    loginUser("officer@gmail.com", "1234567890"),
     loginUser("test.citizen@formly.local", "Citizen@2026"),
     loginUser("test.officer@formly.gov.local", "GovOfficer@2026"),
-    loginUser("sankeerths615@gmail.com", "1234567890"),
-    loginUser("sankeerthvss@gmail.com", "1234567890"),
-    loginUser("sankeerths615@gmail.com", "1234567890"),
-    loginUser("sankeerthvss@gmail.com", "1234567890"),
+    loginUser("user@gmail.com", "1234567890"),
+    loginUser("officer@gmail.com", "1234567890"),
+    loginUser("user@gmail.com", "1234567890"),
+    loginUser("officer@gmail.com", "1234567890"),
   ]);
   console.log(`✓ All 10 concurrent cold-start login requests resolved successfully.`);
   for (let i = 0; i < concurrentLogins.length; i++) {

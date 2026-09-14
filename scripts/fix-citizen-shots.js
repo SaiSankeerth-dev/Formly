@@ -13,7 +13,7 @@ async function fixCitizenScreenshots() {
   const loginRes = await fetch("http://localhost:3000/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "sankeerths615@gmail.com", password: "1234567890" })
+    body: JSON.stringify({ email: "user@gmail.com", password: "1234567890" })
   });
   const data = await loginRes.json();
   const setCookie = loginRes.headers.get("set-cookie");

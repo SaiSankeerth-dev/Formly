@@ -32,7 +32,7 @@ async function main() {
   const cLoginRes = await fetch("http://localhost:3000/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "sankeerths615@gmail.com", password: "1234567890" })
+    body: JSON.stringify({ email: "user@gmail.com", password: "1234567890" })
   });
   const cData = await cLoginRes.json();
   console.log("Citizen token:", cData.token);
@@ -87,7 +87,7 @@ async function main() {
   const gLoginRes = await fetch("http://localhost:3001/api/gov/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "sankeerthvss@gmail.com", password: "1234567890" })
+    body: JSON.stringify({ email: "officer@gmail.com", password: "1234567890" })
   });
   const gData = await gLoginRes.json();
   console.log("Government token:", gData.token);

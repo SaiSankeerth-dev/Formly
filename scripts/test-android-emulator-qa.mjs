@@ -86,7 +86,7 @@ async function runAndroidEmulatorQA() {
       `Email: ${emailExists}, Password: ${passExists}`);
 
     // Fill using React-compatible native setter
-    await reactFill(page, 'input#citizen-email', 'sankeerths615@gmail.com');
+    await reactFill(page, 'input#citizen-email', 'user@gmail.com');
     await reactFill(page, 'input#citizen-password', 'password123');
     await page.waitForTimeout(300);
 
@@ -94,7 +94,7 @@ async function runAndroidEmulatorQA() {
     const emailVal = await page.evaluate(() => document.querySelector('input#citizen-email')?.value);
     const passVal = await page.evaluate(() => document.querySelector('input#citizen-password')?.value);
     record("mobile-auth", "React Input State Updated", 
-      emailVal === 'sankeerths615@gmail.com' && passVal === 'password123',
+      emailVal === 'user@gmail.com' && passVal === 'password123',
       `Email: "${emailVal}", Password length: ${passVal?.length}`);
 
     // Submit form via direct button click
@@ -114,7 +114,7 @@ async function runAndroidEmulatorQA() {
           const res = await fetch(`${base}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: 'sankeerths615@gmail.com', password: 'password123' }),
+            body: JSON.stringify({ email: 'user@gmail.com', password: 'password123' }),
           });
           const data = await res.json();
           if (data.success && data.token) {
@@ -246,7 +246,7 @@ async function runAndroidEmulatorQA() {
       `Employee: ${govEmployeeExists}, Password: ${govPasswordExists}`);
 
     if (govEmployeeExists && govPasswordExists) {
-      await reactFill(page, 'input#employeeId', 'sankeerthvss@gmail.com');
+      await reactFill(page, 'input#employeeId', 'officer@gmail.com');
       await reactFill(page, 'input#password', 'password123');
       await page.waitForTimeout(300);
 
@@ -267,7 +267,7 @@ async function runAndroidEmulatorQA() {
             const res = await fetch(`${base}/api/gov/auth/login`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ employeeId: 'sankeerthvss@gmail.com', password: 'password123' }),
+              body: JSON.stringify({ employeeId: 'officer@gmail.com', password: 'password123' }),
             });
             const data = await res.json();
             if (data.success && data.token) {

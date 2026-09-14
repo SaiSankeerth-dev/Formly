@@ -42,7 +42,7 @@ async function runVerification() {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      email: "sankeerths615@gmail.com",
+      email: "user@gmail.com",
       password: "password123",
       rememberMe: true,
     }),
@@ -72,7 +72,7 @@ async function runVerification() {
   assert.strictEqual(sessionRes.status, 200, "/api/auth/session must return 200");
   const sessionData = await sessionRes.json();
   assert.strictEqual(sessionData.authenticated, true, "Session must be authenticated");
-  assert.strictEqual(sessionData.user.email, "sankeerths615@gmail.com");
+  assert.strictEqual(sessionData.user.email, "user@gmail.com");
   console.log(`✓ PASS: /api/auth/session confirms authenticated user: ${sessionData.user.name}\n`);
 
   // TEST 4: Load /api/dashboard for Authenticated Citizen
@@ -105,13 +105,13 @@ async function runVerification() {
     },
     body: JSON.stringify({
       applicantName: "Sai Sankeerth",
-      applicantEmail: "sankeerths615@gmail.com",
+      applicantEmail: "user@gmail.com",
       applicantPhone: "9876543210",
       citizenData: {
         fullName: "Sai Sankeerth",
         dateOfBirth: "2007-08-05",
         gender: "Male",
-        email: "sankeerths615@gmail.com",
+        email: "user@gmail.com",
         mobile: "9876543210",
         address: "Hyderabad, Telangana",
         serviceId: "s001",
@@ -164,7 +164,7 @@ async function runVerification() {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      employeeId: "sankeerthvss@gmail.com",
+      employeeId: "officer@gmail.com",
       password: "password123",
     }),
   });

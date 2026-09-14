@@ -188,13 +188,13 @@ An integrated AI assistant (powered by Google Gemini) prepares clear, structured
 ## 👥 Demo Accounts & Test Credentials
 
 ### 1. Citizen Portal (`http://localhost:3000/login`)
-- **Email:** `sankeerths615@gmail.com`
+- **Email:** `user@gmail.com`
 - **Password:** `password123`
 - **Alternative:** Continue with Google (Supabase OAuth PKCE)
 - **Role:** Citizen / Applicant (Full profile, uploaded documents, active applications)
 
 ### 2. Government Operations Portal (`http://localhost:3001/gov/login`)
-- **Employee ID / Email:** `sankeerthvss@gmail.com`
+- **Employee ID / Email:** `officer@gmail.com`
 - **Password:** `password123`
 - **Department:** Department of Revenue / PAN Operations
 - **Role:** Verification Officer / Desk Administrator

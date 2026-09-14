@@ -35,12 +35,12 @@ async function runVerification() {
 
   // 3. Authenticate Existing User (User A: Sai Sankeerth)
   console.log("[3] Testing User A (Sai Sankeerth) Login & Isolation...");
-  const userALogin = await loginUser("sankeerths615@gmail.com", "1234567890");
+  const userALogin = await loginUser("user@gmail.com", "1234567890");
   if (!userALogin.token.startsWith("formly_")) {
     throw new Error("User A login did not return a signed HMAC token");
   }
   const authUserA = await authenticateSession(userALogin.token);
-  if (!authUserA || authUserA.email !== "sankeerths615@gmail.com") {
+  if (!authUserA || authUserA.email !== "user@gmail.com") {
     throw new Error(`Failed to authenticate User A session: ${JSON.stringify(authUserA)}`);
   }
   console.log(`  ✓ User A authenticated: ${authUserA.name} (${authUserA.id})`);

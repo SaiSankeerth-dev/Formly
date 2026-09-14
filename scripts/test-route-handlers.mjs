@@ -38,7 +38,7 @@ async function testRoutes() {
   const loginReq = new Request("http://localhost:3000/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "sankeerths615@gmail.com", password: "password123" }),
+    body: JSON.stringify({ email: "user@gmail.com", password: "password123" }),
   });
   const loginRes = await loginPost(loginReq);
   const loginData = await loginRes.json();

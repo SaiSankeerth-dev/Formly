@@ -10,7 +10,7 @@ async function testLoginFlow() {
   console.log("Login Page HTTP Status:", loginRes.status());
 
   console.log("2. Filling Supabase credentials...");
-  await page.fill("#citizen-email", "sankeerths615@gmail.com");
+  await page.fill("#citizen-email", "user@gmail.com");
   await page.fill("#citizen-password", "password123");
   
   console.log("3. Submitting login form...");

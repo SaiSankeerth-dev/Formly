@@ -107,7 +107,7 @@ async function runRepairVerification() {
   assert(ownerA !== citizenB_Id, "Application PAN-2026-0001 owner check fails for Citizen B (Anti-IDOR enforced)");
 
   // Test 1.6: Case Assignment Boundary (Officers cannot mutate cases assigned to other officers)
-  const otherOfficerLogin = await loginUser("sankeerthvss@gmail.com", "1234567890");
+  const otherOfficerLogin = await loginUser("officer@gmail.com", "1234567890");
   const otherOfficerToken = otherOfficerLogin.token;
   const mockReqOtherOfficer = {
     cookies: {

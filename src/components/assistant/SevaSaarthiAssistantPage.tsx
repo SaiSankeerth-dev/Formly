@@ -325,7 +325,7 @@ export function SevaSaarthiAssistantPage() {
     { key: "first_name", label: "First Name", value: "Sai", code: "Sai" },
     { key: "last_name", label: "Last Name / Surname", value: "Sankeerth", code: "Sankeerth" },
     { key: "dob", label: "Date of Birth", value: "15/08/2001", code: "15/08/2001" },
-    { key: "email", label: "Email ID", value: user?.email || "sankeerths615@gmail.com", code: user?.email || "sankeerths615@gmail.com" },
+    { key: "email", label: "Email ID", value: user?.email || "user@gmail.com", code: user?.email || "user@gmail.com" },
     { key: "mobile", label: "Mobile Number", value: user?.phone || "9876543210", code: user?.phone || "9876543210" },
     { key: "aadhaar", label: "Aadhaar Number", value: "5492 8173 9012", code: "5492 8173 9012" },
   ];
@@ -354,7 +354,7 @@ export function SevaSaarthiAssistantPage() {
       cat_type: "INDIVIDUAL",
       date_of_birth: "15/08/2001",
       dob: "15/08/2001",
-      email: user?.email || "sankeerths615@gmail.com",
+      email: user?.email || "user@gmail.com",
       mobile: user?.phone || "9876543210",
       phone_number: user?.phone || "9876543210",
       gender: "Male",

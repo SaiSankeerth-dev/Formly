@@ -21,7 +21,7 @@ async function testProductionServer() {
   // 1. Login on Production Build
   console.log("1. Logging in on Production Server...");
   await page.goto("http://localhost:3005/login", { waitUntil: "networkidle" });
-  await page.fill("#citizen-email", "sankeerths615@gmail.com");
+  await page.fill("#citizen-email", "user@gmail.com");
   await page.fill("#citizen-password", "password123");
   await Promise.all([
     page.waitForURL("**/dashboard"),
@@ -69,7 +69,7 @@ async function testProductionServer() {
   const mobilePage = await mobileContext.newPage();
 
   await mobilePage.goto("http://localhost:3005/login", { waitUntil: "networkidle" });
-  await mobilePage.fill("#citizen-email", "sankeerths615@gmail.com");
+  await mobilePage.fill("#citizen-email", "user@gmail.com");
   await mobilePage.fill("#citizen-password", "password123");
   await Promise.all([
     mobilePage.waitForURL("**/dashboard"),

@@ -549,8 +549,12 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
       return { success: true };
     } catch (err: any) {
       const msg = err.message || "Network error while signing in.";
-      toast.error(msg);
-      return { success: false, error: msg };
+      const displayMsg =
+        msg === "fetch failed" || msg.includes("Failed to fetch")
+          ? "Unable to connect to the authentication server. Please check your connection."
+          : msg;
+      toast.error(displayMsg);
+      return { success: false, error: displayMsg };
     }
   };
 
@@ -576,7 +580,12 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
       window.location.href = "/dashboard";
       return true;
     } catch (err: any) {
-      toast.error(err.message || "Network error while signing up.");
+      const msg = err.message || "Network error while signing up.";
+      const displayMsg =
+        msg === "fetch failed" || msg.includes("Failed to fetch")
+          ? "Unable to connect to the authentication server. Please check your connection."
+          : msg;
+      toast.error(displayMsg);
       return false;
     }
   };

@@ -89,7 +89,7 @@ async function runCleanBrowserTestSuite() {
   // TEST 5: Clean Email/Password Login -> Dashboard Flow
   console.log("--- 5. Testing Email/Password Login -> Dashboard Flow ---");
   await page.goto("http://localhost:3000/login", { waitUntil: "networkidle" });
-  await page.fill("#citizen-email", "sankeerths615@gmail.com");
+  await page.fill("#citizen-email", "user@gmail.com");
   await page.fill("#citizen-password", "password123");
   
   await Promise.all([

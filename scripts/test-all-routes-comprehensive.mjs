@@ -20,7 +20,7 @@ async function testAllCitizenAndGovRoutes() {
   // 1. Citizen Login
   console.log("1. Logging in as citizen...");
   await page.goto("http://localhost:3000/login", { waitUntil: "networkidle" });
-  await page.fill("#citizen-email", "sankeerths615@gmail.com");
+  await page.fill("#citizen-email", "user@gmail.com");
   await page.fill("#citizen-password", "password123");
   await Promise.all([
     page.waitForURL("**/dashboard"),
@@ -57,7 +57,7 @@ async function testAllCitizenAndGovRoutes() {
   const govPage = await govContext.newPage();
 
   await govPage.goto("http://localhost:3001/gov/login", { waitUntil: "networkidle" });
-  await govPage.fill("#employeeId", "sankeerthvss@gmail.com");
+  await govPage.fill("#employeeId", "officer@gmail.com");
   await govPage.fill("#password", "1234567890");
   await Promise.all([
     govPage.waitForURL("**/gov/dashboard"),

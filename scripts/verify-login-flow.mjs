@@ -2,11 +2,11 @@ import { loginUser, getEmployeeBySession } from "../src/lib/server/db.ts";
 
 async function main() {
   console.log("=== Testing Citizen Login ===");
-  const cit = await loginUser("sankeerths615@gmail.com", "1234567890");
+  const cit = await loginUser("user@gmail.com", "1234567890");
   console.log("Citizen login OK:", { id: cit.user.id, name: cit.user.name, email: cit.user.email, role: cit.user.role });
 
   console.log("\n=== Testing Officer Login ===");
-  const gov = await loginUser("sankeerthvss@gmail.com", "1234567890");
+  const gov = await loginUser("officer@gmail.com", "1234567890");
   console.log("Officer login OK:", { id: gov.user.id, name: gov.user.name, email: gov.user.email });
 
   const emp = await getEmployeeBySession(gov.token);

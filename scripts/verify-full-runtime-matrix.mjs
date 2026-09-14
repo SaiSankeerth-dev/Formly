@@ -13,7 +13,7 @@ async function runMatrix() {
   const citizenLoginRes = await fetch(`${CITIZEN_ORIGIN}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "sankeerths615@gmail.com", password: "password123" }),
+    body: JSON.stringify({ email: "user@gmail.com", password: "password123" }),
   });
   assert.strictEqual(citizenLoginRes.status, 200, "Citizen login API must return 200 OK");
   const citizenData = await citizenLoginRes.json();
@@ -126,7 +126,7 @@ async function runMatrix() {
   const govLoginRes = await fetch(`${GOV_ORIGIN}/api/gov/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ employeeId: "sankeerthvss@gmail.com", password: "password123" }),
+    body: JSON.stringify({ employeeId: "officer@gmail.com", password: "password123" }),
   });
   assert.strictEqual(govLoginRes.status, 200, "Government login API must return 200 OK");
   const govData = await govLoginRes.json();

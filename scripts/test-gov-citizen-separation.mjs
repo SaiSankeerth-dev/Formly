@@ -14,12 +14,12 @@ async function runTests() {
   // ------------------------------------------------------------------
   // TEST 1: Citizen Login at Citizen Endpoint (/api/auth/login)
   // ------------------------------------------------------------------
-  console.log("TEST 1: Citizen login at /api/auth/login (sankeerths615@gmail.com)");
+  console.log("TEST 1: Citizen login at /api/auth/login (user@gmail.com)");
   const citizenRes = await fetch(`${BASE_URL}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      email: "sankeerths615@gmail.com",
+      email: "user@gmail.com",
       password: "password123",
     }),
   });
@@ -49,7 +49,7 @@ async function runTests() {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      employeeId: "sankeerths615@gmail.com",
+      employeeId: "user@gmail.com",
       password: "password123",
     }),
   });
@@ -79,7 +79,7 @@ async function runTests() {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      email: "sankeerthvss@gmail.com",
+      email: "officer@gmail.com",
       password: "password123",
     }),
   });
@@ -110,12 +110,12 @@ async function runTests() {
   // ------------------------------------------------------------------
   // TEST 4: Government Officer Login at Government Endpoint (/api/gov/auth/login)
   // ------------------------------------------------------------------
-  console.log("TEST 4: Government officer login at /api/gov/auth/login (sankeerthvss@gmail.com)");
+  console.log("TEST 4: Government officer login at /api/gov/auth/login (officer@gmail.com)");
   const govRes = await fetch(`${BASE_URL}/api/gov/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      employeeId: "sankeerthvss@gmail.com",
+      employeeId: "officer@gmail.com",
       password: "password123",
     }),
   });

@@ -84,7 +84,7 @@ async function runTests() {
       dateOfBirth: "2004-07-23",
       gender: "Male",
       mobile: "1234567890",
-      email: "sankeerths615@gmail.com",
+      email: "user@gmail.com",
       aadhaarNumber: "123456789876",
       address: "Gandhi Nagar",
       city: "Hyderabad",

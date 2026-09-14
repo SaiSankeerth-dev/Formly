@@ -297,8 +297,8 @@ async function seedInitialData(db: PGlite) {
   const citizenPass = hashPassword("1234567890", "c5bfec7eff377db9d79f52e5ba7ccde0");
   await db.query(`
     INSERT INTO auth.users (id, email)
-    VALUES ('00000000-0000-0000-0000-000000000001', 'sankeerths615@gmail.com')
-    ON CONFLICT (id) DO NOTHING;
+    VALUES ('00000000-0000-0000-0000-000000000001', 'user@gmail.com')
+    ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email;
   `);
 
   await db.query(`
@@ -306,13 +306,14 @@ async function seedInitialData(db: PGlite) {
     VALUES (
       'u_0bc5a3b6-f059-4ab2-9870-46a9c25178b7',
       'Sai Sankeerth',
-      'sankeerths615@gmail.com',
+      'user@gmail.com',
       '1234567890',
       $1,
       $2,
       'Applicant / Citizen'
     )
     ON CONFLICT (id) DO UPDATE SET
+      email = EXCLUDED.email,
       "passwordHash" = EXCLUDED."passwordHash",
       salt = EXCLUDED.salt;
   `, [citizenPass.hash, citizenPass.salt]);
@@ -358,11 +359,11 @@ async function seedInitialData(db: PGlite) {
     ON CONFLICT (employee_code) DO NOTHING;
   `);
 
-  // Officer Sai Sankeerth (sankeerthvss@gmail.com)
+  // Officer Sai Sankeerth (officer@gmail.com)
   const sankeerthPass = hashPassword("1234567890", "sankeerth_gov_salt_2026");
   await db.query(`
     INSERT INTO auth.users (id, email)
-    VALUES ('00000000-0000-0000-0000-000000007043', 'sankeerthvss@gmail.com')
+    VALUES ('00000000-0000-0000-0000-000000007043', 'officer@gmail.com')
     ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email;
   `);
   await db.query(`
@@ -370,13 +371,14 @@ async function seedInitialData(db: PGlite) {
     VALUES (
       'u_sankeerthvss_gov',
       'Officer Sai Sankeerth',
-      'sankeerthvss@gmail.com',
+      'officer@gmail.com',
       '1234567890',
       $1,
       $2,
       'Department Officer'
     )
     ON CONFLICT (id) DO UPDATE SET
+      email = EXCLUDED.email,
       "passwordHash" = EXCLUDED."passwordHash",
       salt = EXCLUDED.salt,
       role = EXCLUDED.role;
@@ -393,7 +395,7 @@ async function seedInitialData(db: PGlite) {
       'e0000000-0000-0000-0000-000000000002',
       'OFF-SAN-7043',
       'Officer Sai Sankeerth',
-      'sankeerthvss@gmail.com',
+      'officer@gmail.com',
       'DEPARTMENT_OFFICER',
       true
     )
@@ -649,7 +651,7 @@ async function seedInitialData(db: PGlite) {
       ('00000000-0000-0000-0000-000000000001', 'full_name', 'full_name', 'Sai Sankeerth', null, 0.99, 'VERIFIED', now(), now(), now()),
       ('00000000-0000-0000-0000-000000000001', 'date_of_birth', 'date_of_birth', '2001-08-15', null, 0.98, 'VERIFIED', now(), now(), now()),
       ('00000000-0000-0000-0000-000000000001', 'phone_number', 'phone_number', '9876543210', null, 0.99, 'VERIFIED', now(), now(), now()),
-      ('00000000-0000-0000-0000-000000000001', 'email', 'email', 'sankeerths615@gmail.com', null, 0.99, 'VERIFIED', now(), now(), now()),
+      ('00000000-0000-0000-0000-000000000001', 'email', 'email', 'user@gmail.com', null, 0.99, 'VERIFIED', now(), now(), now()),
       ('00000000-0000-0000-0000-000000000001', 'annual_income', 'annual_income', '180000', null, 0.96, 'VERIFIED', now(), now(), now()),
       ('00000000-0000-0000-0000-000000000001', 'aadhaar_number', 'aadhaar_number', '5492 8173 9012', null, 0.99, 'VERIFIED', now(), now(), now()),
       ('00000000-0000-0000-0000-000000000001', 'gender', 'gender', 'Male', null, 0.95, 'VERIFIED', now(), now(), now()),

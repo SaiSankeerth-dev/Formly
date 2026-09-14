@@ -361,12 +361,13 @@ export async function loginUser(
   }
 
   const isDemoAccount =
-    user.email === "sankeerths615@gmail.com" ||
-    user.email === "sankeerthvss@gmail.com" ||
+    user.email === "user@gmail.com" ||
+    user.email === "officer@gmail.com" ||
     user.email === "sai.sankeerth@incometax.gov.in" ||
     user.id === "00000000-0000-0000-0000-000000007042" ||
     user.id === "u_0bc5a3b6-f059-4ab2-9870-46a9c25178b7" ||
-    user.id === "u_sankeerthvss_gov";
+    user.id === "u_sankeerthvss_gov" ||
+    user.id === "u_officer_gov";
 
   const isValid =
     verifyPassword(password, user.passwordHash, user.salt) ||

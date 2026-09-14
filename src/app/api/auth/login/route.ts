@@ -46,19 +46,30 @@ export async function POST(request: Request) {
     // 2. Primary Citizen Authentication: Supabase Auth single source of truth
     const cookieStore = await cookies();
     const cookiesToSet: Array<{ name: string; value: string; options?: any }> = [];
-    const supabase = await createClient({
-      cookieStore,
-      onSetCookies: (incoming) => {
-        cookiesToSet.push(...incoming);
-      },
-    });
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: trimmedEmail,
-      password,
-    });
+    let authUser: any = null;
+    let authError: any = null;
 
-    if (data?.user && !error) {
-      const authUser = data.user;
+    try {
+      const supabase = await createClient({
+        cookieStore,
+        onSetCookies: (incoming) => {
+          cookiesToSet.push(...incoming);
+        },
+      });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
+        password,
+      });
+      if (data?.user && !error) {
+        authUser = data.user;
+      } else {
+        authError = error;
+      }
+    } catch (err: any) {
+      authError = err;
+    }
+
+    if (authUser) {
       const userPayload = {
         id: authUser.id,
         email: authUser.email || trimmedEmail,
@@ -172,10 +183,19 @@ export async function POST(request: Request) {
       return response;
     } catch {}
 
-    // Return the real error message from Supabase Auth
-    const errorMessage = error?.message || "Email or password is incorrect.";
+    // Return the real error message from Supabase Auth or standard error
+    const rawError = authError?.message;
+    const errorMessage =
+      rawError === "fetch failed" || !rawError
+        ? "Email or password is incorrect."
+        : rawError;
     return NextResponse.json({ success: false, error: errorMessage }, { status: 401 });
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: err?.message || "Authentication failed" }, { status: 500 });
+    const rawError = err?.message;
+    const errorMessage =
+      rawError === "fetch failed" || !rawError
+        ? "Unable to complete authentication. Please check your connection and try again."
+        : rawError;
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }

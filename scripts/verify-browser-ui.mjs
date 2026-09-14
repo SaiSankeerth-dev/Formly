@@ -78,7 +78,7 @@ async function verifyBrowserUI() {
   console.log("Navigating to http://localhost:3001/gov/login...");
   await govPage.goto("http://localhost:3001/gov/login", { waitUntil: "networkidle" });
 
-  await govPage.fill("#employeeId, input[name='employeeId'], input[type='text']", "sankeerthvss@gmail.com");
+  await govPage.fill("#employeeId, input[name='employeeId'], input[type='text']", "officer@gmail.com");
   await govPage.fill("#password, input[type='password']", "password123");
 
   console.log("Submitting government officer login...");
